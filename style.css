@@ -807,3 +807,54 @@ body {
         font-size: 32px;
     }
 }
+
+    
+        .legal-content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .legal-content h2 {
+            color: var(--color-black);
+            margin: 30px 0 15px;
+            font-size: 24px;
+        }
+
+        .legal-content h3 {
+            color: var(--color-gray-dark);
+            margin: 20px 0 10px;
+            font-size: 18px;
+        }
+
+        .legal-content p {
+            color: var(--color-gray);
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        .legal-content ul {
+            margin: 15px 0 15px 30px;
+            color: var(--color-gray);
+        }
+
+        .legal-content li {
+            margin-bottom: 8px;
+        }
+
+        .last-updated {
+            color: var(--color-gray);
+            font-style: italic;
+            margin-bottom: 30px;
+        }
+
+        .compliance-badge {
+            display: inline-block;
+            background: var(--color-primary);
+            color: var(--color-black);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 10px;
+        }
