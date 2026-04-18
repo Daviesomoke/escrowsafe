@@ -304,50 +304,57 @@
         });
     }
 
+    
+
+
+
+
     // ===== MOBILE SIDEBAR NAVIGATION =====
-    function initMobileSidebar() {
-        const menuToggle = document.getElementById('menuToggle');
-        const sidebar = document.getElementById('mobileSidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        const closeBtn = document.getElementById('sidebarClose');
-        const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
-        
-        if (!menuToggle || !sidebar || !overlay) return;
-        
-        // Open sidebar
-        menuToggle.addEventListener('click', function() {
-            sidebar.classList.add('active');
-            overlay.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        });
-        
-        // Close sidebar function
-        function closeSidebar() {
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-        
-        // Close on overlay click
-        overlay.addEventListener('click', closeSidebar);
-        
-        // Close on close button
-        if (closeBtn) {
-            closeBtn.addEventListener('click', closeSidebar);
-        }
-        
-        // Close on nav link click
-        navLinks.forEach(function(link) {
-            link.addEventListener('click', closeSidebar);
-        });
-        
-        // Close on escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && sidebar.classList.contains('active')) {
-                closeSidebar();
-            }
-        });
+function initMobileSidebar() {
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('mobileSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const closeBtn = document.getElementById('sidebarClose');
+    const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
+    
+    if (!menuToggle || !sidebar || !overlay) return;
+    
+    // Open sidebar
+    menuToggle.addEventListener('click', function() {
+        sidebar.classList.add('active');
+        overlay.classList.add('active');
+        document.body.classList.add('sidebar-open');
+        document.body.style.overflow = 'hidden';
+    });
+    
+    // Close sidebar function
+    function closeSidebar() {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+        document.body.classList.remove('sidebar-open');
+        document.body.style.overflow = '';
     }
+    
+    // Close on overlay click
+    overlay.addEventListener('click', closeSidebar);
+    
+    // Close on close button
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeSidebar);
+    }
+    
+    // Close on nav link click
+    navLinks.forEach(function(link) {
+        link.addEventListener('click', closeSidebar);
+    });
+    
+    // Close on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && sidebar.classList.contains('active')) {
+            closeSidebar();
+        }
+    });
+}
 
     // ===== SMOOTH SCROLLING =====
     function initSmoothScrolling() {

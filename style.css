@@ -751,7 +751,10 @@ body {
     transform: translateY(-1px);
 }
 
-/* ===== MOBILE TOGGLE BUTTON ===== */
+
+
+
+/* ===== MOBILE SIDEBAR NAVIGATION ===== */
 .mobile-menu-toggle {
     display: none;
     flex-direction: column;
@@ -760,6 +763,7 @@ body {
     height: 24px;
     cursor: pointer;
     z-index: 1001;
+    position: relative;
 }
 
 .toggle-bar {
@@ -770,7 +774,22 @@ body {
     transition: all 0.3s ease;
 }
 
-/* ===== SIDEBAR OVERLAY ===== */
+/* When sidebar is open - transform hamburger to X */
+.mobile-sidebar.active~.mobile-menu-toggle .toggle-bar:nth-child(1),
+body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.mobile-sidebar.active~.mobile-menu-toggle .toggle-bar:nth-child(2),
+body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(2) {
+    opacity: 0;
+}
+
+.mobile-sidebar.active~.mobile-menu-toggle .toggle-bar:nth-child(3),
+body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -7px);
+}
+
 .sidebar-overlay {
     position: fixed;
     top: 0;
@@ -789,7 +808,6 @@ body {
     visibility: visible;
 }
 
-/* ===== MOBILE SIDEBAR ===== */
 .mobile-sidebar {
     position: fixed;
     top: 0;
@@ -831,7 +849,6 @@ body {
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    transition: background 0.2s;
 }
 
 .sidebar-close:hover {
@@ -843,17 +860,12 @@ body {
     padding: 20px 0;
 }
 
-.sidebar-nav .nav-item {
-    width: 100%;
-}
-
 .sidebar-nav .nav-link {
     display: block;
     padding: 16px 24px;
-    text-align: left;
-    border-radius: 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     color: #ffffff;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .sidebar-nav .nav-link:hover {
@@ -874,9 +886,26 @@ body {
     display: block;
     text-align: center;
     width: 100%;
+    background: #2ecc71;
+    color: #111111;
+    padding: 12px 24px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
 }
 
-/* ===== MOBILE RESPONSIVE ===== */
+/* Desktop Navigation */
+.primary-nav {
+    display: flex;
+}
+
+.nav-list {
+    display: flex;
+    list-style: none;
+    gap: 8px;
+    align-items: center;
+}
+
 @media (max-width: 768px) {
     .mobile-menu-toggle {
         display: flex;
