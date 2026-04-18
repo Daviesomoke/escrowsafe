@@ -2,6 +2,8 @@
 
 
 
+
+
 /**
  * SecureEscrow Kenya - Complete JavaScript File
  */
@@ -113,7 +115,6 @@
         phoneNumber: '254791190667',
         button: null,
         tooltip: null,
-        backToTopButton: null,
         
         init: function() {
             this.createButton();
@@ -181,7 +182,7 @@
         }
     };
 
-    // ===== FORM VALIDATION =====
+    // ===== FORM VALIDATION HELPERS =====
     function validateKenyanPhone(phone) {
         const cleanPhone = phone.replace(/\s+/g, '');
         const phoneRegex = /^(0|\+254)[71]\d{8}$/;
@@ -195,39 +196,6 @@
 
     function formatKES(amount) {
         return 'KES ' + amount.toLocaleString('en-KE');
-    }
-
-    // ===== ANIMATED COUNTERS =====
-    function initCounters() {
-        const counters = document.querySelectorAll('.counter');
-        if (counters.length === 0) return;
-        
-        const observer = new IntersectionObserver(function(entries) {
-            entries.forEach(function(entry) {
-                if (entry.isIntersecting) {
-                    const counter = entry.target;
-                    const target = parseInt(counter.getAttribute('data-target'));
-                    let current = 0;
-                    const increment = target / 50;
-                    
-                    const updateCounter = setInterval(function() {
-                        current += increment;
-                        if (current >= target) {
-                            counter.textContent = target;
-                            clearInterval(updateCounter);
-                        } else {
-                            counter.textContent = Math.floor(current);
-                        }
-                    }, 20);
-                    
-                    observer.unobserve(counter);
-                }
-            });
-        }, { threshold: 0.5 });
-        
-        counters.forEach(function(counter) {
-            observer.observe(counter);
-        });
     }
 
     // ===== ESCROW FORM HANDLER =====
@@ -274,7 +242,6 @@
             }
             
             if (isValid) {
-                const total = parseFloat(amount.value) + (parseFloat(amount.value) * 0.02);
                 const confirmMessage = 'Proceed with transaction for ' + formatKES(parseFloat(amount.value)) + '?';
                 
                 if (confirm(confirmMessage)) {
@@ -337,29 +304,47 @@
         });
     }
 
-    // ===== MOBILE MENU =====
-    function initMobileMenu() {
-        const menuToggle = document.querySelector('.mobile-menu-checkbox');
-        const nav = document.querySelector('.primary-nav');
-        const navLinks = document.querySelectorAll('.nav-link');
+    // ===== MOBILE SIDEBAR NAVIGATION =====
+    function initMobileSidebar() {
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('mobileSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const closeBtn = document.getElementById('sidebarClose');
+        const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
         
-        if (!menuToggle || !nav) return;
+        if (!menuToggle || !sidebar || !overlay) return;
         
+        // Open sidebar
+        menuToggle.addEventListener('click', function() {
+            sidebar.classList.add('active');
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        
+        // Close sidebar function
+        function closeSidebar() {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        // Close on overlay click
+        overlay.addEventListener('click', closeSidebar);
+        
+        // Close on close button
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeSidebar);
+        }
+        
+        // Close on nav link click
         navLinks.forEach(function(link) {
-            link.addEventListener('click', function() {
-                menuToggle.checked = false;
-            });
+            link.addEventListener('click', closeSidebar);
         });
         
-        document.addEventListener('click', function(e) {
-            if (menuToggle.checked && !nav.contains(e.target) && !e.target.closest('.mobile-menu-label')) {
-                menuToggle.checked = false;
-            }
-        });
-        
+        // Close on escape key
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && menuToggle.checked) {
-                menuToggle.checked = false;
+            if (e.key === 'Escape' && sidebar.classList.contains('active')) {
+                closeSidebar();
             }
         });
     }
@@ -406,12 +391,11 @@
 
     // ===== MAIN INITIALIZATION =====
     function init() {
+        initMobileSidebar();      // NEW - Sidebar navigation
         initBackToTop();
         whatsappButton.init();
-        initCounters();
         initEscrowForm();
         initContactForm();
-        initMobileMenu();
         initSmoothScrolling();
         initScrollAnimations();
         
