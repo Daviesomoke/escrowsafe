@@ -35,13 +35,16 @@
                     </a>
                 </div>
 
-                <!-- Mobile Menu Checkbox Hack (No JavaScript) -->
-                <input type="checkbox" id="mobile-menu-toggle" class="mobile-menu-checkbox">
-                <label for="mobile-menu-toggle" class="mobile-menu-label">
-                    <span class="menu-bar"></span>
-                    <span class="menu-bar"></span>
-                    <span class="menu-bar"></span>
-                </label>
+            <input type="checkbox" id="mobile-menu-toggle" class="mobile-menu-checkbox">
+            <label for="mobile-menu-toggle" class="mobile-menu-label">
+                <span class="menu-bar"></span>
+                <span class="menu-bar"></span>
+                <span class="menu-bar"></span>
+            </label>
+            <div class="nav-overlay" onclick="document.getElementById('mobile-menu-toggle').checked = false;"></div>
+
+
+            
 
                 <nav class="primary-nav">
                     <ul class="nav-list">
