@@ -304,10 +304,6 @@
         });
     }
 
-    
-
-
-
 
     // ===== MOBILE SIDEBAR NAVIGATION =====
 function initMobileSidebar() {
@@ -319,11 +315,11 @@ function initMobileSidebar() {
     
     if (!menuToggle || !sidebar || !overlay) return;
     
-    // Open sidebar
-    menuToggle.addEventListener('click', function() {
+    // Open sidebar when clicking hamburger
+    menuToggle.addEventListener('click', function(e) {
+        e.stopPropagation();
         sidebar.classList.add('active');
         overlay.classList.add('active');
-        document.body.classList.add('sidebar-open');
         document.body.style.overflow = 'hidden';
     });
     
@@ -331,21 +327,25 @@ function initMobileSidebar() {
     function closeSidebar() {
         sidebar.classList.remove('active');
         overlay.classList.remove('active');
-        document.body.classList.remove('sidebar-open');
         document.body.style.overflow = '';
     }
     
-    // Close on overlay click
+    // Close when clicking overlay
     overlay.addEventListener('click', closeSidebar);
     
-    // Close on close button
+    // Close when clicking X button
     if (closeBtn) {
-        closeBtn.addEventListener('click', closeSidebar);
+        closeBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            closeSidebar();
+        });
     }
     
-    // Close on nav link click
+    // Close when clicking any navigation link
     navLinks.forEach(function(link) {
-        link.addEventListener('click', closeSidebar);
+        link.addEventListener('click', function() {
+            closeSidebar();
+        });
     });
     
     // Close on escape key
@@ -354,7 +354,20 @@ function initMobileSidebar() {
             closeSidebar();
         }
     });
+    
+    // Prevent sidebar clicks from closing
+    sidebar.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
 }
+
+    
+
+
+
+
+
+
 
     // ===== SMOOTH SCROLLING =====
     function initSmoothScrolling() {
