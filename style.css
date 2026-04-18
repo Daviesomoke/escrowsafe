@@ -1448,11 +1448,6 @@ body {
 
 
 
-
-
-
-
-
  /* ===== TRUST STRIP - AUTHENTIC DESIGN ===== */
  .trust-strip {
      background: #1a1a1a;
@@ -1505,7 +1500,6 @@ body {
      margin: 12px 0;
  }
 
- /* Hover effect - subtle */
  .trust-metric:hover .metric-icon {
      color: #2ecc71;
      opacity: 1;
@@ -1515,35 +1509,38 @@ body {
      color: #ffffff;
  }
 
- /* Mobile adjustments */
+ /* Mobile - Stack vertically with dividers between */
  @media (max-width: 768px) {
      .trust-strip-inner {
          flex-direction: column;
          padding: 8px 0;
+         min-height: auto;
      }
 
      .trust-metric {
-         padding: 12px 20px;
+         padding: 14px 20px;
+         justify-content: flex-start;
      }
 
      .trust-divider {
-         width: 100%;
+         width: calc(100% - 40px);
          height: 1px;
-         margin: 0 20px;
-         background: linear-gradient(to right, transparent, #2a2a2a, transparent);
+         margin: 0 auto;
+         background: linear-gradient(to right, transparent, #3a3a3a, transparent);
      }
  }
 
- @media (max-width: 480px) {
-     .metric-main {
-         font-size: 13px;
-     }
 
-     .metric-sub {
-         font-size: 11px;
-     }
- }
 
+
+
+
+
+
+
+
+
+ 
 
 
 
