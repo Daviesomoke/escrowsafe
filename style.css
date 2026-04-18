@@ -700,113 +700,134 @@ body {
     font-size: 14px;
 }
 
-/* ===== MOBILE RESPONSIVE ===== */
+
+
+
+/* ===== MOBILE SIDEBAR NAVIGATION ===== */
+.mobile-menu-checkbox {
+    display: none;
+}
+
+.mobile-menu-label {
+    display: none;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 30px;
+    height: 24px;
+    cursor: pointer;
+    padding: 2px;
+    position: relative;
+    z-index: 1001;
+}
+
+.menu-bar {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: var(--color-white);
+    transition: all 0.3s ease;
+}
+
+/* Sidebar Overlay */
+.nav-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-checkbox:checked ~ .nav-overlay {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Primary Navigation - Sidebar on Mobile */
+.primary-nav {
+    display: flex;
+}
+
 @media (max-width: 768px) {
     .mobile-menu-label {
         display: flex;
     }
-
+    
     .primary-nav {
-        display: none;
-        position: absolute;
-        top: 70px;
-        left: 0;
-        right: 0;
+        position: fixed;
+        top: 0;
+        right: -280px;
+        width: 280px;
+        height: 100vh;
         background: var(--color-black);
-        padding: 20px;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 80px 0 20px;
+        transition: right 0.3s ease;
+        z-index: 1000;
+        overflow-y: auto;
+        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3);
     }
-
-    .mobile-menu-checkbox:checked~.primary-nav {
-        display: block;
+    
+    .mobile-menu-checkbox:checked ~ .primary-nav {
+        right: 0;
     }
-
+    
     .nav-list {
         flex-direction: column;
-        gap: 5px;
+        gap: 0;
+        width: 100%;
     }
-
+    
     .nav-item {
         width: 100%;
     }
-
+    
     .nav-link {
         display: block;
-        padding: 15px;
-        text-align: center;
+        padding: 16px 24px;
+        text-align: left;
+        border-radius: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
-
+    
+    .nav-link:hover {
+        background: rgba(46, 204, 113, 0.1);
+    }
+    
+    .nav-link.active {
+        background: var(--color-primary);
+        color: var(--color-black);
+    }
+    
+    .nav-item-cta {
+        margin-top: 20px;
+        padding: 0 16px;
+    }
+    
     .nav-button {
         display: block;
         text-align: center;
-        margin-top: 10px;
+        width: 100%;
     }
-
-    .hero-grid {
-        grid-template-columns: 1fr;
+    
+    /* Hamburger to X animation */
+    .mobile-menu-checkbox:checked ~ .mobile-menu-label .menu-bar:nth-child(1) {
+        transform: rotate(45deg) translate(5px, 5px);
     }
-
-    .hero-title {
-        font-size: 34px;
+    
+    .mobile-menu-checkbox:checked ~ .mobile-menu-label .menu-bar:nth-child(2) {
+        opacity: 0;
     }
-
-    .hero-actions {
-        flex-direction: column;
-    }
-
-    .hero-metrics {
-        flex-wrap: wrap;
-        gap: 20px;
-    }
-
-    .about-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .contact-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .process-step {
-        flex-direction: column;
-        text-align: center;
-        gap: 15px;
-    }
-
-    .step-marker {
-        margin: 0 auto;
-    }
-
-    .step-details li {
-        text-align: left;
-    }
-
-    .form-row {
-        grid-template-columns: 1fr;
+    
+    .mobile-menu-checkbox:checked ~ .mobile-menu-label .menu-bar:nth-child(3) {
+        transform: rotate(-45deg) translate(7px, -7px);
     }
 }
 
-@media (max-width: 480px) {
-    .about-features {
-        grid-template-columns: 1fr;
-    }
 
-    .about-stats {
-        grid-template-columns: 1fr;
-    }
-
-    .trust-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .section-title {
-        font-size: 28px;
-    }
-
-    .page-title {
-        font-size: 32px;
-    }
-}
 
     
         .legal-content {
