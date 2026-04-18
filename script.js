@@ -1,9 +1,9 @@
 
 
 
+
 /**
  * SecureEscrow Kenya - Complete JavaScript File
- * Just copy and paste this entire file - no editing needed!
  */
 
 (function() {
@@ -197,6 +197,39 @@
         return 'KES ' + amount.toLocaleString('en-KE');
     }
 
+    // ===== ANIMATED COUNTERS =====
+    function initCounters() {
+        const counters = document.querySelectorAll('.counter');
+        if (counters.length === 0) return;
+        
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    const counter = entry.target;
+                    const target = parseInt(counter.getAttribute('data-target'));
+                    let current = 0;
+                    const increment = target / 50;
+                    
+                    const updateCounter = setInterval(function() {
+                        current += increment;
+                        if (current >= target) {
+                            counter.textContent = target;
+                            clearInterval(updateCounter);
+                        } else {
+                            counter.textContent = Math.floor(current);
+                        }
+                    }, 20);
+                    
+                    observer.unobserve(counter);
+                }
+            });
+        }, { threshold: 0.5 });
+        
+        counters.forEach(function(counter) {
+            observer.observe(counter);
+        });
+    }
+
     // ===== ESCROW FORM HANDLER =====
     function initEscrowForm() {
         const form = document.querySelector('.escrow-form');
@@ -256,7 +289,6 @@
             }
         });
         
-        // Set minimum date for deadline
         const deadlineInput = form.querySelector('#deliveryDeadline, [name="deliveryDeadline"]');
         if (deadlineInput) {
             const now = new Date();
@@ -374,16 +406,15 @@
 
     // ===== MAIN INITIALIZATION =====
     function init() {
-        // Initialize all features
         initBackToTop();
         whatsappButton.init();
+        initCounters();
         initEscrowForm();
         initContactForm();
         initMobileMenu();
         initSmoothScrolling();
         initScrollAnimations();
         
-        // Welcome message for first-time visitors
         if (!localStorage.getItem('visited_escrow')) {
             setTimeout(function() {
                 ToastManager.info('Welcome to SecureEscrow Kenya! Click the WhatsApp icon for support.', 'Welcome');
@@ -392,7 +423,6 @@
         }
     }
 
-    // Start everything when page loads
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
