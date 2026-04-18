@@ -305,47 +305,50 @@
     }
 
 
+
+
     // ===== MOBILE SIDEBAR NAVIGATION =====
 function initMobileSidebar() {
     const menuToggle = document.getElementById('menuToggle');
     const sidebar = document.getElementById('mobileSidebar');
     const overlay = document.getElementById('sidebarOverlay');
-    const closeBtn = document.getElementById('sidebarClose');
     const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
     
     if (!menuToggle || !sidebar || !overlay) return;
     
-    // Open sidebar when clicking hamburger
+    // Toggle sidebar when clicking hamburger/X
     menuToggle.addEventListener('click', function(e) {
         e.stopPropagation();
-        sidebar.classList.add('active');
-        overlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
+        
+        if (sidebar.classList.contains('active')) {
+            // Close sidebar
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+            document.body.classList.remove('sidebar-open');
+            document.body.style.overflow = '';
+        } else {
+            // Open sidebar
+            sidebar.classList.add('active');
+            overlay.classList.add('active');
+            document.body.classList.add('sidebar-open');
+            document.body.style.overflow = 'hidden';
+        }
     });
     
     // Close sidebar function
     function closeSidebar() {
         sidebar.classList.remove('active');
         overlay.classList.remove('active');
+        document.body.classList.remove('sidebar-open');
         document.body.style.overflow = '';
     }
     
     // Close when clicking overlay
     overlay.addEventListener('click', closeSidebar);
     
-    // Close when clicking X button
-    if (closeBtn) {
-        closeBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            closeSidebar();
-        });
-    }
-    
     // Close when clicking any navigation link
     navLinks.forEach(function(link) {
-        link.addEventListener('click', function() {
-            closeSidebar();
-        });
+        link.addEventListener('click', closeSidebar);
     });
     
     // Close on escape key
@@ -354,12 +357,11 @@ function initMobileSidebar() {
             closeSidebar();
         }
     });
-    
-    // Prevent sidebar clicks from closing
-    sidebar.addEventListener('click', function(e) {
-        e.stopPropagation();
-    });
 }
+
+
+
+
 
     
 
