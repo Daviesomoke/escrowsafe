@@ -14,19 +14,14 @@
 
 
 
-    <!-- Floating Background Elements -->
-    <div class="floating-elements">
-        <div class="float-item">KSh</div>
-        <div class="float-item">🔒</div>
-        <div class="float-item">KES</div>
-        <div class="float-item">✓</div>
-        <div class="float-item">M-PESA</div>
-    </div>
+   
 
 
 
     <div class="app-wrapper">
-        <!-- Header Navigation -->
+
+
+
         <header class="site-header">
             <div class="header-container">
                 <div class="header-brand">
@@ -34,25 +29,50 @@
                         <span class="brand-text">Secure<span class="brand-accent">Escrow</span> Kenya</span>
                     </a>
                 </div>
-
-            <input type="checkbox" id="mobile-menu-toggle" class="mobile-menu-checkbox">
-            <label for="mobile-menu-toggle" class="mobile-menu-label">
-                <span class="menu-bar"></span>
-                <span class="menu-bar"></span>
-                <span class="menu-bar"></span>
-            </label>
-            <div class="nav-overlay" onclick="document.getElementById('mobile-menu-toggle').checked = false;"></div>
-
-
-            
-
+        
+                <!-- Mobile Menu Toggle -->
+                <div class="mobile-menu-toggle" id="menuToggle">
+                    <span class="toggle-bar"></span>
+                    <span class="toggle-bar"></span>
+                    <span class="toggle-bar"></span>
+                </div>
+        
+                <!-- Sidebar Overlay -->
+                <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        
+                <!-- Navigation Sidebar -->
+                <nav class="mobile-sidebar" id="mobileSidebar">
+                    <div class="sidebar-header">
+                        <span class="sidebar-title">Menu</span>
+                        <div class="sidebar-close" id="sidebarClose">×</div>
+                    </div>
+                    <ul class="sidebar-nav">
+                        <li class="nav-item">
+                            <a href="index.html" class="nav-link active">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="how-it-works.html" class="nav-link">How It Works</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="about.html" class="nav-link">About Us</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="contact.html" class="nav-link">Contact</a>
+                        </li>
+                        <li class="nav-item nav-item-cta">
+                            <a href="index.html#start-escrow" class="nav-button">Start Transaction</a>
+                        </li>
+                    </ul>
+                </nav>
+        
+                <!-- Desktop Navigation -->
                 <nav class="primary-nav">
                     <ul class="nav-list">
                         <li class="nav-item">
                             <a href="index.html" class="nav-link active">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a href="how.html" class="nav-link">How It Works</a>
+                            <a href="how-it-works.html" class="nav-link">How It Works</a>
                         </li>
                         <li class="nav-item">
                             <a href="about.html" class="nav-link">About Us</a>
@@ -67,6 +87,7 @@
                 </nav>
             </div>
         </header>
+      
 
 
         <!-- Trust Indicators - Authentic Design -->
