@@ -1,15 +1,14 @@
 
 
 
-
-
-
 /**
  * SecureEscrow Kenya - Complete JavaScript File
  */
 
 (function() {
     'use strict';
+
+    console.log('JavaScript loaded');
 
     // ===== TOAST NOTIFICATION SYSTEM =====
     const ToastManager = {
@@ -106,8 +105,6 @@
                 behavior: 'smooth'
             });
         });
-        
-        return button;
     }
 
     // ===== WHATSAPP INTEGRATION =====
@@ -304,72 +301,71 @@
         });
     }
 
-
-
-
     // ===== MOBILE SIDEBAR NAVIGATION =====
-function initMobileSidebar() {
-    const menuToggle = document.getElementById('menuToggle');
-    const sidebar = document.getElementById('mobileSidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
-    
-    if (!menuToggle || !sidebar || !overlay) return;
-    
-    // Toggle sidebar when clicking hamburger/X
-    menuToggle.addEventListener('click', function(e) {
-        e.stopPropagation();
+    function initMobileSidebar() {
+        console.log('Initializing mobile sidebar...');
         
-        if (sidebar.classList.contains('active')) {
-            // Close sidebar
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('mobileSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
+        
+        console.log('Elements found:', {
+            menuToggle: !!menuToggle,
+            sidebar: !!sidebar,
+            overlay: !!overlay,
+            navLinksCount: navLinks.length
+        });
+        
+        if (!menuToggle || !sidebar || !overlay) {
+            console.error('Mobile sidebar elements not found!');
+            return;
+        }
+        
+        // Toggle sidebar when clicking hamburger
+        menuToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            console.log('Menu toggle clicked');
+            
+            if (sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+                document.body.classList.remove('sidebar-open');
+                document.body.style.overflow = '';
+            } else {
+                sidebar.classList.add('active');
+                overlay.classList.add('active');
+                document.body.classList.add('sidebar-open');
+                document.body.style.overflow = 'hidden';
+            }
+        });
+        
+        // Close sidebar function
+        function closeSidebar() {
+            console.log('Closing sidebar');
             sidebar.classList.remove('active');
             overlay.classList.remove('active');
             document.body.classList.remove('sidebar-open');
             document.body.style.overflow = '';
-        } else {
-            // Open sidebar
-            sidebar.classList.add('active');
-            overlay.classList.add('active');
-            document.body.classList.add('sidebar-open');
-            document.body.style.overflow = 'hidden';
         }
-    });
-    
-    // Close sidebar function
-    function closeSidebar() {
-        sidebar.classList.remove('active');
-        overlay.classList.remove('active');
-        document.body.classList.remove('sidebar-open');
-        document.body.style.overflow = '';
+        
+        // Close when clicking overlay
+        overlay.addEventListener('click', closeSidebar);
+        
+        // Close when clicking any navigation link
+        navLinks.forEach(function(link) {
+            link.addEventListener('click', closeSidebar);
+        });
+        
+        // Close on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && sidebar.classList.contains('active')) {
+                closeSidebar();
+            }
+        });
+        
+        console.log('Mobile sidebar initialized successfully');
     }
-    
-    // Close when clicking overlay
-    overlay.addEventListener('click', closeSidebar);
-    
-    // Close when clicking any navigation link
-    navLinks.forEach(function(link) {
-        link.addEventListener('click', closeSidebar);
-    });
-    
-    // Close on escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && sidebar.classList.contains('active')) {
-            closeSidebar();
-        }
-    });
-}
-
-
-
-
-
-    
-
-
-
-
-
-
 
     // ===== SMOOTH SCROLLING =====
     function initSmoothScrolling() {
@@ -390,43 +386,39 @@ function initMobileSidebar() {
         });
     }
 
-    // ===== SCROLL ANIMATIONS =====
-    function initScrollAnimations() {
-        const observer = new IntersectionObserver(function(entries) {
-            entries.forEach(function(entry) {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
-            });
-        }, {
-            threshold: 0.1
-        });
+    // ===== SET ACTIVE NAV LINK =====
+    function setActiveNavLink() {
+        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
         
-        document.querySelectorAll('.trust-card, .stat-card, .process-step, .feature-item').forEach(function(el) {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(20px)';
-            el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-            observer.observe(el);
+        document.querySelectorAll('.nav-link').forEach(function(link) {
+            link.classList.remove('active');
+            const href = link.getAttribute('href');
+            if (href === currentPage || (currentPage === '' && href === 'index.html')) {
+                link.classList.add('active');
+            }
         });
     }
 
     // ===== MAIN INITIALIZATION =====
     function init() {
-        initMobileSidebar();      // NEW - Sidebar navigation
+        console.log('Starting initialization...');
+        
+        initMobileSidebar();
         initBackToTop();
         whatsappButton.init();
         initEscrowForm();
         initContactForm();
         initSmoothScrolling();
-        initScrollAnimations();
+        setActiveNavLink();
         
         if (!localStorage.getItem('visited_escrow')) {
             setTimeout(function() {
-                ToastManager.info('Welcome to SecureEscrow Kenya! Click the WhatsApp icon for support.', 'Welcome');
+                ToastManager.info('Welcome to SecureEscrow Kenya!', 'Welcome');
             }, 1000);
             localStorage.setItem('visited_escrow', 'true');
         }
+        
+        console.log('Initialization complete');
     }
 
     if (document.readyState === 'loading') {
