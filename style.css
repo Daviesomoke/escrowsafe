@@ -2007,3 +2007,292 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) {
          font-size: 16px;
      }
  }
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+ /* ===== MOBILE RESPONSIVENESS FIXES ===== */
+
+ @media (max-width: 768px) {
+
+     /* General container padding */
+     .container {
+         padding: 0 16px;
+     }
+
+     /* Hero section fixes */
+     .hero-title {
+         font-size: 28px !important;
+         line-height: 1.3 !important;
+     }
+
+     .hero-description {
+         font-size: 15px !important;
+     }
+
+     /* Form card fixes - prevents cutting off */
+     .escrow-form-card {
+         padding: 20px 16px !important;
+         margin: 0 !important;
+         width: 100% !important;
+         overflow: visible !important;
+     }
+
+     .form-title {
+         font-size: 20px !important;
+         margin-bottom: 16px !important;
+     }
+
+     /* Form inputs */
+     .form-input,
+     .form-select,
+     .form-textarea {
+         padding: 12px !important;
+         font-size: 14px !important;
+         width: 100% !important;
+         box-sizing: border-box !important;
+     }
+
+     /* Form row - stack vertically */
+     .form-row {
+         grid-template-columns: 1fr !important;
+         gap: 12px !important;
+     }
+
+     /* Fee display */
+     .fee-display {
+         padding: 14px !important;
+     }
+
+     .fee-row {
+         font-size: 14px !important;
+     }
+
+     .fee-total {
+         font-size: 16px !important;
+     }
+
+     /* Buttons */
+     .btn {
+         padding: 12px 20px !important;
+         font-size: 14px !important;
+         width: 100% !important;
+         box-sizing: border-box !important;
+     }
+
+     .hero-actions {
+         flex-direction: column !important;
+         gap: 12px !important;
+     }
+
+     .hero-actions .btn {
+         width: 100% !important;
+         text-align: center !important;
+     }
+
+     /* Hero metrics */
+     .hero-metrics {
+         flex-wrap: wrap !important;
+         justify-content: space-around !important;
+         gap: 16px !important;
+     }
+
+     .metric-item {
+         text-align: center !important;
+     }
+
+     .metric-value {
+         font-size: 22px !important;
+     }
+
+     .metric-label {
+         font-size: 12px !important;
+     }
+
+     /* Trust cards */
+     .trust-card {
+         padding: 20px 16px !important;
+     }
+
+     .trust-title {
+         font-size: 18px !important;
+     }
+
+     .trust-description {
+         font-size: 14px !important;
+     }
+
+     /* Section titles */
+     .section-title {
+         font-size: 24px !important;
+     }
+
+     .section-subtitle {
+         font-size: 15px !important;
+     }
+
+     /* Page titles */
+     .page-title {
+         font-size: 28px !important;
+     }
+
+     /* Process steps */
+     .process-step {
+         gap: 16px !important;
+     }
+
+     .step-marker {
+         width: 50px !important;
+         height: 50px !important;
+         font-size: 18px !important;
+     }
+
+     .step-title {
+         font-size: 18px !important;
+     }
+
+     .step-description {
+         font-size: 14px !important;
+     }
+
+     .step-details li {
+         font-size: 13px !important;
+     }
+
+     /* About page */
+     .about-intro {
+         font-size: 16px !important;
+     }
+
+     .about-subheading {
+         font-size: 18px !important;
+     }
+
+     .about-text {
+         font-size: 14px !important;
+     }
+
+     .stat-value {
+         font-size: 28px !important;
+     }
+
+     .stat-label {
+         font-size: 13px !important;
+     }
+
+     /* Contact page */
+     .contact-info-panel,
+     .contact-form-panel {
+         padding: 24px 16px !important;
+     }
+
+     .contact-heading,
+     .form-heading {
+         font-size: 20px !important;
+     }
+
+     .method-title {
+         font-size: 15px !important;
+     }
+
+     .method-detail {
+         font-size: 13px !important;
+         line-height: 1.6 !important;
+     }
+
+     /* Footer */
+     .footer-grid {
+         gap: 24px !important;
+     }
+
+     .footer-heading {
+         font-size: 15px !important;
+     }
+
+     .footer-text,
+     .footer-links a {
+         font-size: 13px !important;
+     }
+
+     /* Trust strip mobile (already fixed) */
+     .trust-metric {
+         padding: 0 20px !important;
+     }
+
+     .metric-main {
+         font-size: 13px !important;
+     }
+
+     .metric-sub {
+         font-size: 11px !important;
+     }
+
+     /* Live ticker */
+     .ticker-item {
+         font-size: 12px !important;
+     }
+
+     /* WhatsApp button */
+     .whatsapp-float {
+         width: 50px !important;
+         height: 50px !important;
+         bottom: 70px !important;
+         right: 16px !important;
+     }
+
+     /* Back to top button */
+     .back-to-top {
+         width: 45px !important;
+         height: 45px !important;
+         bottom: 20px !important;
+         right: 16px !important;
+         font-size: 20px !important;
+     }
+ }
+
+ /* Extra small devices */
+ @media (max-width: 480px) {
+     .hero-title {
+         font-size: 24px !important;
+     }
+
+     .escrow-form-card {
+         padding: 16px 12px !important;
+     }
+
+     .form-title {
+         font-size: 18px !important;
+     }
+
+     .hero-metrics {
+         flex-direction: column !important;
+         gap: 10px !important;
+     }
+
+     .trust-card {
+         padding: 16px 12px !important;
+     }
+
+     .section-title {
+         font-size: 22px !important;
+     }
+
+     .page-title {
+         font-size: 24px !important;
+     }
+
+     .btn {
+         padding: 10px 16px !important;
+         font-size: 13px !important;
+     }
+ }
