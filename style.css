@@ -1051,6 +1051,11 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) {
     transform: translateY(-1px);
 }
 
+
+
+
+
+
 @media (max-width: 768px) {
     .mobile-menu-toggle {
         display: flex;
@@ -1060,6 +1065,9 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) {
         display: none;
     }
 }
+
+
+
 
 
 
@@ -1712,127 +1720,140 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) {
 
 
 
-/* ===== TRUST STRIP - AUTHENTIC DESIGN ===== */
-.trust-strip {
-    background: #1a1a1a;
-    border-bottom: 1px solid #2a2a2a;
-    padding: 0;
-    overflow: hidden;
-}
-
-.trust-strip-inner {
-    display: flex;
-    align-items: stretch;
-    justify-content: space-around;
-    min-height: 72px;
-}
-
-.trust-metric {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 0 20px;
-    flex-shrink: 0;
-}
-
-.metric-icon {
-    color: #2ecc71;
-    opacity: 0.85;
-    flex-shrink: 0;
-}
-
-.metric-text {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-
-.metric-main {
-    color: #e0e0e0;
-    font-size: 14px;
-    font-weight: 500;
-    letter-spacing: -0.2px;
-    white-space: nowrap;
-}
-
-.metric-sub {
-    color: #888;
-    font-size: 12px;
-    font-weight: 400;
-    white-space: nowrap;
-}
-
-.trust-divider {
-    width: 1px;
-    background: linear-gradient(to bottom, transparent, #3a3a3a, transparent);
-    margin: 12px 0;
-    flex-shrink: 0;
-}
-
-.trust-metric:hover .metric-icon {
-    color: #2ecc71;
-    opacity: 1;
-}
-
-.trust-metric:hover .metric-main {
-    color: #ffffff;
-}
-
-/* Mobile - Horizontal scrolling ticker */
-@media (max-width: 768px) {
-    .trust-strip {
-        overflow: hidden;
-        position: relative;
-    }
-
-    .trust-strip-inner {
-        display: flex;
-        flex-direction: row;
-        justify-content: flex-start;
-        align-items: center;
-        min-height: 60px;
-        width: max-content;
-        animation: scrollTrust 20s linear infinite;
-        padding: 0;
-    }
-
-    .trust-metric {
-        padding: 0 30px;
-    }
-
-    .trust-divider {
-        margin: 12px 0;
-    }
-
-    /* Pause animation on hover */
-    .trust-strip:hover .trust-strip-inner {
-        animation-play-state: paused;
-    }
-
-    /* Duplicate content for seamless loop - handled by HTML */
-}
-
-@keyframes scrollTrust {
-    0% {
-        transform: translateX(0);
-    }
-
-    100% {
-        transform: translateX(-50%);
-    }
-}
 
 
 
 
 
+ /* ===== TRUST STRIP - AUTHENTIC DESIGN ===== */
+ .trust-strip {
+     background: #1a1a1a;
+     border-bottom: 1px solid #2a2a2a;
+     padding: 0;
+ }
+
+ .trust-strip-inner {
+     display: flex;
+     align-items: stretch;
+     justify-content: space-around;
+     min-height: 72px;
+ }
+
+ .trust-metric {
+     display: flex;
+     align-items: center;
+     gap: 14px;
+     padding: 0 20px;
+     flex-shrink: 0;
+ }
+
+ .metric-icon {
+     color: #2ecc71;
+     opacity: 0.85;
+     flex-shrink: 0;
+ }
+
+ .metric-text {
+     display: flex;
+     flex-direction: column;
+     gap: 3px;
+ }
+
+ .metric-main {
+     color: #e0e0e0;
+     font-size: 14px;
+     font-weight: 500;
+     letter-spacing: -0.2px;
+     white-space: nowrap;
+ }
+
+ .metric-sub {
+     color: #888;
+     font-size: 12px;
+     font-weight: 400;
+     white-space: nowrap;
+ }
+
+ .trust-divider {
+     width: 1px;
+     background: linear-gradient(to bottom, transparent, #3a3a3a, transparent);
+     margin: 12px 0;
+     flex-shrink: 0;
+ }
+
+ .trust-metric:hover .metric-icon {
+     color: #2ecc71;
+     opacity: 1;
+ }
+
+ .trust-metric:hover .metric-main {
+     color: #ffffff;
+ }
+
+ /* Desktop - Static 3 items */
+ @media (min-width: 769px) {
+     .trust-strip-inner {
+         justify-content: space-around;
+     }
+ }
+
+ /* Mobile - Horizontal scrolling with CSS duplication */
+ @media (max-width: 768px) {
+     .trust-strip {
+         overflow: hidden;
+         position: relative;
+     }
+
+     .trust-strip-inner {
+         display: flex;
+         flex-direction: row;
+         justify-content: flex-start;
+         align-items: center;
+         min-height: 60px;
+         width: max-content;
+         animation: scrollTrust 20s linear infinite;
+         padding: 0;
+     }
+
+     /* CSS-only duplication for seamless loop */
+     .trust-strip-inner::after {
+         content: '';
+         display: flex;
+     }
+
+     /* Clone the items using CSS */
+     .trust-strip {
+         --clone-count: 1;
+     }
+
+     .trust-metric {
+         padding: 0 30px;
+     }
+
+     .trust-divider {
+         margin: 12px 0;
+     }
+
+     /* Pause animation on hover */
+     .trust-strip:hover .trust-strip-inner {
+         animation-play-state: paused;
+     }
+ }
+
+ @keyframes scrollTrust {
+     0% {
+         transform: translateX(0);
+     }
+
+     100% {
+         transform: translateX(-50%);
+     }
+ }
 
 
 
 
 
-
- 
 
 
 
