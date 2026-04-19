@@ -1,14 +1,49 @@
 
 
 
+
+
+
 /**
  * SecureEscrow Kenya - Complete JavaScript File
+ * Just copy and paste this entire file!
  */
 
 (function() {
     'use strict';
 
     console.log('JavaScript loaded');
+
+    // ===== PAGE LOADER =====
+    function initPageLoader() {
+        const loader = document.getElementById('pageLoader');
+        const progressFill = document.getElementById('loaderProgress');
+        
+        if (!loader || !progressFill) return;
+        
+        let progress = 0;
+        const interval = setInterval(function() {
+            progress += Math.random() * 15;
+            
+            if (progress >= 100) {
+                progress = 100;
+                progressFill.style.width = '100%';
+                clearInterval(interval);
+                
+                setTimeout(function() {
+                    loader.classList.add('fade-out');
+                    
+                    setTimeout(function() {
+                        if (loader && loader.parentNode) {
+                            loader.parentNode.removeChild(loader);
+                        }
+                    }, 600);
+                }, 300);
+            } else {
+                progressFill.style.width = progress + '%';
+            }
+        }, 150);
+    }
 
     // ===== TOAST NOTIFICATION SYSTEM =====
     const ToastManager = {
@@ -303,29 +338,15 @@
 
     // ===== MOBILE SIDEBAR NAVIGATION =====
     function initMobileSidebar() {
-        console.log('Initializing mobile sidebar...');
-        
         const menuToggle = document.getElementById('menuToggle');
         const sidebar = document.getElementById('mobileSidebar');
         const overlay = document.getElementById('sidebarOverlay');
         const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
         
-        console.log('Elements found:', {
-            menuToggle: !!menuToggle,
-            sidebar: !!sidebar,
-            overlay: !!overlay,
-            navLinksCount: navLinks.length
-        });
+        if (!menuToggle || !sidebar || !overlay) return;
         
-        if (!menuToggle || !sidebar || !overlay) {
-            console.error('Mobile sidebar elements not found!');
-            return;
-        }
-        
-        // Toggle sidebar when clicking hamburger
         menuToggle.addEventListener('click', function(e) {
             e.stopPropagation();
-            console.log('Menu toggle clicked');
             
             if (sidebar.classList.contains('active')) {
                 sidebar.classList.remove('active');
@@ -340,31 +361,24 @@
             }
         });
         
-        // Close sidebar function
         function closeSidebar() {
-            console.log('Closing sidebar');
             sidebar.classList.remove('active');
             overlay.classList.remove('active');
             document.body.classList.remove('sidebar-open');
             document.body.style.overflow = '';
         }
         
-        // Close when clicking overlay
         overlay.addEventListener('click', closeSidebar);
         
-        // Close when clicking any navigation link
         navLinks.forEach(function(link) {
             link.addEventListener('click', closeSidebar);
         });
         
-        // Close on escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && sidebar.classList.contains('active')) {
                 closeSidebar();
             }
         });
-        
-        console.log('Mobile sidebar initialized successfully');
     }
 
     // ===== SMOOTH SCROLLING =====
@@ -401,8 +415,7 @@
 
     // ===== MAIN INITIALIZATION =====
     function init() {
-        console.log('Starting initialization...');
-        
+        initPageLoader();
         initMobileSidebar();
         initBackToTop();
         whatsappButton.init();
@@ -417,8 +430,6 @@
             }, 1000);
             localStorage.setItem('visited_escrow', 'true');
         }
-        
-        console.log('Initialization complete');
     }
 
     if (document.readyState === 'loading') {

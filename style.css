@@ -2700,3 +2700,208 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) {
          color: black;
      }
  }
+
+
+
+
+
+
+
+
+
+
+ /* ===== MODERN PAGE LOADER ===== */
+ .page-loader {
+     position: fixed;
+     top: 0;
+     left: 0;
+     width: 100%;
+     height: 100%;
+     background: #0d0d0d;
+     z-index: 9999;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     transition: opacity 0.6s cubic-bezier(0.645, 0.045, 0.355, 1), visibility 0.6s;
+ }
+
+ .page-loader.fade-out {
+     opacity: 0;
+     visibility: hidden;
+ }
+
+ .loader-content {
+     text-align: center;
+     animation: loaderFadeIn 0.5s ease-out;
+ }
+
+ @keyframes loaderFadeIn {
+     0% {
+         opacity: 0;
+         transform: translateY(15px);
+     }
+
+     100% {
+         opacity: 1;
+         transform: translateY(0);
+     }
+ }
+
+ /* Shield Animation */
+ .loader-shield {
+     width: 70px;
+     height: 70px;
+     margin: 0 auto 25px;
+     animation: shieldPulse 2s ease-in-out infinite;
+ }
+
+ @keyframes shieldPulse {
+
+     0%,
+     100% {
+         transform: scale(1);
+     }
+
+     50% {
+         transform: scale(1.05);
+     }
+ }
+
+ .shield-outline {
+     stroke-dasharray: 200;
+     stroke-dashoffset: 200;
+     animation: drawShield 2s ease-out forwards;
+ }
+
+ @keyframes drawShield {
+     0% {
+         stroke-dashoffset: 200;
+     }
+
+     100% {
+         stroke-dashoffset: 0;
+     }
+ }
+
+ .shield-check {
+     stroke-dasharray: 30;
+     stroke-dashoffset: 30;
+     animation: drawCheck 0.8s ease-out 1.2s forwards;
+ }
+
+ @keyframes drawCheck {
+     0% {
+         stroke-dashoffset: 30;
+     }
+
+     100% {
+         stroke-dashoffset: 0;
+     }
+ }
+
+ /* Loader Text */
+ .loader-text {
+     margin-bottom: 20px;
+ }
+
+ .loader-brand {
+     display: block;
+     font-size: 28px;
+     font-weight: 700;
+     color: #ffffff;
+     letter-spacing: -0.5px;
+     margin-bottom: 5px;
+     animation: textGlow 2s ease-in-out infinite;
+ }
+
+ .loader-brand span {
+     color: #2ecc71;
+ }
+
+ @keyframes textGlow {
+
+     0%,
+     100% {
+         text-shadow: 0 0 20px rgba(46, 204, 113, 0.3);
+     }
+
+     50% {
+         text-shadow: 0 0 30px rgba(46, 204, 113, 0.6);
+     }
+ }
+
+ .loader-tagline {
+     display: block;
+     font-size: 13px;
+     color: #888;
+     letter-spacing: 3px;
+     text-transform: uppercase;
+     opacity: 0;
+     animation: taglineFade 0.6s ease-out 0.8s forwards;
+ }
+
+ @keyframes taglineFade {
+     0% {
+         opacity: 0;
+         letter-spacing: 6px;
+     }
+
+     100% {
+         opacity: 1;
+         letter-spacing: 3px;
+     }
+ }
+
+ /* Progress Bar */
+ .loader-progress {
+     width: 200px;
+     margin: 0 auto;
+ }
+
+ .progress-track {
+     height: 2px;
+     background: rgba(255, 255, 255, 0.1);
+     border-radius: 1px;
+     overflow: hidden;
+ }
+
+ .progress-fill {
+     height: 100%;
+     width: 0%;
+     background: linear-gradient(90deg, #2ecc71, #27ae60, #1a7a42);
+     border-radius: 1px;
+     transition: width 0.1s ease;
+     animation: progressShimmer 2s linear infinite;
+     background-size: 200% 100%;
+ }
+
+ @keyframes progressShimmer {
+     0% {
+         background-position: 100% 0;
+     }
+
+     100% {
+         background-position: -100% 0;
+     }
+ }
+
+ /* Mobile adjustments */
+ @media (max-width: 768px) {
+     .loader-shield {
+         width: 60px;
+         height: 60px;
+     }
+
+     .loader-brand {
+         font-size: 24px;
+     }
+
+     .loader-tagline {
+         font-size: 11px;
+         letter-spacing: 2px;
+     }
+
+     .loader-progress {
+         width: 160px;
+     }
+ }
