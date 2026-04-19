@@ -14,36 +14,29 @@
 
     console.log('JavaScript loaded');
 
+
+
+
+
     // ===== PAGE LOADER =====
-    function initPageLoader() {
-        const loader = document.getElementById('pageLoader');
-        const progressFill = document.getElementById('loaderProgress');
+function initPageLoader() {
+    const loader = document.getElementById('pageLoader');
+    
+    if (!loader) return;
+    
+    // Simulate loading for 2 seconds then fade out
+    setTimeout(function() {
+        loader.classList.add('fade-out');
         
-        if (!loader || !progressFill) return;
-        
-        let progress = 0;
-        const interval = setInterval(function() {
-            progress += Math.random() * 15;
-            
-            if (progress >= 100) {
-                progress = 100;
-                progressFill.style.width = '100%';
-                clearInterval(interval);
-                
-                setTimeout(function() {
-                    loader.classList.add('fade-out');
-                    
-                    setTimeout(function() {
-                        if (loader && loader.parentNode) {
-                            loader.parentNode.removeChild(loader);
-                        }
-                    }, 600);
-                }, 300);
-            } else {
-                progressFill.style.width = progress + '%';
+        setTimeout(function() {
+            if (loader && loader.parentNode) {
+                loader.parentNode.removeChild(loader);
             }
-        }, 150);
-    }
+        }, 600);
+    }, 2000);
+}
+
+   
 
     // ===== TOAST NOTIFICATION SYSTEM =====
     const ToastManager = {
