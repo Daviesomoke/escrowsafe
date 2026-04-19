@@ -230,76 +230,199 @@ function initPageLoader() {
         return 'KES ' + amount.toLocaleString('en-KE');
     }
 
-    // ===== ESCROW FORM HANDLER =====
-    function initEscrowForm() {
-        const form = document.querySelector('.escrow-form');
-        if (!form) return;
-        
-        const amountInput = form.querySelector('#amount, [name="amount"]');
-        const displayAmount = document.querySelector('#displayAmount');
-        const escrowFee = document.querySelector('#escrowFee');
-        const totalAmount = document.querySelector('#totalAmount');
-        
-        if (amountInput) {
-            amountInput.addEventListener('input', function() {
-                const amount = parseFloat(this.value) || 0;
-                const fee = amount * 0.02;
-                const total = amount + fee;
-                
-                if (displayAmount) displayAmount.textContent = formatKES(amount);
-                if (escrowFee) escrowFee.textContent = formatKES(fee);
-                if (totalAmount) totalAmount.textContent = formatKES(total);
-            });
-        }
-        
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
+
+
+
+
+
+
+
+
+
+
+
+// ===== ESCROW FORM HANDLER WITH 11% FEE - HUMAN DESIGNED POPUP =====
+function initEscrowForm() {
+    const form = document.querySelector('.escrow-form');
+    if (!form) return;
+    
+    const amountInput = form.querySelector('#amount, [name="amount"]');
+    const displayAmount = document.querySelector('#displayAmount');
+    const escrowFee = document.querySelector('#escrowFee');
+    const totalAmount = document.querySelector('#totalAmount');
+    
+    // Update fee calculation (11% fee)
+    if (amountInput) {
+        amountInput.addEventListener('input', function() {
+            const amount = parseFloat(this.value) || 0;
+            const fee = amount * 0.11;
+            const total = amount + fee;
             
-            const itemName = form.querySelector('#itemName, [name="itemName"]');
-            const amount = form.querySelector('#amount, [name="amount"]');
-            const sellerPhone = form.querySelector('#sellerContact, [name="sellerContact"]');
-            
-            let isValid = true;
-            let errorMessage = '';
-            
-            if (!itemName || !itemName.value.trim()) {
-                isValid = false;
-                errorMessage = 'Please enter the item description';
-            } else if (!amount || !amount.value || parseFloat(amount.value) < 100) {
-                isValid = false;
-                errorMessage = 'Amount must be at least KES 100';
-            } else if (!sellerPhone || !validateKenyanPhone(sellerPhone.value)) {
-                isValid = false;
-                errorMessage = 'Please enter a valid Kenyan phone number';
-            }
-            
-            if (isValid) {
-                const confirmMessage = 'Proceed with transaction for ' + formatKES(parseFloat(amount.value)) + '?';
-                
-                if (confirm(confirmMessage)) {
-                    ToastManager.success('Transaction initiated! Redirecting to payment...', 'Success');
-                    form.reset();
-                    if (displayAmount) displayAmount.textContent = 'KES 0';
-                    if (escrowFee) escrowFee.textContent = 'KES 0';
-                    if (totalAmount) totalAmount.textContent = 'KES 0';
-                }
-            } else {
-                ToastManager.error(errorMessage, 'Validation Error');
-            }
+            if (displayAmount) displayAmount.textContent = formatKES(amount);
+            if (escrowFee) escrowFee.textContent = formatKES(fee);
+            if (totalAmount) totalAmount.textContent = formatKES(total);
         });
-        
-        const deadlineInput = form.querySelector('#deliveryDeadline, [name="deliveryDeadline"]');
-        if (deadlineInput) {
-            const now = new Date();
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            deadlineInput.min = now.toISOString().slice(0, 16);
-            
-            const defaultDate = new Date();
-            defaultDate.setDate(defaultDate.getDate() + 3);
-            defaultDate.setMinutes(defaultDate.getMinutes() - defaultDate.getTimezoneOffset());
-            deadlineInput.value = defaultDate.toISOString().slice(0, 16);
-        }
     }
+    
+    // Form submission - show payment prompt
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const itemName = form.querySelector('#itemName, [name="itemName"]');
+        const amount = form.querySelector('#amount, [name="amount"]');
+        const sellerPhone = form.querySelector('#sellerContact, [name="sellerContact"]');
+        
+        let isValid = true;
+        let errorMessage = '';
+        
+        if (!itemName || !itemName.value.trim()) {
+            isValid = false;
+            errorMessage = 'Please enter the item description';
+        } else if (!amount || !amount.value || parseFloat(amount.value) < 100) {
+            isValid = false;
+            errorMessage = 'Amount must be at least KES 100';
+        } else if (!sellerPhone || !validateKenyanPhone(sellerPhone.value)) {
+            isValid = false;
+            errorMessage = 'Please enter a valid Kenyan phone number';
+        }
+        
+        if (isValid) {
+            const baseAmount = parseFloat(amount.value);
+            const fee = baseAmount * 0.11;
+            const total = baseAmount + fee;
+            
+            // Human-designed payment confirmation popup
+            const paymentHTML = `
+                <div class="payment-popup-overlay" id="paymentPopup">
+                    <div class="payment-popup">
+                        <div class="popup-header">
+                            <h3>Ready to secure this transaction?</h3>
+                            <button class="popup-close" id="closePopupBtn">&times;</button>
+                        </div>
+                        <div class="popup-body">
+                            <div class="payment-summary">
+                                <div class="summary-item">
+                                    <span class="summary-label">Item</span>
+                                    <span class="summary-value">${itemName.value}</span>
+                                </div>
+                                <div class="summary-divider"></div>
+                                <div class="summary-item">
+                                    <span class="summary-label">Amount</span>
+                                    <span class="summary-value">${formatKES(baseAmount)}</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="summary-label">Protection fee</span>
+                                    <span class="summary-value">${formatKES(fee)}</span>
+                                </div>
+                                <div class="summary-item summary-total">
+                                    <span class="summary-label">You'll pay</span>
+                                    <span class="summary-value">${formatKES(total)}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="payment-note">
+                                <p>We'll send an M-PESA prompt to your phone.</p>
+                                <p class="note-small">Just enter your PIN and the funds will be held safely until you confirm delivery.</p>
+                            </div>
+                            
+                            <div class="popup-actions">
+                                <button class="btn-primary-pay" id="confirmPayBtn">Yes, pay with M-PESA</button>
+                                <button class="btn-secondary-pay" id="cancelPayBtn">Not now</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove any existing popup
+            const existingPopup = document.getElementById('paymentPopup');
+            if (existingPopup) existingPopup.remove();
+            
+            // Add popup to body
+            document.body.insertAdjacentHTML('beforeend', paymentHTML);
+            
+            const popup = document.getElementById('paymentPopup');
+            
+            // Close function
+            function closePopup() {
+                popup.classList.add('closing');
+                setTimeout(() => popup.remove(), 200);
+            }
+            
+            // Handle confirm payment
+            document.getElementById('confirmPayBtn').addEventListener('click', function() {
+                closePopup();
+                ToastManager.success('Check your phone for the M-PESA prompt.', 'Payment started');
+                form.reset();
+                if (displayAmount) displayAmount.textContent = 'KES 0';
+                if (escrowFee) escrowFee.textContent = 'KES 0';
+                if (totalAmount) totalAmount.textContent = 'KES 0';
+            });
+            
+            // Handle cancel
+            document.getElementById('cancelPayBtn').addEventListener('click', closePopup);
+            document.getElementById('closePopupBtn').addEventListener('click', closePopup);
+            
+            // Close on overlay click
+            popup.addEventListener('click', function(e) {
+                if (e.target === popup) closePopup();
+            });
+            
+            // Close on escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && popup.parentNode) {
+                    closePopup();
+                }
+            });
+        } else {
+            ToastManager.error(errorMessage, 'Validation Error');
+        }
+    });
+    
+    // Set minimum date for deadline
+    const deadlineInput = form.querySelector('#deliveryDeadline, [name="deliveryDeadline"]');
+    if (deadlineInput) {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        deadlineInput.min = now.toISOString().slice(0, 16);
+        
+        const defaultDate = new Date();
+        defaultDate.setDate(defaultDate.getDate() + 3);
+        defaultDate.setMinutes(defaultDate.getMinutes() - defaultDate.getTimezoneOffset());
+        deadlineInput.value = defaultDate.toISOString().slice(0, 16);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // ===== CONTACT FORM HANDLER =====
     function initContactForm() {
