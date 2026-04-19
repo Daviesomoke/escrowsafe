@@ -3229,3 +3229,496 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) {
 
 
 
+
+
+
+/* ===== TRACKING PAGE STYLES ===== */
+.tracking-section {
+    padding: 60px 0;
+    min-height: 60vh;
+}
+
+.tracking-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.tab-btn {
+    padding: 12px 24px;
+    background: none;
+    border: none;
+    font-size: 16px;
+    font-weight: 500;
+    color: #666;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+}
+
+.tab-btn.active {
+    color: #2ecc71;
+    border-bottom-color: #2ecc71;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+.track-form {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.track-input-group {
+    display: flex;
+    gap: 10px;
+}
+
+.track-input {
+    flex: 1;
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 16px;
+    text-transform: uppercase;
+}
+
+.track-input:focus {
+    outline: none;
+    border-color: #2ecc71;
+}
+
+.btn-track {
+    padding: 14px 28px;
+    background: #2ecc71;
+    color: #111;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-track:hover {
+    background: #27ae60;
+}
+
+.track-hint {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #888;
+}
+
+.transaction-display {
+    max-width: 700px;
+    margin: 30px auto 0;
+}
+
+.transaction-details-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e8e8e8;
+}
+
+.transaction-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.transaction-header h3 {
+    font-size: 20px;
+    color: #111;
+}
+
+.status-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.status-secured {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-awaiting {
+    background: #cce5ff;
+    color: #004085;
+}
+
+.status-delivered {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-released {
+    background: #d1e7dd;
+    color: #0f5132;
+}
+
+.status-disputed {
+    background: #f8d7da;
+    color: #842029;
+}
+
+.transaction-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.info-label {
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+}
+
+.info-value {
+    font-size: 16px;
+    font-weight: 500;
+    color: #111;
+}
+
+.action-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.role-indicator {
+    margin-bottom: 15px;
+    font-weight: 500;
+    color: #555;
+}
+
+.auth-input-group {
+    margin-bottom: 15px;
+}
+
+.auth-input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+.auth-input-wrapper {
+    display: flex;
+    gap: 10px;
+}
+
+.auth-input {
+    flex: 1;
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 18px;
+    text-align: center;
+    letter-spacing: 4px;
+    font-weight: 600;
+}
+
+.auth-input:focus {
+    outline: none;
+    border-color: #2ecc71;
+}
+
+.btn-release-funds {
+    padding: 14px 24px;
+    background: #2ecc71;
+    color: #111;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.btn-release-funds:hover {
+    background: #27ae60;
+}
+
+.btn-mark-shipped {
+    width: 100%;
+    padding: 16px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-mark-shipped:hover {
+    background: #2980b9;
+}
+
+.btn-dispute {
+    width: 100%;
+    padding: 14px;
+    background: none;
+    color: #e74c3c;
+    border: 1px solid #e74c3c;
+    border-radius: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all 0.2s;
+}
+
+.btn-dispute:hover {
+    background: #e74c3c;
+    color: white;
+}
+
+.completion-message {
+    text-align: center;
+    color: #27ae60;
+    font-weight: 500;
+    padding: 10px;
+}
+
+/* Auth Code Popup */
+.auth-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(3px);
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-popup {
+    background: #fff;
+    border-radius: 20px;
+    max-width: 450px;
+    width: 90%;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    animation: popupEnter 0.25s ease;
+}
+
+.auth-popup-header {
+    padding: 25px 25px 15px;
+    text-align: center;
+}
+
+.auth-popup-header h3 {
+    font-size: 22px;
+    color: #111;
+    margin: 0;
+}
+
+.auth-popup-body {
+    padding: 0 25px 25px;
+}
+
+.auth-code-display {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.auth-code-main {
+    background: #f0fdf4;
+    border: 2px dashed #2ecc71;
+}
+
+.auth-label {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.auth-value {
+    font-size: 22px;
+    font-weight: 600;
+    color: #111;
+    letter-spacing: 1px;
+}
+
+.auth-value-large {
+    font-size: 42px;
+    font-weight: 700;
+    color: #2ecc71;
+    letter-spacing: 8px;
+}
+
+.auth-warning {
+    background: #fefce8;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border-left: 4px solid #ca8a04;
+}
+
+.auth-warning p {
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #854d0e;
+}
+
+.auth-warning p:last-child {
+    margin-bottom: 0;
+}
+
+.auth-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn-auth-primary {
+    padding: 16px;
+    background: #2ecc71;
+    color: #111;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-auth-primary:hover {
+    background: #27ae60;
+}
+
+.btn-auth-secondary {
+    padding: 14px;
+    background: #f5f5f5;
+    color: #444;
+    border: none;
+    border-radius: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-auth-secondary:hover {
+    background: #e8e8e8;
+}
+
+/* SMS Preview */
+.sms-preview-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sms-preview {
+    background: #fff;
+    border-radius: 16px;
+    max-width: 380px;
+    width: 90%;
+}
+
+.sms-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    font-weight: 500;
+    color: #333;
+}
+
+.sms-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+}
+
+.sms-body {
+    padding: 20px;
+}
+
+.sms-bubble {
+    background: #e8f5e9;
+    padding: 18px;
+    border-radius: 16px;
+    margin-bottom: 15px;
+}
+
+.sms-sender {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.sms-text {
+    font-size: 14px;
+    color: #111;
+    margin-bottom: 5px;
+}
+
+.sms-note {
+    font-size: 12px;
+    color: #888;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .track-input-group {
+        flex-direction: column;
+    }
+
+    .btn-track {
+        width: 100%;
+    }
+
+    .transaction-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .auth-input-wrapper {
+        flex-direction: column;
+    }
+
+    .btn-release-funds {
+        width: 100%;
+    }
+}

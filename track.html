@@ -1,0 +1,130 @@
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Transaction | SecureEscrow Kenya</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-wrapper">
+        <header class="site-header">
+            <div class="header-container">
+                <div class="header-brand">
+                    <a href="index.html" class="brand-link">
+                        <span class="brand-text">Secure<span class="brand-accent">Escrow</span> Kenya</span>
+                    </a>
+                </div>
+
+                <div class="mobile-menu-toggle" id="menuToggle">
+                    <span class="toggle-bar"></span>
+                    <span class="toggle-bar"></span>
+                    <span class="toggle-bar"></span>
+                </div>
+
+                <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+                <nav class="mobile-sidebar" id="mobileSidebar">
+                    <ul class="sidebar-nav">
+                        <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
+                        <li class="nav-item"><a href="how.html" class="nav-link">How It Works</a></li>
+                        <li class="nav-item"><a href="track.html" class="nav-link active">Track Transaction</a></li>
+                        <li class="nav-item"><a href="about.html" class="nav-link">About Us</a></li>
+                        <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
+                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start Transaction</a></li>
+                    </ul>
+                </nav>
+
+                <nav class="primary-nav">
+                    <ul class="nav-list">
+                        <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
+                        <li class="nav-item"><a href="how.html" class="nav-link">How It Works</a></li>
+                        <li class="nav-item"><a href="track.html" class="nav-link active">Track Transaction</a></li>
+                        <li class="nav-item"><a href="about.html" class="nav-link">About Us</a></li>
+                        <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
+                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start Transaction</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <main class="page-content">
+            <section class="tracking-section">
+                <div class="container">
+                    <div class="section-header">
+                        <h1 class="page-title">Track Your Transaction</h1>
+                        <p class="page-subtitle">Enter your transaction reference or registered phone number</p>
+                    </div>
+
+                    <div class="tracking-tabs">
+                        <button class="tab-btn active" data-tab="idTab">Transaction ID</button>
+                        <button class="tab-btn" data-tab="phoneTab">Phone Number</button>
+                    </div>
+
+                    <div class="tab-pane active" id="idTab">
+                        <div class="track-form">
+                            <form id="trackForm">
+                                <div class="track-input-group">
+                                    <input type="text" id="trackId" class="track-input" placeholder="e.g. ESC-ABC123"
+                                        maxlength="10" required>
+                                    <button type="submit" class="btn-track">Track</button>
+                                </div>
+                                <p class="track-hint">Enter the transaction reference provided at initiation.</p>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane" id="phoneTab">
+                        <div class="track-form">
+                            <form id="phoneForm">
+                                <div class="track-input-group">
+                                    <input type="tel" id="trackPhone" class="track-input" placeholder="e.g. 0712345678"
+                                        required>
+                                    <button type="submit" class="btn-track">Find</button>
+                                </div>
+                                <p class="track-hint">Enter the buyer or seller phone number to locate transactions.</p>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="transaction-display" id="transactionDisplay"></div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="site-footer">
+            <div class="footer-container">
+                <div class="footer-bottom">
+                    <p>&copy; 2026 SecureEscrow Kenya Limited. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        document.querySelectorAll('.tab-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(function(b) {
+                    b.classList.remove('active');
+                });
+                document.querySelectorAll('.tab-pane').forEach(function(p) {
+                    p.classList.remove('active');
+                });
+
+                this.classList.add('active');
+                document.getElementById(this.dataset.tab).classList.add('active');
+            });
+        });
+    </script>
+    <script src="script.js"></script>
+</body>
+
+</html>

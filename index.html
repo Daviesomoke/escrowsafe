@@ -3,19 +3,21 @@
 
 
 
+
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SecureEscrow Kenya - Protected Online Transactions</title>
+    <title>SecureEscrow Kenya | Protected Online Transactions</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <!-- Samsung-Style Dotted Shield Loader -->
+    <!-- Application Loader -->
     <div class="page-loader" id="pageLoader">
         <div class="loader-content">
             <div class="loader-shield">
@@ -30,7 +32,6 @@
                 <span class="loader-brand">Secure<span>Escrow</span></span>
                 <span class="loader-tagline">Securing Your Transaction</span>
             </div>
-            <!-- Samsung-Style Dotted Spinner -->
             <div class="samsung-spinner">
                 <div class="dot dot1"></div>
                 <div class="dot dot2"></div>
@@ -54,21 +55,19 @@
                     </a>
                 </div>
 
-                <!-- Mobile Menu Toggle (Hamburger/X) -->
                 <div class="mobile-menu-toggle" id="menuToggle">
                     <span class="toggle-bar"></span>
                     <span class="toggle-bar"></span>
                     <span class="toggle-bar"></span>
                 </div>
 
-                <!-- Overlay Background -->
                 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-                <!-- Mobile Sidebar -->
                 <nav class="mobile-sidebar" id="mobileSidebar">
                     <ul class="sidebar-nav">
                         <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
                         <li class="nav-item"><a href="how.html" class="nav-link">How It Works</a></li>
+                        <li class="nav-item"><a href="track.html" class="nav-link">Track Transaction</a></li>
                         <li class="nav-item"><a href="about.html" class="nav-link">About Us</a></li>
                         <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
                         <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start
@@ -76,11 +75,11 @@
                     </ul>
                 </nav>
 
-                <!-- Desktop Navigation -->
                 <nav class="primary-nav">
                     <ul class="nav-list">
                         <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
                         <li class="nav-item"><a href="how.html" class="nav-link">How It Works</a></li>
+                        <li class="nav-item"><a href="track.html" class="nav-link">Track Transaction</a></li>
                         <li class="nav-item"><a href="about.html" class="nav-link">About Us</a></li>
                         <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
                         <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start
@@ -90,7 +89,7 @@
             </div>
         </header>
 
-        <!-- Trust Indicators - Authentic Design -->
+        <!-- Trust Indicators -->
         <div class="trust-strip">
             <div class="container">
                 <div class="trust-strip-inner">
@@ -118,7 +117,7 @@
                             </svg>
                         </div>
                         <div class="metric-text">
-                            <span class="metric-main">Buyer & Seller Protection</span>
+                            <span class="metric-main">Buyer and Seller Protection</span>
                             <span class="metric-sub">Dispute Resolution Included</span>
                         </div>
                     </div>
@@ -186,7 +185,7 @@
                         <div class="hero-form-wrapper" id="start-escrow">
                             <div class="escrow-form-card">
                                 <h2 class="form-title">Initiate Escrow Agreement</h2>
-                                <form action="#" method="POST" class="escrow-form">
+                                <form action="#" method="POST" class="escrow-form" id="escrowForm">
                                     <div class="form-field">
                                         <label for="transactionType" class="form-label">Transaction Category</label>
                                         <select id="transactionType" name="transactionType" class="form-select">
@@ -219,10 +218,16 @@
                                         </div>
 
                                         <div class="form-field">
-                                            <label for="sellerContact" class="form-label">Seller Contact</label>
-                                            <input type="tel" id="sellerContact" name="sellerContact" class="form-input"
-                                                placeholder="M-PESA number">
+                                            <label for="buyerContact" class="form-label">Your Contact</label>
+                                            <input type="tel" id="buyerContact" name="buyerContact" class="form-input"
+                                                placeholder="Your M-PESA number">
                                         </div>
+                                    </div>
+
+                                    <div class="form-field">
+                                        <label for="sellerContact" class="form-label">Seller Contact</label>
+                                        <input type="tel" id="sellerContact" name="sellerContact" class="form-input"
+                                            placeholder="Seller's M-PESA number">
                                     </div>
 
                                     <div class="form-field">
@@ -231,7 +236,6 @@
                                             class="form-input">
                                     </div>
 
-                                    <!-- FEE DISPLAY WITH CORRECT IDs AND 11% -->
                                     <div class="fee-display">
                                         <div class="fee-row">
                                             <span>Transaction Amount</span>
@@ -261,7 +265,7 @@
                 </div>
             </section>
 
-            <!-- Trust Indicators Section -->
+            <!-- Trust Section -->
             <section class="trust-section">
                 <div class="container">
                     <div class="section-header">
@@ -329,7 +333,7 @@
                 </div>
             </section>
 
-            <!-- Trusted By Section -->
+            <!-- Partners Section -->
             <section class="trusted-by">
                 <div class="container">
                     <p class="trusted-label">Trusted by Leading Kenyan Businesses</p>
@@ -361,6 +365,7 @@
                         <ul class="footer-links">
                             <li><a href="index.html">Home</a></li>
                             <li><a href="how.html">How It Works</a></li>
+                            <li><a href="track.html">Track Transaction</a></li>
                             <li><a href="about.html">About Us</a></li>
                             <li><a href="contact.html">Contact</a></li>
                         </ul>
@@ -424,4 +429,3 @@
 </body>
 
 </html>
-
