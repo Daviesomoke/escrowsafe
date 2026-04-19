@@ -18,13 +18,14 @@
 
 
 
+
     // ===== PAGE LOADER =====
 function initPageLoader() {
     const loader = document.getElementById('pageLoader');
     
     if (!loader) return;
     
-    // Simulate loading for 2 seconds then fade out
+    // Fade out after 2.2 seconds
     setTimeout(function() {
         loader.classList.add('fade-out');
         
@@ -32,9 +33,15 @@ function initPageLoader() {
             if (loader && loader.parentNode) {
                 loader.parentNode.removeChild(loader);
             }
-        }, 600);
-    }, 2000);
+        }, 500);
+    }, 2200);
 }
+
+
+
+
+
+
 
    
 

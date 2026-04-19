@@ -2714,20 +2714,20 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) {
 
 
 
- 
-/* ===== SHIELD LOADER WITH GLOWING DOTTED CIRCLE ===== */
+
+/* ===== SAMSUNG-STYLE DOTTED SHIELD LOADER ===== */
 .page-loader {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: #0d0d0d;
+    background: #0a0a0a;
     z-index: 9999;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: opacity 0.6s ease, visibility 0.6s;
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.5s;
 }
 
 .page-loader.fade-out {
@@ -2737,45 +2737,45 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) {
 
 .loader-content {
     text-align: center;
-    animation: loaderFadeIn 0.5s ease-out;
+    animation: contentAppear 0.4s ease-out;
 }
 
-@keyframes loaderFadeIn {
+@keyframes contentAppear {
     0% {
         opacity: 0;
-        transform: translateY(15px);
+        transform: scale(0.96);
     }
 
     100% {
         opacity: 1;
-        transform: translateY(0);
+        transform: scale(1);
     }
 }
 
 /* Shield */
 .loader-shield {
-    width: 70px;
-    height: 70px;
+    width: 64px;
+    height: 64px;
     margin: 0 auto 20px;
-    animation: shieldPulse 2s ease-in-out infinite;
+    animation: shieldFloat 2.5s ease-in-out infinite;
 }
 
-@keyframes shieldPulse {
+@keyframes shieldFloat {
 
     0%,
     100% {
-        transform: scale(1);
+        transform: translateY(0);
     }
 
     50% {
-        transform: scale(1.05);
+        transform: translateY(-3px);
     }
 }
 
 .shield-outline {
     stroke-dasharray: 200;
     stroke-dashoffset: 200;
-    animation: drawShield 1.5s ease-out forwards;
+    animation: drawShield 1.4s ease-out forwards;
 }
 
 @keyframes drawShield {
@@ -2791,7 +2791,7 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) {
 .shield-check {
     stroke-dasharray: 30;
     stroke-dashoffset: 30;
-    animation: drawCheck 0.6s ease-out 1s forwards;
+    animation: drawCheck 0.5s ease-out 0.9s forwards;
 }
 
 @keyframes drawCheck {
@@ -2806,102 +2806,52 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) {
 
 /* Text */
 .loader-text {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .loader-brand {
     display: block;
-    font-size: 28px;
-    font-weight: 700;
+    font-size: 26px;
+    font-weight: 600;
     color: #ffffff;
-    letter-spacing: -0.5px;
+    letter-spacing: -0.3px;
     margin-bottom: 4px;
-    animation: textGlow 2s ease-in-out infinite;
 }
 
 .loader-brand span {
     color: #2ecc71;
 }
 
-@keyframes textGlow {
-
-    0%,
-    100% {
-        text-shadow: 0 0 15px rgba(46, 204, 113, 0.2);
-    }
-
-    50% {
-        text-shadow: 0 0 25px rgba(46, 204, 113, 0.4);
-    }
-}
-
 .loader-tagline {
     display: block;
     font-size: 11px;
-    color: #777;
-    letter-spacing: 4px;
+    color: #666;
+    letter-spacing: 3px;
     text-transform: uppercase;
     opacity: 0;
-    animation: taglineFade 0.6s ease-out 0.8s forwards;
+    animation: taglineAppear 0.5s ease-out 0.7s forwards;
 }
 
-@keyframes taglineFade {
+@keyframes taglineAppear {
     0% {
         opacity: 0;
-        letter-spacing: 6px;
     }
 
     100% {
         opacity: 1;
-        letter-spacing: 4px;
     }
 }
 
-/* Glowing Dotted Circle Spinner */
-.loader-dotted-spinner {
+/* Samsung-Style Dotted Spinner */
+.samsung-spinner {
     position: relative;
-    width: 50px;
-    height: 50px;
+    width: 40px;
+    height: 40px;
     margin: 0 auto;
+    animation: spinnerRotate 2s linear infinite;
 }
 
-.dotted-circle {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 2px dotted #2ecc71;
-    animation: spinDotted 2s linear infinite, glowPulse 1.5s ease-in-out infinite;
-    box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
-}
-
-.dotted-circle::before {
-    content: '';
-    position: absolute;
-    top: -3px;
-    left: -3px;
-    right: -3px;
-    bottom: -3px;
-    border-radius: 50%;
-    border: 1px dashed rgba(46, 204, 113, 0.3);
-    animation: spinDotted 3s linear infinite reverse;
-}
-
-.dotted-circle::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 4px;
-    height: 4px;
-    background: #2ecc71;
-    border-radius: 50%;
-    box-shadow: 0 0 15px #2ecc71, 0 0 30px rgba(46, 204, 113, 0.5);
-    animation: dotPulse 1s ease-in-out infinite;
-}
-
-@keyframes spinDotted {
+@keyframes spinnerRotate {
     0% {
         transform: rotate(0deg);
     }
@@ -2911,52 +2861,108 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) {
     }
 }
 
-@keyframes glowPulse {
-
-    0%,
-    100% {
-        box-shadow: 0 0 10px rgba(46, 204, 113, 0.3), 0 0 20px rgba(46, 204, 113, 0.1);
-        border-color: #2ecc71;
-    }
-
-    50% {
-        box-shadow: 0 0 20px rgba(46, 204, 113, 0.5), 0 0 40px rgba(46, 204, 113, 0.2);
-        border-color: #27ae60;
-    }
+.samsung-spinner .dot {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background: #2ecc71;
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(46, 204, 113, 0.6);
+    animation: dotFade 1.4s ease-in-out infinite;
 }
 
-@keyframes dotPulse {
+.samsung-spinner .dot1 {
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    animation-delay: 0s;
+}
+
+.samsung-spinner .dot2 {
+    top: 12%;
+    right: 12%;
+    animation-delay: 0.175s;
+}
+
+.samsung-spinner .dot3 {
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    animation-delay: 0.35s;
+}
+
+.samsung-spinner .dot4 {
+    bottom: 12%;
+    right: 12%;
+    animation-delay: 0.525s;
+}
+
+.samsung-spinner .dot5 {
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    animation-delay: 0.7s;
+}
+
+.samsung-spinner .dot6 {
+    bottom: 12%;
+    left: 12%;
+    animation-delay: 0.875s;
+}
+
+.samsung-spinner .dot7 {
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    animation-delay: 1.05s;
+}
+
+.samsung-spinner .dot8 {
+    top: 12%;
+    left: 12%;
+    animation-delay: 1.225s;
+}
+
+@keyframes dotFade {
 
     0%,
     100% {
-        opacity: 0.6;
-        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.2;
+        transform: scale(0.8);
+        background: #2ecc71;
     }
 
     50% {
         opacity: 1;
-        transform: translate(-50%, -50%) scale(1.5);
+        transform: scale(1.3);
+        background: #27ae60;
+        box-shadow: 0 0 15px #2ecc71;
     }
 }
 
 /* Mobile */
 @media (max-width: 768px) {
     .loader-shield {
-        width: 60px;
-        height: 60px;
+        width: 56px;
+        height: 56px;
     }
 
     .loader-brand {
-        font-size: 24px;
+        font-size: 22px;
     }
 
     .loader-tagline {
         font-size: 10px;
-        letter-spacing: 3px;
+        letter-spacing: 2px;
     }
 
-    .loader-dotted-spinner {
-        width: 40px;
-        height: 40px;
+    .samsung-spinner {
+        width: 36px;
+        height: 36px;
+    }
+
+    .samsung-spinner .dot {
+        width: 4px;
+        height: 4px;
     }
 }
