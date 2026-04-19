@@ -2,9 +2,13 @@
 
 
 
+
+
+
+
 /**
  * SecureEscrow Kenya - Complete JavaScript File
- * Fixed with Counter Animation
+ * Fixed with Guaranteed Counter Animation
  */
 
 (function() {
@@ -29,7 +33,7 @@
         }, 2200);
     }
 
-    // ===== ANIMATED COUNTERS =====
+    // ===== ANIMATED COUNTERS - FIXED VERSION =====
     function initCounters() {
         const counters = document.querySelectorAll('.counter');
         
@@ -40,31 +44,25 @@
         
         console.log('Counters found:', counters.length);
         
-        const observer = new IntersectionObserver(function(entries) {
-            entries.forEach(function(entry) {
-                if (entry.isIntersecting) {
-                    const counter = entry.target;
-                    const target = parseInt(counter.getAttribute('data-target'));
-                    let current = 0;
-                    const increment = target / 50;
-                    
-                    const updateCounter = setInterval(function() {
-                        current += increment;
-                        if (current >= target) {
-                            counter.textContent = target;
-                            clearInterval(updateCounter);
-                        } else {
-                            counter.textContent = Math.floor(current);
-                        }
-                    }, 20);
-                    
-                    observer.unobserve(counter);
-                }
-            });
-        }, { threshold: 0.5 });
-        
         counters.forEach(function(counter) {
-            observer.observe(counter);
+            const target = parseInt(counter.getAttribute('data-target'));
+            let current = 0;
+            const duration = 1500; // 1.5 seconds
+            const stepTime = 20; // Update every 20ms
+            const steps = duration / stepTime;
+            const increment = target / steps;
+            
+            // Start counting immediately
+            const timer = setInterval(function() {
+                current += increment;
+                
+                if (current >= target) {
+                    counter.textContent = target;
+                    clearInterval(timer);
+                } else {
+                    counter.textContent = Math.floor(current);
+                }
+            }, stepTime);
         });
     }
 
@@ -509,7 +507,6 @@
     // ===== MAIN INITIALIZATION =====
     function init() {
         initPageLoader();
-        initCounters();  // ✅ ADDED - This makes the numbers animate!
         initMobileSidebar();
         initBackToTop();
         whatsappButton.init();
@@ -518,10 +515,15 @@
         initSmoothScrolling();
         setActiveNavLink();
         
+        // Start counters after loader fades out
+        setTimeout(function() {
+            initCounters();
+        }, 2500);
+        
         if (!localStorage.getItem('visited_escrow')) {
             setTimeout(function() {
                 ToastManager.info('Welcome to SecureEscrow Kenya!', 'Welcome');
-            }, 1000);
+            }, 2800);
             localStorage.setItem('visited_escrow', 'true');
         }
     }
