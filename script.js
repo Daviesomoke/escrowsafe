@@ -3,25 +3,19 @@
 
 
 
-
-
-
 /**
- * SecureEscrow Kenya - Client Application
- * 
- * A professional escrow management system handling transaction creation,
- * secure authorization, status tracking, and fund release workflows.
- * 
- * Data persistence is managed via localStorage. In production, this layer
- * should be replaced with authenticated API calls to a secure backend.
+ * SecureEscrow Kenya - Frontend Client
+ * Connects to Flask Backend API
  */
 
 (function() {
     'use strict';
 
     // ============================================================================
-    // CONFIGURATION & CONSTANTS
+    // CONFIGURATION
     // ============================================================================
+    
+    const API_BASE_URL = 'http://127.0.0.1:5000/api';
     
     const CONFIG = {
         WHATSAPP_NUMBER: '254791190667',
@@ -42,62 +36,46 @@
         DISPUTED: 'DISPUTED'
     };
 
-    // Characters excluded to avoid confusion: I, O, 0, 1
-    const TRANSACTION_ID_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    const TRANSACTION_ID_PREFIX = 'ESC-';
-    const TRANSACTION_ID_LENGTH = 6;
-
     // ============================================================================
-    // STORAGE LAYER
+    // API CLIENT
     // ============================================================================
     
-    const EscrowStorage = {
-        storageKey: 'escrow_transactions',
-        
-        /**
-         * Persist a transaction to localStorage
-         */
-        save: function(transactionId, transactionData) {
-            const allTransactions = this._fetchAllTransactions();
-            allTransactions[transactionId] = transactionData;
-            this._persistAllTransactions(allTransactions);
+    const ApiClient = {
+        async createTransaction(data) {
+            const response = await fetch(`${API_BASE_URL}/transactions/create`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            return response.json();
         },
         
-        /**
-         * Retrieve a single transaction by its identifier
-         */
-        get: function(transactionId) {
-            const allTransactions = this._fetchAllTransactions();
-            return allTransactions[transactionId] || null;
+        async getTransaction(transactionId) {
+            const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}`);
+            return response.json();
         },
         
-        /**
-         * Update specific fields of an existing transaction
-         */
-        update: function(transactionId, updatedFields) {
-            const transaction = this.get(transactionId);
-            if (!transaction) return false;
-            
-            Object.assign(transaction, updatedFields);
-            transaction.updatedAt = new Date().toISOString();
-            this.save(transactionId, transaction);
-            return true;
+        async trackByPhone(phone) {
+            const response = await fetch(`${API_BASE_URL}/transactions/track/${phone}`);
+            return response.json();
         },
         
-        /**
-         * Return all stored transactions as an object
-         */
-        getAll: function() {
-            return this._fetchAllTransactions();
+        async updateStatus(transactionId, status, phone) {
+            const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status, phone })
+            });
+            return response.json();
         },
         
-        _fetchAllTransactions: function() {
-            const stored = localStorage.getItem(this.storageKey);
-            return stored ? JSON.parse(stored) : {};
-        },
-        
-        _persistAllTransactions: function(transactions) {
-            localStorage.setItem(this.storageKey, JSON.stringify(transactions));
+        async releaseFunds(transactionId, authCode, phone) {
+            const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/release`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ authCode, phone })
+            });
+            return response.json();
         }
     };
 
@@ -105,49 +83,18 @@
     // UTILITY FUNCTIONS
     // ============================================================================
     
-    /**
-     * Generate a human-readable transaction identifier
-     * Format: ESC-XXXXXX where X is alphanumeric (excluding ambiguous characters)
-     */
-    function generateTransactionId() {
-        let identifier = '';
-        for (let i = 0; i < TRANSACTION_ID_LENGTH; i++) {
-            const randomIndex = Math.floor(Math.random() * TRANSACTION_ID_CHARS.length);
-            identifier += TRANSACTION_ID_CHARS.charAt(randomIndex);
-        }
-        return TRANSACTION_ID_PREFIX + identifier;
-    }
-    
-    /**
-     * Generate a cryptographically-adjacent 6-digit authorization code
-     * Note: For production, use a proper CSPRNG
-     */
-    function generateAuthorizationCode() {
-        return Math.floor(100000 + Math.random() * 900000).toString();
+    function validateKenyanPhone(phone) {
+        const cleanPhone = phone.replace(/\s+/g, '');
+        const phoneRegex = /^(0|\+254)[71]\d{8}$/;
+        return phoneRegex.test(cleanPhone);
     }
 
-    /**
-     * Validate Kenyan mobile phone number format
-     * Accepts formats: 07XX XXX XXX or +2547XX XXX XXX
-     */
-    function isValidKenyanPhone(phoneNumber) {
-        const normalized = phoneNumber.replace(/\s+/g, '');
-        const pattern = /^(0|\+254)[71]\d{8}$/;
-        return pattern.test(normalized);
+    function validateEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
     }
 
-    /**
-     * Validate email address format
-     */
-    function isValidEmail(email) {
-        const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return pattern.test(email);
-    }
-
-    /**
-     * Format numeric amount as Kenyan Shilling currency
-     */
-    function formatKenyanShillings(amount) {
+    function formatKES(amount) {
         return 'KES ' + amount.toLocaleString('en-KE');
     }
 
@@ -158,7 +105,6 @@
     function initializePageLoader() {
         const loader = document.getElementById('pageLoader');
         if (!loader) return;
-        
         setTimeout(function() {
             loader.classList.add('fade-out');
             setTimeout(function() {
@@ -355,55 +301,13 @@
     };
 
     // ============================================================================
-    // SMS PREVIEW (Seller Notification)
-    // ============================================================================
-    
-    function displaySmsPreview(transactionId, buyerPhone, sellerPhone, itemName, amount) {
-        const formattedAmount = formatKenyanShillings(amount);
-        
-        const overlayHtml = `
-            <div class="sms-preview-overlay" id="smsPreview">
-                <div class="sms-preview">
-                    <div class="sms-header">
-                        <span>SMS Notification — Sent to Seller</span>
-                        <button class="sms-close" id="closeSmsPreview" aria-label="Close preview">&times;</button>
-                    </div>
-                    <div class="sms-body">
-                        <div class="sms-bubble">
-                            <p class="sms-sender">SecureEscrow Kenya</p>
-                            <p class="sms-text">Transaction: ${transactionId}</p>
-                            <p class="sms-text">Buyer: ${buyerPhone}</p>
-                            <p class="sms-text">Item: ${itemName}</p>
-                            <p class="sms-text">Amount: ${formattedAmount}</p>
-                            <p class="sms-text" style="margin-top: 10px;">Funds secured in escrow. Please prepare for delivery. You will receive ${formattedAmount} after buyer confirmation.</p>
-                        </div>
-                        <p class="sms-note">Recipient: ${sellerPhone}</p>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        const existingPreview = document.getElementById('smsPreview');
-        if (existingPreview) existingPreview.remove();
-        
-        document.body.insertAdjacentHTML('beforeend', overlayHtml);
-        
-        const previewElement = document.getElementById('smsPreview');
-        
-        document.getElementById('closeSmsPreview').addEventListener('click', function() {
-            previewElement.remove();
-        });
-        
-        previewElement.addEventListener('click', function(event) {
-            if (event.target === previewElement) previewElement.remove();
-        });
-    }
-
-    // ============================================================================
     // AUTHORIZATION CODE DISPLAY
     // ============================================================================
     
     function displayAuthorizationCodePopup(transactionId, authorizationCode) {
+        const existingPopup = document.getElementById('authPopup');
+        if (existingPopup) existingPopup.remove();
+        
         const overlayHtml = `
             <div class="auth-popup-overlay" id="authPopup">
                 <div class="auth-popup">
@@ -433,10 +337,9 @@
             </div>
         `;
         
-        const existingPopup = document.getElementById('authPopup');
-        if (existingPopup) existingPopup.remove();
-        
         document.body.insertAdjacentHTML('beforeend', overlayHtml);
+        
+        const popupElement = document.getElementById('authPopup');
         
         document.getElementById('copyCodesButton').addEventListener('click', function() {
             const textToCopy = `Transaction ID: ${transactionId}\nAuthorization Code: ${authorizationCode}`;
@@ -453,8 +356,61 @@
         });
         
         document.getElementById('confirmSavedButton').addEventListener('click', function() {
-            document.getElementById('authPopup').remove();
+            popupElement.remove();
             ToastManager.info('Your funds are now secured in escrow.', 'Transaction Secured');
+        });
+        
+        popupElement.addEventListener('click', function(event) {
+            if (event.target === popupElement) {
+                popupElement.remove();
+            }
+        });
+    }
+
+    // ============================================================================
+    // SMS PREVIEW
+    // ============================================================================
+    
+    function displaySmsPreview(transactionId, buyerPhone, sellerPhone, itemName, amount) {
+        const formattedAmount = formatKES(amount);
+        
+        const existingPreview = document.getElementById('smsPreview');
+        if (existingPreview) existingPreview.remove();
+        
+        const overlayHtml = `
+            <div class="sms-preview-overlay" id="smsPreview">
+                <div class="sms-preview">
+                    <div class="sms-header">
+                        <span>SMS Notification — Sent to Seller</span>
+                        <button class="sms-close" id="closeSmsPreview" aria-label="Close preview">&times;</button>
+                    </div>
+                    <div class="sms-body">
+                        <div class="sms-bubble">
+                            <p class="sms-sender">SecureEscrow Kenya</p>
+                            <p class="sms-text">Transaction: ${transactionId}</p>
+                            <p class="sms-text">Buyer: ${buyerPhone}</p>
+                            <p class="sms-text">Item: ${itemName}</p>
+                            <p class="sms-text">Amount: ${formattedAmount}</p>
+                            <p class="sms-text" style="margin-top: 10px;">Funds secured in escrow. Please prepare for delivery. You will receive ${formattedAmount} after buyer confirmation.</p>
+                        </div>
+                        <p class="sms-note">Recipient: ${sellerPhone}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', overlayHtml);
+        
+        const previewElement = document.getElementById('smsPreview');
+        
+        document.getElementById('closeSmsPreview').addEventListener('click', function() {
+            previewElement.remove();
+        });
+        
+        previewElement.addEventListener('click', function(event) {
+            if (event.target === previewElement) {
+                previewElement.remove();
+            }
         });
     }
 
@@ -477,14 +433,15 @@
                 const feeAmount = baseAmount * CONFIG.ESCROW_FEE_PERCENTAGE;
                 const totalAmount = baseAmount + feeAmount;
                 
-                if (displayAmount) displayAmount.textContent = formatKenyanShillings(baseAmount);
-                if (escrowFeeDisplay) escrowFeeDisplay.textContent = formatKenyanShillings(feeAmount);
-                if (totalAmountDisplay) totalAmountDisplay.textContent = formatKenyanShillings(totalAmount);
+                if (displayAmount) displayAmount.textContent = formatKES(baseAmount);
+                if (escrowFeeDisplay) escrowFeeDisplay.textContent = formatKES(feeAmount);
+                if (totalAmountDisplay) totalAmountDisplay.textContent = formatKES(totalAmount);
             });
         }
         
-        form.addEventListener('submit', function(event) {
+        form.addEventListener('submit', async function(event) {
             event.preventDefault();
+            event.stopPropagation();
             
             const itemNameInput = form.querySelector('#itemName');
             const amountInput = form.querySelector('#amount');
@@ -500,10 +457,10 @@
             } else if (!amountInput || !amountInput.value || parseFloat(amountInput.value) < 100) {
                 isValid = false;
                 errorMessage = 'Amount must be at least KES 100';
-            } else if (!buyerPhoneInput || !isValidKenyanPhone(buyerPhoneInput.value)) {
+            } else if (!buyerPhoneInput || !validateKenyanPhone(buyerPhoneInput.value)) {
                 isValid = false;
                 errorMessage = 'Please enter a valid buyer phone number';
-            } else if (!sellerPhoneInput || !isValidKenyanPhone(sellerPhoneInput.value)) {
+            } else if (!sellerPhoneInput || !validateKenyanPhone(sellerPhoneInput.value)) {
                 isValid = false;
                 errorMessage = 'Please enter a valid seller phone number';
             } else if (buyerPhoneInput.value === sellerPhoneInput.value) {
@@ -519,26 +476,21 @@
             const baseAmount = parseFloat(amountInput.value);
             const feeAmount = baseAmount * CONFIG.ESCROW_FEE_PERCENTAGE;
             const totalAmount = baseAmount + feeAmount;
-            const transactionId = generateTransactionId();
-            const authorizationCode = generateAuthorizationCode();
             
-            const transactionRecord = {
-                transactionId: transactionId,
-                authCode: authorizationCode,
+            const transactionData = {
                 itemName: itemNameInput.value.trim(),
                 itemDetails: form.querySelector('#itemDetails')?.value || '',
                 amount: baseAmount,
                 buyerPhone: buyerPhoneInput.value,
                 sellerPhone: sellerPhoneInput.value,
-                status: TRANSACTION_STATUS.FUNDS_SECURED,
-                createdAt: new Date().toISOString(),
-                deliveredAt: null,
-                releasedAt: null
+                transactionType: form.querySelector('#transactionType')?.value || '',
+                deliveryDeadline: form.querySelector('#deliveryDeadline')?.value || ''
             };
             
-            EscrowStorage.save(transactionId, transactionRecord);
+            const existingPopup = document.getElementById('paymentPopup');
+            if (existingPopup) existingPopup.remove();
             
-            const paymentOverlayHtml = `
+            const paymentHTML = `
                 <div class="payment-popup-overlay" id="paymentPopup">
                     <div class="payment-popup">
                         <div class="popup-header">
@@ -554,15 +506,15 @@
                                 <div class="summary-divider"></div>
                                 <div class="summary-item">
                                     <span class="summary-label">Item amount</span>
-                                    <span class="summary-value">${formatKenyanShillings(baseAmount)}</span>
+                                    <span class="summary-value">${formatKES(baseAmount)}</span>
                                 </div>
                                 <div class="summary-item">
                                     <span class="summary-label">Protection fee (11%)</span>
-                                    <span class="summary-value">${formatKenyanShillings(feeAmount)}</span>
+                                    <span class="summary-value">${formatKES(feeAmount)}</span>
                                 </div>
                                 <div class="summary-item summary-total">
                                     <span class="summary-label">Total payment</span>
-                                    <span class="summary-value">${formatKenyanShillings(totalAmount)}</span>
+                                    <span class="summary-value">${formatKES(totalAmount)}</span>
                                 </div>
                             </div>
                             
@@ -580,26 +532,45 @@
                 </div>
             `;
             
-            const existingPopup = document.getElementById('paymentPopup');
-            if (existingPopup) existingPopup.remove();
-            
-            document.body.insertAdjacentHTML('beforeend', paymentOverlayHtml);
+            document.body.insertAdjacentHTML('beforeend', paymentHTML);
             const popupElement = document.getElementById('paymentPopup');
             
             function dismissPopup() {
                 popupElement.classList.add('closing');
-                setTimeout(function() { popupElement.remove(); }, 200);
+                setTimeout(function() { 
+                    if (popupElement && popupElement.parentNode) {
+                        popupElement.remove(); 
+                    }
+                }, 200);
             }
             
-            document.getElementById('confirmPaymentButton').addEventListener('click', function() {
+            document.getElementById('confirmPaymentButton').addEventListener('click', async function() {
                 dismissPopup();
-                displayAuthorizationCodePopup(transactionId, authorizationCode);
-                displaySmsPreview(transactionId, buyerPhoneInput.value, sellerPhoneInput.value, itemNameInput.value, baseAmount);
                 
-                form.reset();
-                if (displayAmount) displayAmount.textContent = 'KES 0';
-                if (escrowFeeDisplay) escrowFeeDisplay.textContent = 'KES 0';
-                if (totalAmountDisplay) totalAmountDisplay.textContent = 'KES 0';
+                ToastManager.info('Creating transaction...', 'Please wait');
+                
+                try {
+                    const result = await ApiClient.createTransaction(transactionData);
+                    
+                    if (result.success) {
+                        setTimeout(function() {
+                            displayAuthorizationCodePopup(result.transactionId, result.authCode);
+                            displaySmsPreview(result.transactionId, buyerPhoneInput.value, sellerPhoneInput.value, itemNameInput.value, baseAmount);
+                        }, 300);
+                        
+                        form.reset();
+                        if (displayAmount) displayAmount.textContent = 'KES 0';
+                        if (escrowFeeDisplay) escrowFeeDisplay.textContent = 'KES 0';
+                        if (totalAmountDisplay) totalAmountDisplay.textContent = 'KES 0';
+                        
+                        ToastManager.success('Transaction created successfully', 'Success');
+                    } else {
+                        ToastManager.error(result.error || 'Failed to create transaction', 'Error');
+                    }
+                } catch (error) {
+                    console.error('API Error:', error);
+                    ToastManager.error('Could not connect to server. Make sure backend is running.', 'Connection Error');
+                }
             });
             
             document.getElementById('cancelPaymentButton').addEventListener('click', dismissPopup);
@@ -644,7 +615,7 @@
             if (!nameInput || !nameInput.value.trim()) {
                 isValid = false;
                 errorMessage = 'Please enter your name';
-            } else if (!emailInput || !isValidEmail(emailInput.value)) {
+            } else if (!emailInput || !validateEmail(emailInput.value)) {
                 isValid = false;
                 errorMessage = 'Please enter a valid email address';
             } else if (!messageInput || !messageInput.value.trim()) {
@@ -672,33 +643,43 @@
         if (!trackForm && !phoneForm) return;
         
         if (trackForm) {
-            trackForm.addEventListener('submit', function(event) {
+            trackForm.addEventListener('submit', async function(event) {
                 event.preventDefault();
                 const transactionId = document.getElementById('trackId').value.trim().toUpperCase();
-                const transaction = EscrowStorage.get(transactionId);
                 
-                if (transaction) {
-                    renderTransactionDetails(transaction, null);
-                } else {
-                    ToastManager.error('No transaction found with this reference. Please verify and try again.', 'Not Found');
+                ToastManager.info('Searching for transaction...', 'Please wait');
+                
+                try {
+                    const transaction = await ApiClient.getTransaction(transactionId);
+                    
+                    if (transaction.error) {
+                        ToastManager.error('No transaction found with this reference.', 'Not Found');
+                    } else {
+                        renderTransactionDetails(transaction, null);
+                    }
+                } catch (error) {
+                    ToastManager.error('Could not connect to server.', 'Connection Error');
                 }
             });
         }
         
         if (phoneForm) {
-            phoneForm.addEventListener('submit', function(event) {
+            phoneForm.addEventListener('submit', async function(event) {
                 event.preventDefault();
                 const phoneNumber = document.getElementById('trackPhone').value.trim();
-                const allTransactions = EscrowStorage.getAll();
                 
-                const matchingTransaction = Object.values(allTransactions).find(function(transaction) {
-                    return transaction.buyerPhone === phoneNumber || transaction.sellerPhone === phoneNumber;
-                });
+                ToastManager.info('Searching for transactions...', 'Please wait');
                 
-                if (matchingTransaction) {
-                    renderTransactionDetails(matchingTransaction, phoneNumber);
-                } else {
-                    ToastManager.error('No transactions found for this phone number.', 'Not Found');
+                try {
+                    const result = await ApiClient.trackByPhone(phoneNumber);
+                    
+                    if (result.error) {
+                        ToastManager.error('No transactions found for this phone number.', 'Not Found');
+                    } else if (result.transactions && result.transactions.length > 0) {
+                        renderTransactionDetails(result.transactions[0], phoneNumber);
+                    }
+                } catch (error) {
+                    ToastManager.error('Could not connect to server.', 'Connection Error');
                 }
             });
         }
@@ -708,8 +689,8 @@
         const displayContainer = document.getElementById('transactionDisplay');
         if (!displayContainer) return;
         
-        const isBuyer = verifiedPhone === transaction.buyerPhone;
-        const isSeller = verifiedPhone === transaction.sellerPhone;
+        const isBuyer = verifiedPhone === transaction.buyer_phone;
+        const isSeller = verifiedPhone === transaction.seller_phone;
         
         const statusConfig = {
             [TRANSACTION_STATUS.FUNDS_SECURED]: { class: 'status-secured', text: 'Funds Secured — Awaiting Delivery' },
@@ -724,35 +705,37 @@
         let detailsHtml = `
             <div class="transaction-details-card">
                 <div class="transaction-header">
-                    <h3>Transaction ${transaction.transactionId}</h3>
+                    <h3>Transaction ${transaction.id}</h3>
                     <span class="status-badge ${currentStatus.class}">${currentStatus.text}</span>
                 </div>
                 
                 <div class="transaction-info-grid">
                     <div class="info-item">
                         <span class="info-label">Item</span>
-                        <span class="info-value">${transaction.itemName}</span>
+                        <span class="info-value">${transaction.item_name}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Amount</span>
-                        <span class="info-value">${formatKenyanShillings(transaction.amount)}</span>
+                        <span class="info-value">${formatKES(transaction.amount)}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Buyer</span>
-                        <span class="info-value">${transaction.buyerPhone}</span>
+                        <span class="info-value">${transaction.buyer_phone}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Seller</span>
-                        <span class="info-value">${transaction.sellerPhone}</span>
+                        <span class="info-value">${transaction.seller_phone}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Initiated</span>
-                        <span class="info-value">${new Date(transaction.createdAt).toLocaleString()}</span>
+                        <span class="info-value">${new Date(transaction.created_at).toLocaleString()}</span>
                     </div>
                 </div>
         `;
         
-        if (isBuyer && transaction.status === TRANSACTION_STATUS.FUNDS_SECURED) {
+        if (isBuyer && (transaction.status === TRANSACTION_STATUS.FUNDS_SECURED || 
+                        transaction.status === TRANSACTION_STATUS.AWAITING_DELIVERY ||
+                        transaction.status === TRANSACTION_STATUS.DELIVERED)) {
             detailsHtml += `
                 <div class="action-section buyer-section">
                     <p class="role-indicator">You are transacting as the Buyer</p>
@@ -760,7 +743,7 @@
                         <label for="authCodeInput">Enter your authorization code to release funds</label>
                         <div class="auth-input-wrapper">
                             <input type="text" id="authCodeInput" placeholder="Six-digit code" maxlength="6" class="auth-input" inputmode="numeric">
-                            <button class="btn-release-funds" id="releaseFundsButton" data-transaction-id="${transaction.transactionId}">Release Funds</button>
+                            <button class="btn-release-funds" id="releaseFundsButton" data-transaction-id="${transaction.id}">Release Funds</button>
                         </div>
                     </div>
                     <button class="btn-dispute" id="raiseDisputeButton">Raise a Dispute</button>
@@ -770,7 +753,7 @@
             detailsHtml += `
                 <div class="action-section seller-section">
                     <p class="role-indicator">You are transacting as the Seller</p>
-                    <button class="btn-mark-shipped" id="markShippedButton" data-transaction-id="${transaction.transactionId}">Mark Item as Shipped</button>
+                    <button class="btn-mark-shipped" id="markShippedButton" data-transaction-id="${transaction.id}">Mark Item as Shipped</button>
                 </div>
             `;
         } else if (transaction.status === TRANSACTION_STATUS.FUNDS_RELEASED) {
@@ -790,57 +773,80 @@
         detailsHtml += `</div>`;
         displayContainer.innerHTML = detailsHtml;
         
-        setTimeout(function() {
+        setTimeout(() => {
             const releaseButton = document.getElementById('releaseFundsButton');
             if (releaseButton) {
-                releaseButton.addEventListener('click', function() {
+                releaseButton.addEventListener('click', async function() {
                     const authInput = document.getElementById('authCodeInput');
                     const transactionId = this.dataset.transactionId;
-                    const transactionRecord = EscrowStorage.get(transactionId);
                     
-                    if (!authInput.value || authInput.value !== transactionRecord.authCode) {
-                        ToastManager.error('The authorization code you entered is incorrect.', 'Access Denied');
+                    if (!authInput.value) {
+                        ToastManager.error('Please enter your authorization code.', 'Code Required');
                         return;
                     }
                     
-                    const confirmMessage = `Release ${formatKenyanShillings(transactionRecord.amount)} to the seller? This action cannot be undone.`;
-                    if (confirm(confirmMessage)) {
-                        EscrowStorage.update(transactionId, {
-                            status: TRANSACTION_STATUS.FUNDS_RELEASED,
-                            releasedAt: new Date().toISOString()
-                        });
-                        ToastManager.success('Funds have been released to the seller.', 'Transaction Complete');
-                        setTimeout(function() { location.reload(); }, 1500);
+                    ToastManager.info('Verifying authorization code...', 'Please wait');
+                    
+                    try {
+                        const result = await ApiClient.releaseFunds(transactionId, authInput.value, transaction.buyer_phone);
+                        
+                        if (result.success) {
+                            ToastManager.success('Funds have been released to the seller.', 'Transaction Complete');
+                            setTimeout(() => location.reload(), 1500);
+                        } else {
+                            ToastManager.error(result.error || 'The authorization code you entered is incorrect.', 'Access Denied');
+                        }
+                    } catch (error) {
+                        ToastManager.error('Could not connect to server.', 'Connection Error');
                     }
                 });
             }
             
             const shipButton = document.getElementById('markShippedButton');
             if (shipButton) {
-                shipButton.addEventListener('click', function() {
+                shipButton.addEventListener('click', async function() {
                     const transactionId = this.dataset.transactionId;
                     
                     if (confirm('Confirm that the item has been shipped? The buyer will be notified.')) {
-                        EscrowStorage.update(transactionId, {
-                            status: TRANSACTION_STATUS.AWAITING_DELIVERY,
-                            shippedAt: new Date().toISOString()
-                        });
-                        ToastManager.success('Item marked as shipped. The buyer has been notified.', 'Status Updated');
-                        setTimeout(function() { location.reload(); }, 1500);
+                        ToastManager.info('Updating status...', 'Please wait');
+                        
+                        try {
+                            const result = await ApiClient.updateStatus(transactionId, 'AWAITING_DELIVERY', transaction.seller_phone);
+                            
+                            if (result.success) {
+                                ToastManager.success('Item marked as shipped. The buyer has been notified.', 'Status Updated');
+                                setTimeout(() => location.reload(), 1500);
+                            } else {
+                                ToastManager.error(result.error || 'Failed to update status.', 'Error');
+                            }
+                        } catch (error) {
+                            ToastManager.error('Could not connect to server.', 'Connection Error');
+                        }
                     }
                 });
             }
             
             const disputeButton = document.getElementById('raiseDisputeButton');
             if (disputeButton) {
-                disputeButton.addEventListener('click', function() {
+                disputeButton.addEventListener('click', async function() {
                     if (confirm('Raise a dispute for this transaction? A support agent will review the case.')) {
                         const transactionId = releaseButton?.dataset.transactionId;
                         if (transactionId) {
-                            EscrowStorage.update(transactionId, { status: TRANSACTION_STATUS.DISPUTED });
+                            ToastManager.info('Filing dispute...', 'Please wait');
+                            
+                            try {
+                                const result = await ApiClient.updateStatus(transactionId, 'DISPUTED', verifiedPhone);
+                                
+                                if (result.success) {
+                                    ToastManager.warning('Dispute raised. Our team will contact both parties within 24 hours.', 'Dispute Filed');
+                                    setTimeout(() => location.reload(), 1500);
+                                } else {
+                                    ToastManager.error(result.error || 'Failed to raise dispute.', 'Error');
+                                }
+                            } catch (error) {
+                                ToastManager.error('Could not connect to server.', 'Connection Error');
+                            }
                         }
-                        ToastManager.warning('Dispute raised. Our team will contact both parties within 24 hours.', 'Dispute Filed');
-                        setTimeout(function() { location.reload(); }, 1500);
                     }
                 });
             }
@@ -937,6 +943,19 @@
     // APPLICATION ENTRY POINT
     // ============================================================================
     
+    async function checkBackendConnection() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/health`);
+            if (response.ok) {
+                console.log('Backend connected successfully.');
+            } else {
+                console.warn('Backend not responding.');
+            }
+        } catch (error) {
+            console.warn('Backend not reachable. Start the server with: python app.py');
+        }
+    }
+    
     function initializeApplication() {
         initializePageLoader();
         initializeMobileNavigation();
@@ -949,6 +968,8 @@
         highlightCurrentPageInNavigation();
         
         setTimeout(initializeAnimatedCounters, CONFIG.COUNTER_START_DELAY);
+        
+        checkBackendConnection();
         
         if (!localStorage.getItem('visited_escrow')) {
             setTimeout(function() {
