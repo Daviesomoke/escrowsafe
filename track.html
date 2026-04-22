@@ -39,7 +39,8 @@
                         <li class="nav-item"><a href="track.html" class="nav-link active">Track Transaction</a></li>
                         <li class="nav-item"><a href="about.html" class="nav-link">About Us</a></li>
                         <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
-                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start Transaction</a></li>
+                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start
+                                Transaction</a></li>
                     </ul>
                 </nav>
 
@@ -50,7 +51,8 @@
                         <li class="nav-item"><a href="track.html" class="nav-link active">Track Transaction</a></li>
                         <li class="nav-item"><a href="about.html" class="nav-link">About Us</a></li>
                         <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
-                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start Transaction</a></li>
+                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start
+                                Transaction</a></li>
                     </ul>
                 </nav>
             </div>
@@ -95,6 +97,19 @@
                         </div>
                     </div>
 
+                    <!-- Verification Section (shown when needed) -->
+                    <div class="verification-section" id="verificationSection" style="display: none;">
+                        <div class="verify-card">
+                            <h3>Verify Your Identity</h3>
+                            <p>Enter your phone number to verify you are the buyer or seller.</p>
+                            <div class="verify-input-group">
+                                <input type="tel" id="verifyPhone" class="verify-input" placeholder="Your phone number">
+                                <button class="btn-verify" id="verifyPhoneBtn">Verify</button>
+                            </div>
+                            <p class="verify-hint">This helps us show you the correct actions for this transaction.</p>
+                        </div>
+                    </div>
+
                     <div class="transaction-display" id="transactionDisplay"></div>
                 </div>
             </section>
@@ -110,12 +125,13 @@
     </div>
 
     <script>
-        document.querySelectorAll('.tab-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.tab-btn').forEach(function(b) {
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.tab-btn').forEach(function (b) {
                     b.classList.remove('active');
                 });
-                document.querySelectorAll('.tab-pane').forEach(function(p) {
+                document.querySelectorAll('.tab-pane').forEach(function (p) {
                     p.classList.remove('active');
                 });
 

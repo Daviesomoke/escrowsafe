@@ -3722,3 +3722,129 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) {
         width: 100%;
     }
 }
+
+
+
+
+
+
+
+
+
+/* ===== VERIFICATION SECTION ===== */
+.verification-section {
+    max-width: 500px;
+    margin: 20px auto;
+}
+
+.verify-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e8e8e8;
+}
+
+.verify-card h3 {
+    font-size: 18px;
+    color: #111;
+    margin-bottom: 10px;
+}
+
+.verify-card p {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.verify-input-group {
+    display: flex;
+    gap: 10px;
+}
+
+.verify-input {
+    flex: 1;
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 15px;
+}
+
+.verify-input:focus {
+    outline: none;
+    border-color: #2ecc71;
+}
+
+.btn-verify {
+    padding: 14px 24px;
+    background: #2ecc71;
+    color: #111;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-verify:hover {
+    background: #27ae60;
+}
+
+.verify-hint {
+    margin-top: 12px;
+    font-size: 12px;
+    color: #888;
+}
+
+/* ===== RESEND LINK BUTTON ===== */
+.btn-resend-link {
+    width: 100%;
+    padding: 16px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.btn-resend-link:hover {
+    background: #2980b9;
+}
+
+.link-hint {
+    font-size: 12px;
+    color: #888;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.btn-verify-prompt {
+    width: 100%;
+    padding: 14px;
+    background: #2ecc71;
+    color: #111;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-verify-prompt:hover {
+    background: #27ae60;
+}
+
+
+
+
+/* Info message for seller after shipping */
+.info-message {
+    background: #f0fdf4;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    color: #2ecc71;
+    font-weight: 500;
+    border: 1px solid rgba(46, 204, 113, 0.2);
+}

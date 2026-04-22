@@ -3,8 +3,10 @@
 
 
 
+
 /**
  * SecureEscrow Kenya - Frontend Client
+ * Magic Link Authorization System
  * Connects to Flask Backend API
  */
 
@@ -55,25 +57,43 @@
             return response.json();
         },
         
+        async validateToken(transactionId, token) {
+            const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/validate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            });
+            return response.json();
+        },
+        
         async trackByPhone(phone) {
             const response = await fetch(`${API_BASE_URL}/transactions/track/${phone}`);
             return response.json();
         },
         
-        async updateStatus(transactionId, status, phone) {
+        async updateStatus(transactionId, status, phone, token) {
             const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status, phone })
+                body: JSON.stringify({ status, phone, token })
             });
             return response.json();
         },
         
-        async releaseFunds(transactionId, authCode, phone) {
+        async releaseFunds(transactionId, token) {
             const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/release`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ authCode, phone })
+                body: JSON.stringify({ token })
+            });
+            return response.json();
+        },
+        
+        async resendMagicLink(transactionId, phone) {
+            const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/resend`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone })
             });
             return response.json();
         }
@@ -96,6 +116,11 @@
 
     function formatKES(amount) {
         return 'KES ' + amount.toLocaleString('en-KE');
+    }
+    
+    function getUrlParameter(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
     }
 
     // ============================================================================
@@ -149,7 +174,7 @@
     
     const ToastManager = {
         container: null,
-        icons: { success: '✓', error: '✗', warning: '!', info: 'i' },
+        icons: { success: 'OK', error: 'X', warning: '!', info: 'i' },
         titles: { success: 'Success', error: 'Error', warning: 'Warning', info: 'Information' },
         
         ensureContainerExists: function() {
@@ -301,120 +326,6 @@
     };
 
     // ============================================================================
-    // AUTHORIZATION CODE DISPLAY
-    // ============================================================================
-    
-    function displayAuthorizationCodePopup(transactionId, authorizationCode) {
-        const existingPopup = document.getElementById('authPopup');
-        if (existingPopup) existingPopup.remove();
-        
-        const overlayHtml = `
-            <div class="auth-popup-overlay" id="authPopup">
-                <div class="auth-popup">
-                    <div class="auth-popup-header">
-                        <h3>Transaction Created Successfully</h3>
-                    </div>
-                    <div class="auth-popup-body">
-                        <div class="auth-code-display">
-                            <p class="auth-label">Transaction Reference</p>
-                            <p class="auth-value">${transactionId}</p>
-                        </div>
-                        <div class="auth-code-display auth-code-main">
-                            <p class="auth-label">Authorization Code</p>
-                            <p class="auth-value-large">${authorizationCode}</p>
-                        </div>
-                        <div class="auth-warning">
-                            <p><strong>Save this code somewhere safe. It cannot be recovered.</strong></p>
-                            <p>You will need this six-digit code to authorize the release of funds.</p>
-                            <p>Never share this code with anyone, including the seller.</p>
-                        </div>
-                        <div class="auth-actions">
-                            <button class="btn-auth-primary" id="copyCodesButton">Copy Both Codes</button>
-                            <button class="btn-auth-secondary" id="confirmSavedButton">I Have Saved My Code</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.body.insertAdjacentHTML('beforeend', overlayHtml);
-        
-        const popupElement = document.getElementById('authPopup');
-        
-        document.getElementById('copyCodesButton').addEventListener('click', function() {
-            const textToCopy = `Transaction ID: ${transactionId}\nAuthorization Code: ${authorizationCode}`;
-            
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(textToCopy).then(function() {
-                    ToastManager.success('Codes copied to clipboard', 'Copied');
-                }).catch(function() {
-                    ToastManager.error('Unable to copy codes automatically', 'Copy Failed');
-                });
-            } else {
-                ToastManager.info('Please manually copy the codes', 'Copy Unavailable');
-            }
-        });
-        
-        document.getElementById('confirmSavedButton').addEventListener('click', function() {
-            popupElement.remove();
-            ToastManager.info('Your funds are now secured in escrow.', 'Transaction Secured');
-        });
-        
-        popupElement.addEventListener('click', function(event) {
-            if (event.target === popupElement) {
-                popupElement.remove();
-            }
-        });
-    }
-
-    // ============================================================================
-    // SMS PREVIEW
-    // ============================================================================
-    
-    function displaySmsPreview(transactionId, buyerPhone, sellerPhone, itemName, amount) {
-        const formattedAmount = formatKES(amount);
-        
-        const existingPreview = document.getElementById('smsPreview');
-        if (existingPreview) existingPreview.remove();
-        
-        const overlayHtml = `
-            <div class="sms-preview-overlay" id="smsPreview">
-                <div class="sms-preview">
-                    <div class="sms-header">
-                        <span>SMS Notification — Sent to Seller</span>
-                        <button class="sms-close" id="closeSmsPreview" aria-label="Close preview">&times;</button>
-                    </div>
-                    <div class="sms-body">
-                        <div class="sms-bubble">
-                            <p class="sms-sender">SecureEscrow Kenya</p>
-                            <p class="sms-text">Transaction: ${transactionId}</p>
-                            <p class="sms-text">Buyer: ${buyerPhone}</p>
-                            <p class="sms-text">Item: ${itemName}</p>
-                            <p class="sms-text">Amount: ${formattedAmount}</p>
-                            <p class="sms-text" style="margin-top: 10px;">Funds secured in escrow. Please prepare for delivery. You will receive ${formattedAmount} after buyer confirmation.</p>
-                        </div>
-                        <p class="sms-note">Recipient: ${sellerPhone}</p>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.body.insertAdjacentHTML('beforeend', overlayHtml);
-        
-        const previewElement = document.getElementById('smsPreview');
-        
-        document.getElementById('closeSmsPreview').addEventListener('click', function() {
-            previewElement.remove();
-        });
-        
-        previewElement.addEventListener('click', function(event) {
-            if (event.target === previewElement) {
-                previewElement.remove();
-            }
-        });
-    }
-
-    // ============================================================================
     // ESCROW FORM HANDLER
     // ============================================================================
     
@@ -439,9 +350,15 @@
             });
         }
         
-        form.addEventListener('submit', async function(event) {
-            event.preventDefault();
-            event.stopPropagation();
+        const submitButton = document.getElementById('continuePaymentBtn');
+        if (!submitButton) {
+            console.error('Continue payment button not found');
+            return;
+        }
+        
+        submitButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             
             const itemNameInput = form.querySelector('#itemName');
             const amountInput = form.querySelector('#amount');
@@ -553,17 +470,18 @@
                     const result = await ApiClient.createTransaction(transactionData);
                     
                     if (result.success) {
-                        setTimeout(function() {
-                            displayAuthorizationCodePopup(result.transactionId, result.authCode);
-                            displaySmsPreview(result.transactionId, buyerPhoneInput.value, sellerPhoneInput.value, itemNameInput.value, baseAmount);
-                        }, 300);
+                        // SIMPLE TOAST INSTEAD OF SMS PREVIEW POPUP
+                        ToastManager.success('Transaction created! Seller has been notified.', 'Success');
                         
                         form.reset();
                         if (displayAmount) displayAmount.textContent = 'KES 0';
                         if (escrowFeeDisplay) escrowFeeDisplay.textContent = 'KES 0';
                         if (totalAmountDisplay) totalAmountDisplay.textContent = 'KES 0';
                         
-                        ToastManager.success('Transaction created successfully', 'Success');
+                        // Show transaction ID in a small info toast
+                        setTimeout(() => {
+                            ToastManager.info(`Reference: ${result.transactionId}`, 'Transaction ID');
+                        }, 500);
                     } else {
                         ToastManager.error(result.error || 'Failed to create transaction', 'Error');
                     }
@@ -636,61 +554,169 @@
     // TRANSACTION TRACKING PAGE
     // ============================================================================
     
-    function initializeTrackingPage() {
-        const trackForm = document.getElementById('trackForm');
-        const phoneForm = document.getElementById('phoneForm');
-        
-        if (!trackForm && !phoneForm) return;
-        
-        if (trackForm) {
-            trackForm.addEventListener('submit', async function(event) {
-                event.preventDefault();
-                const transactionId = document.getElementById('trackId').value.trim().toUpperCase();
+    let currentVerifiedPhone = null;
+    let currentMagicToken = null;
+    let currentUserRole = null;
+    let currentTransactionId = null;
+    
+   function initializeTrackingPage() {
+    const trackForm = document.getElementById('trackForm');
+    const phoneForm = document.getElementById('phoneForm');
+    
+    // Check for magic token in URL
+    const urlToken = getUrlParameter('token');
+    const urlId = getUrlParameter('id');
+    
+    // If token is present, ALWAYS validate (buyer/seller magic link)
+    if (urlToken && urlId) {
+        validateAndDisplayWithToken(urlId, urlToken);
+    } else if (urlId) {
+        // No token - just load transaction (view only)
+        loadTransactionById(urlId);
+    }
+    
+    if (trackForm) {
+        trackForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const transactionId = document.getElementById('trackId').value.trim().toUpperCase();
+            currentTransactionId = transactionId;
+            loadTransactionById(transactionId);
+        });
+    }
+    
+    if (phoneForm) {
+        phoneForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const phoneNumber = document.getElementById('trackPhone').value.trim();
+            
+            ToastManager.info('Searching for transactions...', 'Please wait');
+            
+            try {
+                const result = await ApiClient.trackByPhone(phoneNumber);
                 
-                ToastManager.info('Searching for transaction...', 'Please wait');
-                
-                try {
-                    const transaction = await ApiClient.getTransaction(transactionId);
-                    
-                    if (transaction.error) {
-                        ToastManager.error('No transaction found with this reference.', 'Not Found');
-                    } else {
-                        renderTransactionDetails(transaction, null);
-                    }
-                } catch (error) {
-                    ToastManager.error('Could not connect to server.', 'Connection Error');
+                if (result.error) {
+                    ToastManager.error('No transactions found for this phone number.', 'Not Found');
+                } else if (result.transactions && result.transactions.length > 0) {
+                    currentVerifiedPhone = phoneNumber;
+                    currentUserRole = null;
+                    currentMagicToken = null;
+                    currentTransactionId = result.transactions[0].id;
+                    renderTransactionDetails(result.transactions[0], phoneNumber, null, null);
                 }
-            });
+            } catch (error) {
+                ToastManager.error('Could not connect to server.', 'Connection Error');
+            }
+        });
+    }
+    
+    // Setup verification button
+    const verifyBtn = document.getElementById('verifyPhoneBtn');
+    if (verifyBtn) {
+        verifyBtn.addEventListener('click', function() {
+            const phone = document.getElementById('verifyPhone').value.trim();
+            if (!validateKenyanPhone(phone)) {
+                ToastManager.error('Please enter a valid phone number', 'Invalid Phone');
+                return;
+            }
+            currentVerifiedPhone = phone;
+            currentUserRole = null;
+            document.getElementById('verificationSection').style.display = 'none';
+            
+            if (currentTransactionId) {
+                loadTransactionWithPhone(currentTransactionId, phone);
+            }
+        });
+    }
+}
+
+
+
+
+
+
+
+    
+    async function validateAndDisplayWithToken(transactionId, token) {
+        ToastManager.info('Verifying your access...', 'Please wait');
+        
+        try {
+            const result = await ApiClient.validateToken(transactionId, token);
+            
+            if (result.success) {
+                currentMagicToken = token;
+                currentVerifiedPhone = result.role === 'buyer' ? result.transaction.buyer_phone : result.transaction.seller_phone;
+                currentUserRole = result.role;
+                currentTransactionId = transactionId;
+                renderTransactionDetails(result.transaction, currentVerifiedPhone, token, result.role);
+                ToastManager.success(`Access verified as ${result.role}.`, 'Verified');
+            } else {
+                ToastManager.error(result.error || 'Invalid or expired link', 'Access Denied');
+                loadTransactionById(transactionId);
+            }
+        } catch (error) {
+            ToastManager.error('Could not connect to server.', 'Connection Error');
         }
+    }
+    
+    async function loadTransactionById(transactionId) {
+        ToastManager.info('Searching for transaction...', 'Please wait');
         
-        if (phoneForm) {
-            phoneForm.addEventListener('submit', async function(event) {
-                event.preventDefault();
-                const phoneNumber = document.getElementById('trackPhone').value.trim();
-                
-                ToastManager.info('Searching for transactions...', 'Please wait');
-                
-                try {
-                    const result = await ApiClient.trackByPhone(phoneNumber);
-                    
-                    if (result.error) {
-                        ToastManager.error('No transactions found for this phone number.', 'Not Found');
-                    } else if (result.transactions && result.transactions.length > 0) {
-                        renderTransactionDetails(result.transactions[0], phoneNumber);
-                    }
-                } catch (error) {
-                    ToastManager.error('Could not connect to server.', 'Connection Error');
-                }
-            });
+        try {
+            const transaction = await ApiClient.getTransaction(transactionId);
+            
+            if (transaction.error) {
+                ToastManager.error('No transaction found with this reference.', 'Not Found');
+            } else {
+                currentMagicToken = null;
+                currentUserRole = null;
+                currentTransactionId = transactionId;
+                renderTransactionDetails(transaction, null, null, null);
+            }
+        } catch (error) {
+            ToastManager.error('Could not connect to server.', 'Connection Error');
+        }
+    }
+    
+    async function loadTransactionWithPhone(transactionId, phone) {
+        try {
+            const transaction = await ApiClient.getTransaction(transactionId);
+            
+            if (transaction.error) {
+                ToastManager.error('Transaction not found.', 'Not Found');
+            } else {
+                currentMagicToken = null;
+                currentUserRole = null;
+                currentTransactionId = transactionId;
+                renderTransactionDetails(transaction, phone, null, null);
+            }
+        } catch (error) {
+            ToastManager.error('Could not connect to server.', 'Connection Error');
+        }
+    }
+    
+    async function refreshTransactionDisplay() {
+        if (!currentTransactionId) return;
+        
+        try {
+            const transaction = await ApiClient.getTransaction(currentTransactionId);
+            
+            if (!transaction.error) {
+                renderTransactionDetails(transaction, currentVerifiedPhone, currentMagicToken, currentUserRole);
+            }
+        } catch (error) {
+            console.error('Failed to refresh:', error);
         }
     }
 
-    function renderTransactionDetails(transaction, verifiedPhone) {
+    function renderTransactionDetails(transaction, verifiedPhone, magicToken, userRole) {
         const displayContainer = document.getElementById('transactionDisplay');
+        const verificationSection = document.getElementById('verificationSection');
         if (!displayContainer) return;
         
         const isBuyer = verifiedPhone === transaction.buyer_phone;
         const isSeller = verifiedPhone === transaction.seller_phone;
+        const isBuyerToken = (userRole === 'buyer');
+        const isSellerToken = (userRole === 'seller');
         
         const statusConfig = {
             [TRANSACTION_STATUS.FUNDS_SECURED]: { class: 'status-secured', text: 'Funds Secured — Awaiting Delivery' },
@@ -730,42 +756,98 @@
                         <span class="info-label">Initiated</span>
                         <span class="info-value">${new Date(transaction.created_at).toLocaleString()}</span>
                     </div>
-                </div>
         `;
         
-        if (isBuyer && (transaction.status === TRANSACTION_STATUS.FUNDS_SECURED || 
-                        transaction.status === TRANSACTION_STATUS.AWAITING_DELIVERY ||
-                        transaction.status === TRANSACTION_STATUS.DELIVERED)) {
+        // Add shipped date if available
+        if (transaction.shipped_at) {
+            detailsHtml += `
+                    <div class="info-item">
+                        <span class="info-label">Shipped</span>
+                        <span class="info-value">${new Date(transaction.shipped_at).toLocaleString()}</span>
+                    </div>
+            `;
+        }
+        
+        // Add released date if available
+        if (transaction.released_at) {
+            detailsHtml += `
+                    <div class="info-item">
+                        <span class="info-label">Released</span>
+                        <span class="info-value">${new Date(transaction.released_at).toLocaleString()}</span>
+                    </div>
+            `;
+        }
+        
+        detailsHtml += `</div>`;
+        
+        // SECURITY: Only BUYER token can release funds
+        if (isBuyerToken && (transaction.status === TRANSACTION_STATUS.FUNDS_SECURED || 
+                            transaction.status === TRANSACTION_STATUS.AWAITING_DELIVERY ||
+                            transaction.status === TRANSACTION_STATUS.DELIVERED)) {
             detailsHtml += `
                 <div class="action-section buyer-section">
-                    <p class="role-indicator">You are transacting as the Buyer</p>
-                    <div class="auth-input-group">
-                        <label for="authCodeInput">Enter your authorization code to release funds</label>
-                        <div class="auth-input-wrapper">
-                            <input type="text" id="authCodeInput" placeholder="Six-digit code" maxlength="6" class="auth-input" inputmode="numeric">
-                            <button class="btn-release-funds" id="releaseFundsButton" data-transaction-id="${transaction.id}">Release Funds</button>
-                        </div>
-                    </div>
+                    <p class="role-indicator">You are verified as the Buyer</p>
+                    <button class="btn-release-funds" id="releaseFundsButton" data-transaction-id="${transaction.id}">Release Funds to Seller</button>
                     <button class="btn-dispute" id="raiseDisputeButton">Raise a Dispute</button>
                 </div>
             `;
-        } else if (isSeller && transaction.status === TRANSACTION_STATUS.FUNDS_SECURED) {
+        }
+        // Buyer without magic token - needs to request link
+        else if (isBuyer && !isBuyerToken && (transaction.status === TRANSACTION_STATUS.FUNDS_SECURED || 
+                                              transaction.status === TRANSACTION_STATUS.AWAITING_DELIVERY ||
+                                              transaction.status === TRANSACTION_STATUS.DELIVERED)) {
+            detailsHtml += `
+                <div class="action-section buyer-section">
+                    <p class="role-indicator">You are verified as the Buyer</p>
+                    <button class="btn-resend-link" id="resendLinkButton" data-transaction-id="${transaction.id}">Resend Magic Link</button>
+                    <button class="btn-dispute" id="raiseDisputeButton">Raise a Dispute</button>
+                    <p class="link-hint">A magic link will be sent to your phone to authorize release.</p>
+                </div>
+            `;
+        }
+        // Seller actions - show for BOTH token and phone verification
+        else if ((isSellerToken || isSeller) && transaction.status === TRANSACTION_STATUS.FUNDS_SECURED) {
             detailsHtml += `
                 <div class="action-section seller-section">
-                    <p class="role-indicator">You are transacting as the Seller</p>
+                    <p class="role-indicator">You are verified as the Seller</p>
                     <button class="btn-mark-shipped" id="markShippedButton" data-transaction-id="${transaction.id}">Mark Item as Shipped</button>
                 </div>
             `;
-        } else if (transaction.status === TRANSACTION_STATUS.FUNDS_RELEASED) {
+        }
+        // Seller view after shipping - show current status
+        else if ((isSellerToken || isSeller) && transaction.status === TRANSACTION_STATUS.AWAITING_DELIVERY) {
+            detailsHtml += `
+                <div class="action-section seller-section">
+                    <p class="role-indicator">You are verified as the Seller</p>
+                    <div class="info-message">Item marked as shipped. Waiting for buyer confirmation.</div>
+                </div>
+            `;
+        }
+        // Completed transaction
+        else if (transaction.status === TRANSACTION_STATUS.FUNDS_RELEASED) {
             detailsHtml += `
                 <div class="action-section completed-section">
                     <p class="completion-message">This transaction is complete. Funds have been released to the seller.</p>
                 </div>
             `;
-        } else {
+        }
+        // Not verified - show verification prompt
+        else if (!verifiedPhone) {
             detailsHtml += `
                 <div class="action-section viewer-section">
-                    <p class="role-indicator">View only. Verify your phone number to access transaction actions.</p>
+                    <p class="role-indicator">Verify your phone number to access transaction actions.</p>
+                    <button class="btn-verify-prompt" id="showVerificationBtn">Verify Phone Number</button>
+                </div>
+            `;
+            if (verificationSection) {
+                verificationSection.style.display = 'block';
+            }
+        }
+        // View only
+        else {
+            detailsHtml += `
+                <div class="action-section viewer-section">
+                    <p class="role-indicator">View only. You are not authorized to perform actions on this transaction.</p>
                 </div>
             `;
         }
@@ -773,28 +855,47 @@
         detailsHtml += `</div>`;
         displayContainer.innerHTML = detailsHtml;
         
+        // Event listeners
         setTimeout(() => {
             const releaseButton = document.getElementById('releaseFundsButton');
             if (releaseButton) {
                 releaseButton.addEventListener('click', async function() {
-                    const authInput = document.getElementById('authCodeInput');
                     const transactionId = this.dataset.transactionId;
                     
-                    if (!authInput.value) {
-                        ToastManager.error('Please enter your authorization code.', 'Code Required');
-                        return;
+                    if (confirm(`Release ${formatKES(transaction.amount)} to seller? This cannot be undone.`)) {
+                        ToastManager.info('Processing release...', 'Please wait');
+                        
+                        try {
+                            const result = await ApiClient.releaseFunds(transactionId, currentMagicToken);
+                            
+                            if (result.success) {
+                                ToastManager.success('Funds have been released to the seller.', 'Transaction Complete');
+                                // Refresh display instead of reloading page
+                                await refreshTransactionDisplay();
+                            } else {
+                                ToastManager.error(result.error || 'Failed to release funds.', 'Error');
+                            }
+                        } catch (error) {
+                            ToastManager.error('Could not connect to server.', 'Connection Error');
+                        }
                     }
+                });
+            }
+            
+            const resendButton = document.getElementById('resendLinkButton');
+            if (resendButton) {
+                resendButton.addEventListener('click', async function() {
+                    const transactionId = this.dataset.transactionId;
                     
-                    ToastManager.info('Verifying authorization code...', 'Please wait');
+                    ToastManager.info('Sending new magic link...', 'Please wait');
                     
                     try {
-                        const result = await ApiClient.releaseFunds(transactionId, authInput.value, transaction.buyer_phone);
+                        const result = await ApiClient.resendMagicLink(transactionId, verifiedPhone);
                         
                         if (result.success) {
-                            ToastManager.success('Funds have been released to the seller.', 'Transaction Complete');
-                            setTimeout(() => location.reload(), 1500);
+                            ToastManager.success('New magic link sent to your phone.', 'Link Sent');
                         } else {
-                            ToastManager.error(result.error || 'The authorization code you entered is incorrect.', 'Access Denied');
+                            ToastManager.error(result.error || 'Failed to send link.', 'Error');
                         }
                     } catch (error) {
                         ToastManager.error('Could not connect to server.', 'Connection Error');
@@ -811,11 +912,12 @@
                         ToastManager.info('Updating status...', 'Please wait');
                         
                         try {
-                            const result = await ApiClient.updateStatus(transactionId, 'AWAITING_DELIVERY', transaction.seller_phone);
+                            const result = await ApiClient.updateStatus(transactionId, 'AWAITING_DELIVERY', verifiedPhone, currentMagicToken);
                             
                             if (result.success) {
-                                ToastManager.success('Item marked as shipped. The buyer has been notified.', 'Status Updated');
-                                setTimeout(() => location.reload(), 1500);
+                                ToastManager.success('Item marked as shipped.', 'Status Updated');
+                                // Refresh display instead of reloading page
+                                await refreshTransactionDisplay();
                             } else {
                                 ToastManager.error(result.error || 'Failed to update status.', 'Error');
                             }
@@ -830,16 +932,16 @@
             if (disputeButton) {
                 disputeButton.addEventListener('click', async function() {
                     if (confirm('Raise a dispute for this transaction? A support agent will review the case.')) {
-                        const transactionId = releaseButton?.dataset.transactionId;
+                        const transactionId = releaseButton?.dataset.transactionId || resendButton?.dataset.transactionId;
                         if (transactionId) {
                             ToastManager.info('Filing dispute...', 'Please wait');
                             
                             try {
-                                const result = await ApiClient.updateStatus(transactionId, 'DISPUTED', verifiedPhone);
+                                const result = await ApiClient.updateStatus(transactionId, 'DISPUTED', verifiedPhone, currentMagicToken);
                                 
                                 if (result.success) {
-                                    ToastManager.warning('Dispute raised. Our team will contact both parties within 24 hours.', 'Dispute Filed');
-                                    setTimeout(() => location.reload(), 1500);
+                                    ToastManager.warning('Dispute raised. Our team will contact both parties.', 'Dispute Filed');
+                                    await refreshTransactionDisplay();
                                 } else {
                                     ToastManager.error(result.error || 'Failed to raise dispute.', 'Error');
                                 }
@@ -848,6 +950,13 @@
                             }
                         }
                     }
+                });
+            }
+            
+            const showVerifyBtn = document.getElementById('showVerificationBtn');
+            if (showVerifyBtn && verificationSection) {
+                showVerifyBtn.addEventListener('click', function() {
+                    verificationSection.style.display = 'block';
                 });
             }
         }, 100);
@@ -957,6 +1066,7 @@
     }
     
     function initializeApplication() {
+        console.log('Initializing SecureEscrow Kenya...');
         initializePageLoader();
         initializeMobileNavigation();
         initializeBackToTop();

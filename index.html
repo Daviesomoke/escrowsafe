@@ -184,7 +184,7 @@
                         <div class="hero-form-wrapper" id="start-escrow">
                             <div class="escrow-form-card">
                                 <h2 class="form-title">Initiate Escrow Agreement</h2>
-                                <form class="escrow-form" id="escrowForm" onsubmit="return false;">
+                                <form class="escrow-form" id="escrowForm">
                                     <div class="form-field">
                                         <label for="transactionType" class="form-label">Transaction Category</label>
                                         <select id="transactionType" name="transactionType" class="form-select">
@@ -250,7 +250,7 @@
                                         </div>
                                     </div>
 
-                                    <button type="submit" class="btn btn-primary btn-full">
+                                    <button type="button" class="btn btn-primary btn-full" id="continuePaymentBtn">
                                         Continue to Payment Details
                                     </button>
 
