@@ -6,7 +6,7 @@
 
 """
 SecureEscrow Kenya - Backend Server
-Magic Link Authorization System with OTP Verification
+Magic Link Authorization System with Release OTP Verification
 Run with: python app.py
 """
 
@@ -373,122 +373,6 @@ def create_transaction():
         'transactionId': transaction_id,
         'message': 'Transaction created. Check your phone for the magic link.'
     }), 201
-
-
-@app.route('/api/transactions/<transaction_id>/request-otp', methods=['POST'])
-def request_otp(transaction_id):
-    """Generate and send OTP to buyer for payment verification."""
-    data = request.json
-    phone = data.get('phone', '')
-    
-    if not phone:
-        return jsonify({'error': 'Phone number is required'}), 400
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('SELECT * FROM transactions WHERE id = ?', (transaction_id,))
-    row = cursor.fetchone()
-    
-    if not row:
-        conn.close()
-        return jsonify({'error': 'Transaction not found'}), 404
-    
-    transaction = dict(row)
-    
-    if normalize_phone(phone) != transaction['buyer_phone']:
-        conn.close()
-        return jsonify({'error': 'Phone does not match buyer'}), 403
-    
-    if transaction['status'] != 'FUNDS_SECURED':
-        conn.close()
-        return jsonify({'error': 'Transaction is not in the correct state'}), 400
-    
-    # Rate limiting for resend
-    if transaction['otp_expires_at']:
-        otp_expires = datetime.fromisoformat(transaction['otp_expires_at'])
-        resend_available = otp_expires - timedelta(minutes=OTP_EXPIRY_MINUTES) + timedelta(minutes=2)
-        if datetime.now() < resend_available:
-            conn.close()
-            return jsonify({'error': 'Please wait before requesting a new code'}), 429
-    
-    otp_code = generate_otp()
-    otp_hash = hash_value(otp_code)
-    otp_expires_at = (datetime.now() + timedelta(minutes=OTP_EXPIRY_MINUTES)).isoformat()
-    
-    cursor.execute('''
-        UPDATE transactions 
-        SET otp_hash = ?, otp_expires_at = ?, otp_attempts = 0
-        WHERE id = ?
-    ''', (otp_hash, otp_expires_at, transaction_id))
-    
-    conn.commit()
-    conn.close()
-    
-    send_otp_sms(transaction['buyer_phone'], otp_code, transaction_id)
-    log_activity(transaction_id, 'OTP_SENT', transaction['buyer_phone'], 'OTP sent for payment verification')
-    
-    return jsonify({'success': True, 'message': 'Verification code sent to your phone'})
-
-
-@app.route('/api/transactions/<transaction_id>/verify-otp', methods=['POST'])
-def verify_otp(transaction_id):
-    """Verify OTP and mark payment as verified."""
-    data = request.json
-    phone = data.get('phone', '')
-    otp_code = data.get('otp', '')
-    
-    if not phone or not otp_code:
-        return jsonify({'error': 'Phone and OTP are required'}), 400
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('SELECT * FROM transactions WHERE id = ?', (transaction_id,))
-    row = cursor.fetchone()
-    
-    if not row:
-        conn.close()
-        return jsonify({'error': 'Transaction not found'}), 404
-    
-    transaction = dict(row)
-    
-    if normalize_phone(phone) != transaction['buyer_phone']:
-        conn.close()
-        return jsonify({'error': 'Phone does not match buyer'}), 403
-    
-    if not transaction['otp_hash']:
-        conn.close()
-        return jsonify({'error': 'No OTP was requested'}), 400
-    
-    # Check expiry
-    otp_expires_at = datetime.fromisoformat(transaction['otp_expires_at'])
-    if datetime.now() > otp_expires_at:
-        conn.close()
-        return jsonify({'error': 'Code has expired. Request a new one.'}), 403
-    
-    # Check attempts
-    if transaction['otp_attempts'] >= 3:
-        conn.close()
-        return jsonify({'error': 'Too many attempts. Request a new code.'}), 429
-    
-    # Verify OTP
-    otp_hash = hash_value(otp_code)
-    if otp_hash != transaction['otp_hash']:
-        cursor.execute('UPDATE transactions SET otp_attempts = otp_attempts + 1 WHERE id = ?', (transaction_id,))
-        conn.commit()
-        conn.close()
-        attempts_left = 3 - (transaction['otp_attempts'] + 1)
-        return jsonify({'error': f'Invalid code. {attempts_left} attempts remaining.'}), 403
-    
-    # Mark as verified
-    cursor.execute('UPDATE transactions SET payment_verified = 1, otp_hash = NULL, otp_expires_at = NULL WHERE id = ?', (transaction_id,))
-    conn.commit()
-    conn.close()
-    
-    log_activity(transaction_id, 'OTP_VERIFIED', transaction['buyer_phone'], 'Payment verified via OTP')
-    
-    return jsonify({'success': True, 'message': 'Phone verified successfully'})
 
 
 @app.route('/api/transactions/<transaction_id>/request-release-otp', methods=['POST'])
@@ -956,7 +840,7 @@ if __name__ == '__main__':
     init_database()
     print("\n" + "=" * 50)
     print("SecureEscrow Kenya Backend Server")
-    print("OTP Verification System Active")
+    print("Release OTP Verification Active")
     print("=" * 50)
     print(f"\nToken expiry: {TOKEN_EXPIRY_DAYS} days")
     print(f"OTP expiry: {OTP_EXPIRY_MINUTES} minutes")

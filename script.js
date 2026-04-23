@@ -115,24 +115,6 @@
             return response.json();
         },
 
-        async requestOtp(transactionId, phone) {
-            const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/request-otp`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone })
-            });
-            return response.json();
-        },
-
-        async verifyOtp(transactionId, phone, otp) {
-            const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/verify-otp`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone, otp })
-            });
-            return response.json();
-        },
-
         async requestReleaseOtp(transactionId, phone, token) {
             const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/request-release-otp`, {
                 method: 'POST',
@@ -215,10 +197,8 @@
         const otpInputs = document.querySelectorAll('.otp-digit');
         const errorElement = document.getElementById('otpError');
         
-        // Auto-focus first input
         otpInputs[0].focus();
         
-        // Auto-tab between inputs
         otpInputs.forEach((input, index) => {
             input.addEventListener('input', function() {
                 if (this.value.length === 1 && index < 5) {
@@ -492,7 +472,7 @@
     };
 
     // ============================================================================
-    // ESCROW FORM HANDLER
+    // ESCROW FORM HANDLER (NO OTP ON PAYMENT - BACK TO ORIGINAL)
     // ============================================================================
     
     function initializeEscrowForm() {
@@ -643,6 +623,7 @@
                 }, 200);
             }
             
+            // ORIGINAL FLOW - No OTP on payment
             document.getElementById('confirmPaymentButton').addEventListener('click', async function() {
                 dismissPopup();
                 
@@ -652,51 +633,21 @@
                     const result = await ApiClient.createTransaction(transactionData);
                     
                     if (result.success) {
-                        // Show OTP popup after payment is made
-                        showOtpPopup(
-                            buyerPhoneInput.value,
-                            async function(otpCode, callback) {
-                                if (otpCode === '__RESEND__') {
-                                    try {
-                                        await ApiClient.requestOtp(result.transactionId, buyerPhoneInput.value);
-                                        callback('__CLEAR__');
-                                        ToastManager.info('New code sent.', 'OTP Sent');
-                                    } catch (error) {
-                                        callback('Failed to resend code.');
-                                    }
-                                    return;
-                                }
-                                
-                                try {
-                                    const otpResult = await ApiClient.verifyOtp(result.transactionId, buyerPhoneInput.value, otpCode);
-                                    if (otpResult.success) {
-                                        callback(null);
-                                        ToastManager.success('Transaction created! Seller has been notified.', 'Success');
-                                        form.reset();
-                                        if (displayAmount) displayAmount.textContent = 'KES 0';
-                                        if (totalAmountDisplay) totalAmountDisplay.textContent = 'KES 0';
-                                        setTimeout(() => {
-                                            ToastManager.info(`Reference: ${result.transactionId}`, 'Transaction ID');
-                                        }, 500);
-                                    } else {
-                                        callback(otpResult.error || 'Invalid code');
-                                    }
-                                } catch (error) {
-                                    callback('Could not connect to server.');
-                                }
-                            },
-                            function() {
-                                ToastManager.info('Transaction created without verification.', 'Notice');
-                                form.reset();
-                            },
-                            'Verify Payment'
-                        );
+                        ToastManager.success('Transaction created! Seller has been notified.', 'Success');
+                        
+                        form.reset();
+                        if (displayAmount) displayAmount.textContent = 'KES 0';
+                        if (totalAmountDisplay) totalAmountDisplay.textContent = 'KES 0';
+                        
+                        setTimeout(() => {
+                            ToastManager.info(`Reference: ${result.transactionId}`, 'Transaction ID');
+                        }, 500);
                     } else {
                         ToastManager.error(result.error || 'Failed to create transaction', 'Error');
                     }
                 } catch (error) {
                     console.error('API Error:', error);
-                    ToastManager.error('Could not connect to server.', 'Connection Error');
+                    ToastManager.error('Could not connect to server. Make sure backend is running.', 'Connection Error');
                 }
             });
             
@@ -1082,7 +1033,11 @@
                     const transactionId = this.dataset.transactionId;
                     const releaseAmount = parseFloat(this.dataset.amount);
                     
-                    const performRelease = async function(otpCode) {
+                    if (!confirm(`Release ${formatKES(releaseAmount)} to seller? This cannot be undone.`)) return;
+                    
+                    const needsOtp = releaseAmount > CONFIG.RELEASE_OTP_THRESHOLD;
+                    
+                    const doRelease = async function(otpCode) {
                         ToastManager.info('Processing release...', 'Please wait');
                         try {
                             const result = await ApiClient.releaseFunds(transactionId, currentMagicToken, otpCode || null);
@@ -1090,28 +1045,6 @@
                             if (result.success) {
                                 ToastManager.success('Payment sent to seller.', 'Transaction Complete');
                                 await refreshTransactionDisplay();
-                            } else if (result.requireOtp) {
-                                // Amount above threshold, need OTP
-                                showOtpPopup(
-                                    currentVerifiedPhone,
-                                    async function(code, callback) {
-                                        if (code === '__RESEND__') {
-                                            try {
-                                                await ApiClient.requestReleaseOtp(transactionId, currentVerifiedPhone, currentMagicToken);
-                                                callback('__CLEAR__');
-                                                ToastManager.info('New code sent.', 'OTP Sent');
-                                            } catch (error) {
-                                                callback('Failed to resend code.');
-                                            }
-                                            return;
-                                        }
-                                        await performRelease(code);
-                                    },
-                                    function() {
-                                        ToastManager.info('Release cancelled.', 'Cancelled');
-                                    },
-                                    'Verify Release'
-                                );
                             } else {
                                 ToastManager.error(result.error || 'Failed to release funds.', 'Error');
                             }
@@ -1120,8 +1053,42 @@
                         }
                     };
                     
-                    if (confirm(`Release ${formatKES(releaseAmount)} to seller? This cannot be undone.`)) {
-                        await performRelease(null);
+                    if (needsOtp) {
+                        // Request release OTP first
+                        try {
+                            const otpReq = await ApiClient.requestReleaseOtp(transactionId, currentVerifiedPhone, currentMagicToken);
+                            if (!otpReq.success) {
+                                ToastManager.error(otpReq.error || 'Failed to send code', 'Error');
+                                return;
+                            }
+                        } catch (e) {
+                            ToastManager.error('Could not send verification code.', 'Error');
+                            return;
+                        }
+                        
+                        showOtpPopup(
+                            currentVerifiedPhone,
+                            async function(code, callback) {
+                                if (code === '__RESEND__') {
+                                    try {
+                                        await ApiClient.requestReleaseOtp(transactionId, currentVerifiedPhone, currentMagicToken);
+                                        callback('__CLEAR__');
+                                        ToastManager.info('New code sent.', 'OTP Sent');
+                                    } catch (error) {
+                                        callback('Failed to resend code.');
+                                    }
+                                    return;
+                                }
+                                await doRelease(code);
+                                callback(null);
+                            },
+                            function() {
+                                ToastManager.info('Release cancelled.', 'Cancelled');
+                            },
+                            'Verify Release'
+                        );
+                    } else {
+                        await doRelease(null);
                     }
                 });
             }
