@@ -226,7 +226,30 @@
                                     <div class="form-field">
                                         <label for="sellerContact" class="form-label">Seller Contact</label>
                                         <input type="tel" id="sellerContact" name="sellerContact" class="form-input"
-                                            placeholder="Seller's M-PESA number">
+                                            placeholder="Seller's phone number">
+                                    </div>
+
+                                    <!-- NEW: Payout Method Section -->
+                                    <div class="form-field">
+                                        <label for="payoutType" class="form-label">Seller Payout Method</label>
+                                        <select id="payoutType" name="payoutType" class="form-select">
+                                            <option value="MPESA">M-PESA (Phone Number)</option>
+                                            <option value="TILL">Till Number</option>
+                                            <option value="PAYBILL">Paybill Number</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-field" id="payoutNumberField" style="display: none;">
+                                        <label for="payoutNumber" class="form-label">Till / Paybill Number</label>
+                                        <input type="text" id="payoutNumber" name="payoutNumber" class="form-input"
+                                            placeholder="Enter Till or Paybill number">
+                                    </div>
+
+                                    <div class="form-field" id="payoutAccountField" style="display: none;">
+                                        <label for="payoutAccount" class="form-label">Account Number (for
+                                            Paybill)</label>
+                                        <input type="text" id="payoutAccount" name="payoutAccount" class="form-input"
+                                            placeholder="Enter account number">
                                     </div>
 
                                     <div class="form-field">
@@ -235,14 +258,11 @@
                                             class="form-input">
                                     </div>
 
+                                    <!-- UPDATED: Fee display removed - only total shown -->
                                     <div class="fee-display">
                                         <div class="fee-row">
                                             <span>Transaction Amount</span>
                                             <span id="displayAmount">KES 0</span>
-                                        </div>
-                                        <div class="fee-row">
-                                            <span>Escrow Service Fee (11%)</span>
-                                            <span id="escrowFee">KES 0</span>
                                         </div>
                                         <div class="fee-row fee-total">
                                             <span>Total Payment</span>

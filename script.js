@@ -6,7 +6,7 @@
 
 /**
  * SecureEscrow Kenya - Frontend Client
- * Magic Link Authorization System
+ * OTP Verification System
  * Connects to Flask Backend API
  */
 
@@ -27,7 +27,8 @@
         TOAST_DEFAULT_DURATION: 5000,
         WHATSAPP_TOOLTIP_DELAY: 2000,
         COUNTER_START_DELAY: 2500,
-        WELCOME_MESSAGE_DELAY: 2800
+        WELCOME_MESSAGE_DELAY: 2800,
+        RELEASE_OTP_THRESHOLD: 10000
     };
 
     const TRANSACTION_STATUS = {
@@ -80,11 +81,13 @@
             return response.json();
         },
         
-        async releaseFunds(transactionId, token) {
+        async releaseFunds(transactionId, token, otp) {
+            const body = { token };
+            if (otp) body.otp = otp;
             const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/release`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token })
+                body: JSON.stringify(body)
             });
             return response.json();
         },
@@ -94,6 +97,47 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone })
+            });
+            return response.json();
+        },
+        
+        async updatePayout(transactionId, token, payoutData) {
+            const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/payout`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, ...payoutData })
+            });
+            return response.json();
+        },
+        
+        async getPayout(transactionId) {
+            const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/payout`);
+            return response.json();
+        },
+
+        async requestOtp(transactionId, phone) {
+            const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/request-otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone })
+            });
+            return response.json();
+        },
+
+        async verifyOtp(transactionId, phone, otp) {
+            const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/verify-otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone, otp })
+            });
+            return response.json();
+        },
+
+        async requestReleaseOtp(transactionId, phone, token) {
+            const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/request-release-otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone, token })
             });
             return response.json();
         }
@@ -121,6 +165,128 @@
     function getUrlParameter(name) {
         const urlParams = new URLSearchParams(window.location.search);
         return urlParams.get(name);
+    }
+
+    // ============================================================================
+    // OTP POPUP
+    // ============================================================================
+    
+    function showOtpPopup(phoneNumber, onVerify, onCancel, title) {
+        const existingPopup = document.getElementById('otpPopup');
+        if (existingPopup) existingPopup.remove();
+
+        const maskedPhone = phoneNumber.slice(0, 6) + '****' + phoneNumber.slice(-2);
+        
+        const overlayHtml = `
+            <div class="otp-popup-overlay" id="otpPopup">
+                <div class="otp-popup">
+                    <div class="otp-header">
+                        <h3>${title || 'Verify Your Phone'}</h3>
+                        <button class="otp-close" id="closeOtpPopup" aria-label="Close">&times;</button>
+                    </div>
+                    <div class="otp-body">
+                        <p class="otp-instruction">We sent a 6-digit code to ${maskedPhone}</p>
+                        
+                        <div class="otp-input-group">
+                            <input type="text" id="otpInput1" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                            <input type="text" id="otpInput2" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                            <input type="text" id="otpInput3" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                            <input type="text" id="otpInput4" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                            <input type="text" id="otpInput5" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                            <input type="text" id="otpInput6" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                        </div>
+                        
+                        <p class="otp-error" id="otpError" style="display: none;"></p>
+                        
+                        <div class="otp-actions">
+                            <button class="btn-otp-verify" id="verifyOtpBtn">Verify</button>
+                            <button class="btn-otp-resend" id="resendOtpBtn">Resend Code</button>
+                        </div>
+                        
+                        <p class="otp-expiry">Code expires in 5 minutes</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', overlayHtml);
+        
+        const popupElement = document.getElementById('otpPopup');
+        const otpInputs = document.querySelectorAll('.otp-digit');
+        const errorElement = document.getElementById('otpError');
+        
+        // Auto-focus first input
+        otpInputs[0].focus();
+        
+        // Auto-tab between inputs
+        otpInputs.forEach((input, index) => {
+            input.addEventListener('input', function() {
+                if (this.value.length === 1 && index < 5) {
+                    otpInputs[index + 1].focus();
+                }
+                errorElement.style.display = 'none';
+            });
+            
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && this.value.length === 0 && index > 0) {
+                    otpInputs[index - 1].focus();
+                }
+            });
+        });
+        
+        function getOtpCode() {
+            let code = '';
+            otpInputs.forEach(input => { code += input.value; });
+            return code;
+        }
+        
+        function dismissPopup() {
+            popupElement.classList.add('closing');
+            setTimeout(() => { if (popupElement.parentNode) popupElement.remove(); }, 200);
+        }
+        
+        document.getElementById('verifyOtpBtn').addEventListener('click', function() {
+            const code = getOtpCode();
+            if (code.length < 6) {
+                errorElement.textContent = 'Please enter all 6 digits';
+                errorElement.style.display = 'block';
+                return;
+            }
+            onVerify(code, (errorMsg) => {
+                if (errorMsg) {
+                    errorElement.textContent = errorMsg;
+                    errorElement.style.display = 'block';
+                } else {
+                    dismissPopup();
+                }
+            });
+        });
+        
+        document.getElementById('resendOtpBtn').addEventListener('click', function() {
+            onVerify('__RESEND__', (errorMsg) => {
+                if (errorMsg === '__CLEAR__') {
+                    otpInputs.forEach(input => { input.value = ''; });
+                    otpInputs[0].focus();
+                    errorElement.textContent = '';
+                    errorElement.style.display = 'none';
+                } else if (errorMsg) {
+                    errorElement.textContent = errorMsg;
+                    errorElement.style.display = 'block';
+                }
+            });
+        });
+        
+        document.getElementById('closeOtpPopup').addEventListener('click', () => {
+            dismissPopup();
+            if (onCancel) onCancel();
+        });
+        
+        popupElement.addEventListener('click', function(event) {
+            if (event.target === popupElement) {
+                dismissPopup();
+                if (onCancel) onCancel();
+            }
+        });
     }
 
     // ============================================================================
@@ -333,9 +499,27 @@
         const form = document.querySelector('.escrow-form');
         if (!form) return;
         
+        const payoutType = document.getElementById('payoutType');
+        const payoutNumberField = document.getElementById('payoutNumberField');
+        const payoutAccountField = document.getElementById('payoutAccountField');
+        
+        if (payoutType) {
+            payoutType.addEventListener('change', function() {
+                if (this.value === 'TILL') {
+                    payoutNumberField.style.display = 'block';
+                    payoutAccountField.style.display = 'none';
+                } else if (this.value === 'PAYBILL') {
+                    payoutNumberField.style.display = 'block';
+                    payoutAccountField.style.display = 'block';
+                } else {
+                    payoutNumberField.style.display = 'none';
+                    payoutAccountField.style.display = 'none';
+                }
+            });
+        }
+        
         const amountInput = form.querySelector('#amount');
         const displayAmount = document.querySelector('#displayAmount');
-        const escrowFeeDisplay = document.querySelector('#escrowFee');
         const totalAmountDisplay = document.querySelector('#totalAmount');
         
         if (amountInput) {
@@ -345,7 +529,6 @@
                 const totalAmount = baseAmount + feeAmount;
                 
                 if (displayAmount) displayAmount.textContent = formatKES(baseAmount);
-                if (escrowFeeDisplay) escrowFeeDisplay.textContent = formatKES(feeAmount);
                 if (totalAmountDisplay) totalAmountDisplay.textContent = formatKES(totalAmount);
             });
         }
@@ -401,7 +584,10 @@
                 buyerPhone: buyerPhoneInput.value,
                 sellerPhone: sellerPhoneInput.value,
                 transactionType: form.querySelector('#transactionType')?.value || '',
-                deliveryDeadline: form.querySelector('#deliveryDeadline')?.value || ''
+                deliveryDeadline: form.querySelector('#deliveryDeadline')?.value || '',
+                payoutType: document.getElementById('payoutType')?.value || 'MPESA',
+                payoutNumber: document.getElementById('payoutNumber')?.value || '',
+                payoutAccount: document.getElementById('payoutAccount')?.value || ''
             };
             
             const existingPopup = document.getElementById('paymentPopup');
@@ -424,10 +610,6 @@
                                 <div class="summary-item">
                                     <span class="summary-label">Item amount</span>
                                     <span class="summary-value">${formatKES(baseAmount)}</span>
-                                </div>
-                                <div class="summary-item">
-                                    <span class="summary-label">Protection fee (11%)</span>
-                                    <span class="summary-value">${formatKES(feeAmount)}</span>
                                 </div>
                                 <div class="summary-item summary-total">
                                     <span class="summary-label">Total payment</span>
@@ -470,24 +652,51 @@
                     const result = await ApiClient.createTransaction(transactionData);
                     
                     if (result.success) {
-                        // SIMPLE TOAST INSTEAD OF SMS PREVIEW POPUP
-                        ToastManager.success('Transaction created! Seller has been notified.', 'Success');
-                        
-                        form.reset();
-                        if (displayAmount) displayAmount.textContent = 'KES 0';
-                        if (escrowFeeDisplay) escrowFeeDisplay.textContent = 'KES 0';
-                        if (totalAmountDisplay) totalAmountDisplay.textContent = 'KES 0';
-                        
-                        // Show transaction ID in a small info toast
-                        setTimeout(() => {
-                            ToastManager.info(`Reference: ${result.transactionId}`, 'Transaction ID');
-                        }, 500);
+                        // Show OTP popup after payment is made
+                        showOtpPopup(
+                            buyerPhoneInput.value,
+                            async function(otpCode, callback) {
+                                if (otpCode === '__RESEND__') {
+                                    try {
+                                        await ApiClient.requestOtp(result.transactionId, buyerPhoneInput.value);
+                                        callback('__CLEAR__');
+                                        ToastManager.info('New code sent.', 'OTP Sent');
+                                    } catch (error) {
+                                        callback('Failed to resend code.');
+                                    }
+                                    return;
+                                }
+                                
+                                try {
+                                    const otpResult = await ApiClient.verifyOtp(result.transactionId, buyerPhoneInput.value, otpCode);
+                                    if (otpResult.success) {
+                                        callback(null);
+                                        ToastManager.success('Transaction created! Seller has been notified.', 'Success');
+                                        form.reset();
+                                        if (displayAmount) displayAmount.textContent = 'KES 0';
+                                        if (totalAmountDisplay) totalAmountDisplay.textContent = 'KES 0';
+                                        setTimeout(() => {
+                                            ToastManager.info(`Reference: ${result.transactionId}`, 'Transaction ID');
+                                        }, 500);
+                                    } else {
+                                        callback(otpResult.error || 'Invalid code');
+                                    }
+                                } catch (error) {
+                                    callback('Could not connect to server.');
+                                }
+                            },
+                            function() {
+                                ToastManager.info('Transaction created without verification.', 'Notice');
+                                form.reset();
+                            },
+                            'Verify Payment'
+                        );
                     } else {
                         ToastManager.error(result.error || 'Failed to create transaction', 'Error');
                     }
                 } catch (error) {
                     console.error('API Error:', error);
-                    ToastManager.error('Could not connect to server. Make sure backend is running.', 'Connection Error');
+                    ToastManager.error('Could not connect to server.', 'Connection Error');
                 }
             });
             
@@ -542,7 +751,7 @@
             }
             
             if (isValid) {
-                ToastManager.success('Thank you for contacting us. We will respond within two hours during business hours.', 'Message Received');
+                ToastManager.success('Thank you for contacting us.', 'Message Received');
                 form.reset();
             } else {
                 ToastManager.error(errorMessage, 'Form Incomplete');
@@ -559,82 +768,71 @@
     let currentUserRole = null;
     let currentTransactionId = null;
     
-   function initializeTrackingPage() {
-    const trackForm = document.getElementById('trackForm');
-    const phoneForm = document.getElementById('phoneForm');
-    
-    // Check for magic token in URL
-    const urlToken = getUrlParameter('token');
-    const urlId = getUrlParameter('id');
-    
-    // If token is present, ALWAYS validate (buyer/seller magic link)
-    if (urlToken && urlId) {
-        validateAndDisplayWithToken(urlId, urlToken);
-    } else if (urlId) {
-        // No token - just load transaction (view only)
-        loadTransactionById(urlId);
-    }
-    
-    if (trackForm) {
-        trackForm.addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const transactionId = document.getElementById('trackId').value.trim().toUpperCase();
-            currentTransactionId = transactionId;
-            loadTransactionById(transactionId);
-        });
-    }
-    
-    if (phoneForm) {
-        phoneForm.addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const phoneNumber = document.getElementById('trackPhone').value.trim();
-            
-            ToastManager.info('Searching for transactions...', 'Please wait');
-            
-            try {
-                const result = await ApiClient.trackByPhone(phoneNumber);
+    function initializeTrackingPage() {
+        const trackForm = document.getElementById('trackForm');
+        const phoneForm = document.getElementById('phoneForm');
+        
+        const urlToken = getUrlParameter('token');
+        const urlId = getUrlParameter('id');
+        
+        if (urlToken && urlId) {
+            validateAndDisplayWithToken(urlId, urlToken);
+        } else if (urlId) {
+            loadTransactionById(urlId);
+        }
+        
+        if (trackForm) {
+            trackForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                const transactionId = document.getElementById('trackId').value.trim().toUpperCase();
+                currentTransactionId = transactionId;
+                loadTransactionById(transactionId);
+            });
+        }
+        
+        if (phoneForm) {
+            phoneForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                const phoneNumber = document.getElementById('trackPhone').value.trim();
                 
-                if (result.error) {
-                    ToastManager.error('No transactions found for this phone number.', 'Not Found');
-                } else if (result.transactions && result.transactions.length > 0) {
-                    currentVerifiedPhone = phoneNumber;
-                    currentUserRole = null;
-                    currentMagicToken = null;
-                    currentTransactionId = result.transactions[0].id;
-                    renderTransactionDetails(result.transactions[0], phoneNumber, null, null);
+                ToastManager.info('Searching for transactions...', 'Please wait');
+                
+                try {
+                    const result = await ApiClient.trackByPhone(phoneNumber);
+                    
+                    if (result.error) {
+                        ToastManager.error('No transactions found for this phone number.', 'Not Found');
+                    } else if (result.transactions && result.transactions.length > 0) {
+                        currentVerifiedPhone = phoneNumber;
+                        currentUserRole = null;
+                        currentMagicToken = null;
+                        currentTransactionId = result.transactions[0].id;
+                        renderTransactionDetails(result.transactions[0], phoneNumber, null, null);
+                    }
+                } catch (error) {
+                    ToastManager.error('Could not connect to server.', 'Connection Error');
                 }
-            } catch (error) {
-                ToastManager.error('Could not connect to server.', 'Connection Error');
-            }
-        });
+            });
+        }
+        
+        const verifyBtn = document.getElementById('verifyPhoneBtn');
+        if (verifyBtn) {
+            verifyBtn.addEventListener('click', function() {
+                const phone = document.getElementById('verifyPhone').value.trim();
+                if (!validateKenyanPhone(phone)) {
+                    ToastManager.error('Please enter a valid phone number', 'Invalid Phone');
+                    return;
+                }
+                currentVerifiedPhone = phone;
+                currentUserRole = null;
+                document.getElementById('verificationSection').style.display = 'none';
+                
+                if (currentTransactionId) {
+                    loadTransactionWithPhone(currentTransactionId, phone);
+                }
+            });
+        }
     }
-    
-    // Setup verification button
-    const verifyBtn = document.getElementById('verifyPhoneBtn');
-    if (verifyBtn) {
-        verifyBtn.addEventListener('click', function() {
-            const phone = document.getElementById('verifyPhone').value.trim();
-            if (!validateKenyanPhone(phone)) {
-                ToastManager.error('Please enter a valid phone number', 'Invalid Phone');
-                return;
-            }
-            currentVerifiedPhone = phone;
-            currentUserRole = null;
-            document.getElementById('verificationSection').style.display = 'none';
-            
-            if (currentTransactionId) {
-                loadTransactionWithPhone(currentTransactionId, phone);
-            }
-        });
-    }
-}
-
-
-
-
-
-
-
     
     async function validateAndDisplayWithToken(transactionId, token) {
         ToastManager.info('Verifying your access...', 'Please wait');
@@ -648,7 +846,7 @@
                 currentUserRole = result.role;
                 currentTransactionId = transactionId;
                 renderTransactionDetails(result.transaction, currentVerifiedPhone, token, result.role);
-                ToastManager.success(`Access verified as ${result.role}.`, 'Verified');
+                ToastManager.success(`Verified.`, 'Access Granted');
             } else {
                 ToastManager.error(result.error || 'Invalid or expired link', 'Access Denied');
                 loadTransactionById(transactionId);
@@ -708,6 +906,36 @@
         }
     }
 
+    async function loadCurrentPayoutSettings(transactionId) {
+        try {
+            const result = await ApiClient.getPayout(transactionId);
+            if (!result.error) {
+                document.querySelector(`input[name="payoutType"][value="${result.payoutType}"]`).checked = true;
+                document.getElementById('payoutNumberInput').value = result.payoutNumber || '';
+                document.getElementById('payoutAccountInput').value = result.payoutAccount || '';
+                updatePayoutFieldsVisibility(result.payoutType);
+            }
+        } catch (error) {
+            console.error('Failed to load payout settings:', error);
+        }
+    }
+
+    function updatePayoutFieldsVisibility(type) {
+        const numberContainer = document.getElementById('payoutNumberContainer');
+        const accountContainer = document.getElementById('payoutAccountContainer');
+        
+        if (type === 'TILL') {
+            numberContainer.style.display = 'block';
+            accountContainer.style.display = 'none';
+        } else if (type === 'PAYBILL') {
+            numberContainer.style.display = 'block';
+            accountContainer.style.display = 'block';
+        } else {
+            numberContainer.style.display = 'none';
+            accountContainer.style.display = 'none';
+        }
+    }
+
     function renderTransactionDetails(transaction, verifiedPhone, magicToken, userRole) {
         const displayContainer = document.getElementById('transactionDisplay');
         const verificationSection = document.getElementById('verificationSection');
@@ -717,13 +945,13 @@
         const isSeller = verifiedPhone === transaction.seller_phone;
         const isBuyerToken = (userRole === 'buyer');
         const isSellerToken = (userRole === 'seller');
-        
+
         const statusConfig = {
-            [TRANSACTION_STATUS.FUNDS_SECURED]: { class: 'status-secured', text: 'Funds Secured — Awaiting Delivery' },
-            [TRANSACTION_STATUS.AWAITING_DELIVERY]: { class: 'status-awaiting', text: 'Shipped — Awaiting Confirmation' },
-            [TRANSACTION_STATUS.DELIVERED]: { class: 'status-delivered', text: 'Delivered — Ready for Release' },
-            [TRANSACTION_STATUS.FUNDS_RELEASED]: { class: 'status-released', text: 'Completed — Funds Released' },
-            [TRANSACTION_STATUS.DISPUTED]: { class: 'status-disputed', text: 'Dispute Raised — Under Review' }
+            [TRANSACTION_STATUS.FUNDS_SECURED]: { class: 'status-secured', text: 'Funds secured' },
+            [TRANSACTION_STATUS.AWAITING_DELIVERY]: { class: 'status-awaiting', text: 'Shipped' },
+            [TRANSACTION_STATUS.DELIVERED]: { class: 'status-delivered', text: 'Delivered' },
+            [TRANSACTION_STATUS.FUNDS_RELEASED]: { class: 'status-released', text: 'Complete' },
+            [TRANSACTION_STATUS.DISPUTED]: { class: 'status-disputed', text: 'Disputed' }
         };
         
         const currentStatus = statusConfig[transaction.status] || { class: '', text: transaction.status };
@@ -758,7 +986,6 @@
                     </div>
         `;
         
-        // Add shipped date if available
         if (transaction.shipped_at) {
             detailsHtml += `
                     <div class="info-item">
@@ -768,7 +995,6 @@
             `;
         }
         
-        // Add released date if available
         if (transaction.released_at) {
             detailsHtml += `
                     <div class="info-item">
@@ -780,19 +1006,17 @@
         
         detailsHtml += `</div>`;
         
-        // SECURITY: Only BUYER token can release funds
         if (isBuyerToken && (transaction.status === TRANSACTION_STATUS.FUNDS_SECURED || 
                             transaction.status === TRANSACTION_STATUS.AWAITING_DELIVERY ||
                             transaction.status === TRANSACTION_STATUS.DELIVERED)) {
             detailsHtml += `
                 <div class="action-section buyer-section">
                     <p class="role-indicator">You are verified as the Buyer</p>
-                    <button class="btn-release-funds" id="releaseFundsButton" data-transaction-id="${transaction.id}">Release Funds to Seller</button>
+                    <button class="btn-release-funds" id="releaseFundsButton" data-transaction-id="${transaction.id}" data-amount="${transaction.amount}">Release Funds to Seller</button>
                     <button class="btn-dispute" id="raiseDisputeButton">Raise a Dispute</button>
                 </div>
             `;
         }
-        // Buyer without magic token - needs to request link
         else if (isBuyer && !isBuyerToken && (transaction.status === TRANSACTION_STATUS.FUNDS_SECURED || 
                                               transaction.status === TRANSACTION_STATUS.AWAITING_DELIVERY ||
                                               transaction.status === TRANSACTION_STATUS.DELIVERED)) {
@@ -805,33 +1029,30 @@
                 </div>
             `;
         }
-        // Seller actions - show for BOTH token and phone verification
         else if ((isSellerToken || isSeller) && transaction.status === TRANSACTION_STATUS.FUNDS_SECURED) {
             detailsHtml += `
                 <div class="action-section seller-section">
                     <p class="role-indicator">You are verified as the Seller</p>
                     <button class="btn-mark-shipped" id="markShippedButton" data-transaction-id="${transaction.id}">Mark Item as Shipped</button>
+                    <button class="btn-payout-settings" id="showPayoutSettingsBtn" style="margin-top: 10px;">Set Payout Method</button>
                 </div>
             `;
         }
-        // Seller view after shipping - show current status
         else if ((isSellerToken || isSeller) && transaction.status === TRANSACTION_STATUS.AWAITING_DELIVERY) {
             detailsHtml += `
                 <div class="action-section seller-section">
                     <p class="role-indicator">You are verified as the Seller</p>
-                    <div class="info-message">Item marked as shipped. Waiting for buyer confirmation.</div>
+                    <div class="info-message">Waiting for buyer to confirm delivery.</div>
                 </div>
             `;
         }
-        // Completed transaction
         else if (transaction.status === TRANSACTION_STATUS.FUNDS_RELEASED) {
             detailsHtml += `
                 <div class="action-section completed-section">
-                    <p class="completion-message">This transaction is complete. Funds have been released to the seller.</p>
+                    <p class="completion-message">Payment sent to seller.</p>
                 </div>
             `;
         }
-        // Not verified - show verification prompt
         else if (!verifiedPhone) {
             detailsHtml += `
                 <div class="action-section viewer-section">
@@ -843,7 +1064,6 @@
                 verificationSection.style.display = 'block';
             }
         }
-        // View only
         else {
             detailsHtml += `
                 <div class="action-section viewer-section">
@@ -855,29 +1075,53 @@
         detailsHtml += `</div>`;
         displayContainer.innerHTML = detailsHtml;
         
-        // Event listeners
         setTimeout(() => {
             const releaseButton = document.getElementById('releaseFundsButton');
             if (releaseButton) {
                 releaseButton.addEventListener('click', async function() {
                     const transactionId = this.dataset.transactionId;
+                    const releaseAmount = parseFloat(this.dataset.amount);
                     
-                    if (confirm(`Release ${formatKES(transaction.amount)} to seller? This cannot be undone.`)) {
+                    const performRelease = async function(otpCode) {
                         ToastManager.info('Processing release...', 'Please wait');
-                        
                         try {
-                            const result = await ApiClient.releaseFunds(transactionId, currentMagicToken);
+                            const result = await ApiClient.releaseFunds(transactionId, currentMagicToken, otpCode || null);
                             
                             if (result.success) {
-                                ToastManager.success('Funds have been released to the seller.', 'Transaction Complete');
-                                // Refresh display instead of reloading page
+                                ToastManager.success('Payment sent to seller.', 'Transaction Complete');
                                 await refreshTransactionDisplay();
+                            } else if (result.requireOtp) {
+                                // Amount above threshold, need OTP
+                                showOtpPopup(
+                                    currentVerifiedPhone,
+                                    async function(code, callback) {
+                                        if (code === '__RESEND__') {
+                                            try {
+                                                await ApiClient.requestReleaseOtp(transactionId, currentVerifiedPhone, currentMagicToken);
+                                                callback('__CLEAR__');
+                                                ToastManager.info('New code sent.', 'OTP Sent');
+                                            } catch (error) {
+                                                callback('Failed to resend code.');
+                                            }
+                                            return;
+                                        }
+                                        await performRelease(code);
+                                    },
+                                    function() {
+                                        ToastManager.info('Release cancelled.', 'Cancelled');
+                                    },
+                                    'Verify Release'
+                                );
                             } else {
                                 ToastManager.error(result.error || 'Failed to release funds.', 'Error');
                             }
                         } catch (error) {
                             ToastManager.error('Could not connect to server.', 'Connection Error');
                         }
+                    };
+                    
+                    if (confirm(`Release ${formatKES(releaseAmount)} to seller? This cannot be undone.`)) {
+                        await performRelease(null);
                     }
                 });
             }
@@ -908,15 +1152,14 @@
                 shipButton.addEventListener('click', async function() {
                     const transactionId = this.dataset.transactionId;
                     
-                    if (confirm('Confirm that the item has been shipped? The buyer will be notified.')) {
+                    if (confirm('Confirm that the item has been shipped?')) {
                         ToastManager.info('Updating status...', 'Please wait');
                         
                         try {
                             const result = await ApiClient.updateStatus(transactionId, 'AWAITING_DELIVERY', verifiedPhone, currentMagicToken);
                             
                             if (result.success) {
-                                ToastManager.success('Item marked as shipped.', 'Status Updated');
-                                // Refresh display instead of reloading page
+                                ToastManager.success('Marked as shipped.', 'Status Updated');
                                 await refreshTransactionDisplay();
                             } else {
                                 ToastManager.error(result.error || 'Failed to update status.', 'Error');
@@ -931,7 +1174,7 @@
             const disputeButton = document.getElementById('raiseDisputeButton');
             if (disputeButton) {
                 disputeButton.addEventListener('click', async function() {
-                    if (confirm('Raise a dispute for this transaction? A support agent will review the case.')) {
+                    if (confirm('Raise a dispute for this transaction?')) {
                         const transactionId = releaseButton?.dataset.transactionId || resendButton?.dataset.transactionId;
                         if (transactionId) {
                             ToastManager.info('Filing dispute...', 'Please wait');
@@ -940,7 +1183,7 @@
                                 const result = await ApiClient.updateStatus(transactionId, 'DISPUTED', verifiedPhone, currentMagicToken);
                                 
                                 if (result.success) {
-                                    ToastManager.warning('Dispute raised. Our team will contact both parties.', 'Dispute Filed');
+                                    ToastManager.warning('Dispute filed. We will contact you.', 'Dispute Filed');
                                     await refreshTransactionDisplay();
                                 } else {
                                     ToastManager.error(result.error || 'Failed to raise dispute.', 'Error');
@@ -953,6 +1196,14 @@
                 });
             }
             
+            const payoutBtn = document.getElementById('showPayoutSettingsBtn');
+            if (payoutBtn) {
+                payoutBtn.addEventListener('click', function() {
+                    document.getElementById('payoutSettingsSection').style.display = 'block';
+                    loadCurrentPayoutSettings(transaction.id);
+                });
+            }
+            
             const showVerifyBtn = document.getElementById('showVerificationBtn');
             if (showVerifyBtn && verificationSection) {
                 showVerifyBtn.addEventListener('click', function() {
@@ -960,6 +1211,57 @@
                 });
             }
         }, 100);
+    }
+
+    // ============================================================================
+    // PAYOUT SETTINGS INITIALIZATION
+    // ============================================================================
+    
+    function initializePayoutSettings() {
+        const payoutRadios = document.querySelectorAll('input[name="payoutType"]');
+        if (payoutRadios.length > 0) {
+            payoutRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    updatePayoutFieldsVisibility(this.value);
+                });
+            });
+        }
+        
+        const savePayoutBtn = document.getElementById('savePayoutBtn');
+        if (savePayoutBtn) {
+            savePayoutBtn.addEventListener('click', async function() {
+                const payoutType = document.querySelector('input[name="payoutType"]:checked').value;
+                const payoutNumber = document.getElementById('payoutNumberInput').value;
+                const payoutAccount = document.getElementById('payoutAccountInput').value;
+                
+                if (payoutType !== 'MPESA' && !payoutNumber) {
+                    ToastManager.error('Please enter the Till or Paybill number.', 'Required Field');
+                    return;
+                }
+                
+                if (payoutType === 'PAYBILL' && !payoutAccount) {
+                    ToastManager.error('Please enter the account number.', 'Required Field');
+                    return;
+                }
+                
+                ToastManager.info('Updating payout method...', 'Please wait');
+                
+                try {
+                    const result = await ApiClient.updatePayout(currentTransactionId, currentMagicToken, {
+                        payoutType, payoutNumber, payoutAccount
+                    });
+                    
+                    if (result.success) {
+                        ToastManager.success('Payout method updated.', 'Success');
+                        document.getElementById('payoutSettingsSection').style.display = 'none';
+                    } else {
+                        ToastManager.error(result.error || 'Failed to update', 'Error');
+                    }
+                } catch (error) {
+                    ToastManager.error('Could not connect to server.', 'Connection Error');
+                }
+            });
+        }
     }
 
     // ============================================================================
@@ -1056,17 +1358,14 @@
         try {
             const response = await fetch(`${API_BASE_URL}/health`);
             if (response.ok) {
-                console.log('Backend connected successfully.');
-            } else {
-                console.warn('Backend not responding.');
+                console.log('Backend connected.');
             }
         } catch (error) {
-            console.warn('Backend not reachable. Start the server with: python app.py');
+            console.warn('Backend not reachable. Start with: python app.py');
         }
     }
     
     function initializeApplication() {
-        console.log('Initializing SecureEscrow Kenya...');
         initializePageLoader();
         initializeMobileNavigation();
         initializeBackToTop();
@@ -1074,6 +1373,7 @@
         initializeEscrowForm();
         initializeContactForm();
         initializeTrackingPage();
+        initializePayoutSettings();
         initializeSmoothScrolling();
         highlightCurrentPageInNavigation();
         
