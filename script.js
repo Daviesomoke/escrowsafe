@@ -6,8 +6,10 @@
 
 /**
  * SecureEscrow Kenya - Frontend Client
- * OTP Verification System
+ * Magic Link Authorization System with Payout Methods
  * Connects to Flask Backend API
+ * 
+ * OTP system removed - ready for future integration
  */
 
 (function() {
@@ -27,8 +29,7 @@
         TOAST_DEFAULT_DURATION: 5000,
         WHATSAPP_TOOLTIP_DELAY: 2000,
         COUNTER_START_DELAY: 2500,
-        WELCOME_MESSAGE_DELAY: 2800,
-        RELEASE_OTP_THRESHOLD: 10000
+        WELCOME_MESSAGE_DELAY: 2800
     };
 
     const TRANSACTION_STATUS = {
@@ -44,6 +45,7 @@
     // ============================================================================
     
     const ApiClient = {
+        
         async createTransaction(data) {
             const response = await fetch(`${API_BASE_URL}/transactions/create`, {
                 method: 'POST',
@@ -81,13 +83,11 @@
             return response.json();
         },
         
-        async releaseFunds(transactionId, token, otp) {
-            const body = { token };
-            if (otp) body.otp = otp;
+        async releaseFunds(transactionId, token) {
             const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/release`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
+                body: JSON.stringify({ token })
             });
             return response.json();
         },
@@ -112,15 +112,6 @@
         
         async getPayout(transactionId) {
             const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/payout`);
-            return response.json();
-        },
-
-        async requestReleaseOtp(transactionId, phone, token) {
-            const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/request-release-otp`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone, token })
-            });
             return response.json();
         }
     };
@@ -150,134 +141,18 @@
     }
 
     // ============================================================================
-    // OTP POPUP
-    // ============================================================================
-    
-    function showOtpPopup(phoneNumber, onVerify, onCancel, title) {
-        const existingPopup = document.getElementById('otpPopup');
-        if (existingPopup) existingPopup.remove();
-
-        const maskedPhone = phoneNumber.slice(0, 6) + '****' + phoneNumber.slice(-2);
-        
-        const overlayHtml = `
-            <div class="otp-popup-overlay" id="otpPopup">
-                <div class="otp-popup">
-                    <div class="otp-header">
-                        <h3>${title || 'Verify Your Phone'}</h3>
-                        <button class="otp-close" id="closeOtpPopup" aria-label="Close">&times;</button>
-                    </div>
-                    <div class="otp-body">
-                        <p class="otp-instruction">We sent a 6-digit code to ${maskedPhone}</p>
-                        
-                        <div class="otp-input-group">
-                            <input type="text" id="otpInput1" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
-                            <input type="text" id="otpInput2" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
-                            <input type="text" id="otpInput3" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
-                            <input type="text" id="otpInput4" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
-                            <input type="text" id="otpInput5" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
-                            <input type="text" id="otpInput6" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
-                        </div>
-                        
-                        <p class="otp-error" id="otpError" style="display: none;"></p>
-                        
-                        <div class="otp-actions">
-                            <button class="btn-otp-verify" id="verifyOtpBtn">Verify</button>
-                            <button class="btn-otp-resend" id="resendOtpBtn">Resend Code</button>
-                        </div>
-                        
-                        <p class="otp-expiry">Code expires in 5 minutes</p>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.body.insertAdjacentHTML('beforeend', overlayHtml);
-        
-        const popupElement = document.getElementById('otpPopup');
-        const otpInputs = document.querySelectorAll('.otp-digit');
-        const errorElement = document.getElementById('otpError');
-        
-        otpInputs[0].focus();
-        
-        otpInputs.forEach((input, index) => {
-            input.addEventListener('input', function() {
-                if (this.value.length === 1 && index < 5) {
-                    otpInputs[index + 1].focus();
-                }
-                errorElement.style.display = 'none';
-            });
-            
-            input.addEventListener('keydown', function(e) {
-                if (e.key === 'Backspace' && this.value.length === 0 && index > 0) {
-                    otpInputs[index - 1].focus();
-                }
-            });
-        });
-        
-        function getOtpCode() {
-            let code = '';
-            otpInputs.forEach(input => { code += input.value; });
-            return code;
-        }
-        
-        function dismissPopup() {
-            popupElement.classList.add('closing');
-            setTimeout(() => { if (popupElement.parentNode) popupElement.remove(); }, 200);
-        }
-        
-        document.getElementById('verifyOtpBtn').addEventListener('click', function() {
-            const code = getOtpCode();
-            if (code.length < 6) {
-                errorElement.textContent = 'Please enter all 6 digits';
-                errorElement.style.display = 'block';
-                return;
-            }
-            onVerify(code, (errorMsg) => {
-                if (errorMsg) {
-                    errorElement.textContent = errorMsg;
-                    errorElement.style.display = 'block';
-                } else {
-                    dismissPopup();
-                }
-            });
-        });
-        
-        document.getElementById('resendOtpBtn').addEventListener('click', function() {
-            onVerify('__RESEND__', (errorMsg) => {
-                if (errorMsg === '__CLEAR__') {
-                    otpInputs.forEach(input => { input.value = ''; });
-                    otpInputs[0].focus();
-                    errorElement.textContent = '';
-                    errorElement.style.display = 'none';
-                } else if (errorMsg) {
-                    errorElement.textContent = errorMsg;
-                    errorElement.style.display = 'block';
-                }
-            });
-        });
-        
-        document.getElementById('closeOtpPopup').addEventListener('click', () => {
-            dismissPopup();
-            if (onCancel) onCancel();
-        });
-        
-        popupElement.addEventListener('click', function(event) {
-            if (event.target === popupElement) {
-                dismissPopup();
-                if (onCancel) onCancel();
-            }
-        });
-    }
-
-    // ============================================================================
     // PAGE LOADER
     // ============================================================================
     
     function initializePageLoader() {
         const loader = document.getElementById('pageLoader');
-        if (!loader) return;
+        if (!loader) {
+            return;
+        }
+        
         setTimeout(function() {
             loader.classList.add('fade-out');
+            
             setTimeout(function() {
                 if (loader && loader.parentNode) {
                     loader.parentNode.removeChild(loader);
@@ -292,7 +167,10 @@
     
     function initializeAnimatedCounters() {
         const counters = document.querySelectorAll('.counter');
-        if (!counters.length) return;
+        
+        if (!counters.length) {
+            return;
+        }
         
         counters.forEach(function(counter) {
             const targetValue = parseInt(counter.getAttribute('data-target'), 10);
@@ -335,7 +213,7 @@
             this.ensureContainerExists();
             
             const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
+            toast.className = 'toast ' + type;
             
             const displayTitle = title || this.titles[type] || 'Notice';
             const displayIcon = this.icons[type] || '•';
@@ -346,17 +224,21 @@
                     <div class="toast-title">${displayTitle}</div>
                     <div class="toast-message">${message}</div>
                 </div>
-                <button class="toast-close" aria-label="Dismiss">×</button>
+                <button type="button" class="toast-close" aria-label="Dismiss">×</button>
             `;
             
             const closeButton = toast.querySelector('.toast-close');
-            closeButton.addEventListener('click', function() { toast.remove(); });
+            closeButton.addEventListener('click', function() {
+                toast.remove();
+            });
             
             this.container.appendChild(toast);
             
             if (duration > 0) {
                 setTimeout(function() {
-                    if (toast.parentElement) toast.remove();
+                    if (toast.parentElement) {
+                        toast.remove();
+                    }
                 }, duration);
             }
         },
@@ -384,6 +266,7 @@
     
     function initializeBackToTop() {
         const button = document.createElement('button');
+        button.type = 'button';
         button.className = 'back-to-top';
         button.innerHTML = '↑';
         button.setAttribute('aria-label', 'Return to top of page');
@@ -472,13 +355,22 @@
     };
 
     // ============================================================================
-    // ESCROW FORM HANDLER (NO OTP ON PAYMENT - BACK TO ORIGINAL)
+    // ESCROW FORM HANDLER
     // ============================================================================
     
     function initializeEscrowForm() {
         const form = document.querySelector('.escrow-form');
-        if (!form) return;
+        if (!form) {
+            return;
+        }
+
+        // Block accidental native form submission
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        });
         
+        // Payout fields toggle
         const payoutType = document.getElementById('payoutType');
         const payoutNumberField = document.getElementById('payoutNumberField');
         const payoutAccountField = document.getElementById('payoutAccountField');
@@ -498,6 +390,7 @@
             });
         }
         
+        // Amount input with fee calculation
         const amountInput = form.querySelector('#amount');
         const displayAmount = document.querySelector('#displayAmount');
         const totalAmountDisplay = document.querySelector('#totalAmount');
@@ -508,11 +401,16 @@
                 const feeAmount = baseAmount * CONFIG.ESCROW_FEE_PERCENTAGE;
                 const totalAmount = baseAmount + feeAmount;
                 
-                if (displayAmount) displayAmount.textContent = formatKES(baseAmount);
-                if (totalAmountDisplay) totalAmountDisplay.textContent = formatKES(totalAmount);
+                if (displayAmount) {
+                    displayAmount.textContent = formatKES(baseAmount);
+                }
+                if (totalAmountDisplay) {
+                    totalAmountDisplay.textContent = formatKES(totalAmount);
+                }
             });
         }
         
+        // Submit button handler
         const submitButton = document.getElementById('continuePaymentBtn');
         if (!submitButton) {
             console.error('Continue payment button not found');
@@ -570,15 +468,18 @@
                 payoutAccount: document.getElementById('payoutAccount')?.value || ''
             };
             
+            // Remove any existing payment popup
             const existingPopup = document.getElementById('paymentPopup');
-            if (existingPopup) existingPopup.remove();
+            if (existingPopup) {
+                existingPopup.remove();
+            }
             
             const paymentHTML = `
                 <div class="payment-popup-overlay" id="paymentPopup">
                     <div class="payment-popup">
                         <div class="popup-header">
                             <h3>Ready to secure this transaction?</h3>
-                            <button class="popup-close" id="closePaymentPopup" aria-label="Close">&times;</button>
+                            <button type="button" class="popup-close" id="closePaymentPopup" aria-label="Close">&times;</button>
                         </div>
                         <div class="popup-body">
                             <div class="payment-summary">
@@ -596,15 +497,13 @@
                                     <span class="summary-value">${formatKES(totalAmount)}</span>
                                 </div>
                             </div>
-                            
                             <div class="payment-note">
                                 <p>An M-PESA prompt will be sent to your phone.</p>
                                 <p class="note-small">Enter your PIN to complete the payment. Funds are held securely until delivery confirmation.</p>
                             </div>
-                            
                             <div class="popup-actions">
-                                <button class="btn-primary-pay" id="confirmPaymentButton">Confirm and pay with M-PESA</button>
-                                <button class="btn-secondary-pay" id="cancelPaymentButton">Cancel</button>
+                                <button type="button" class="btn-primary-pay" id="confirmPaymentButton">Confirm and pay with M-PESA</button>
+                                <button type="button" class="btn-secondary-pay" id="cancelPaymentButton">Cancel</button>
                             </div>
                         </div>
                     </div>
@@ -616,17 +515,15 @@
             
             function dismissPopup() {
                 popupElement.classList.add('closing');
-                setTimeout(function() { 
+                setTimeout(function() {
                     if (popupElement && popupElement.parentNode) {
-                        popupElement.remove(); 
+                        popupElement.remove();
                     }
                 }, 200);
             }
             
-            // ORIGINAL FLOW - No OTP on payment
             document.getElementById('confirmPaymentButton').addEventListener('click', async function() {
                 dismissPopup();
-                
                 ToastManager.info('Creating transaction...', 'Please wait');
                 
                 try {
@@ -634,20 +531,18 @@
                     
                     if (result.success) {
                         ToastManager.success('Transaction created! Seller has been notified.', 'Success');
-                        
                         form.reset();
                         if (displayAmount) displayAmount.textContent = 'KES 0';
                         if (totalAmountDisplay) totalAmountDisplay.textContent = 'KES 0';
-                        
-                        setTimeout(() => {
-                            ToastManager.info(`Reference: ${result.transactionId}`, 'Transaction ID');
+                        setTimeout(function() {
+                            ToastManager.info('Reference: ' + result.transactionId, 'Transaction ID');
                         }, 500);
                     } else {
                         ToastManager.error(result.error || 'Failed to create transaction', 'Error');
                     }
                 } catch (error) {
                     console.error('API Error:', error);
-                    ToastManager.error('Could not connect to server. Make sure backend is running.', 'Connection Error');
+                    ToastManager.error('Could not connect to server.', 'Connection Error');
                 }
             });
             
@@ -655,10 +550,13 @@
             document.getElementById('closePaymentPopup').addEventListener('click', dismissPopup);
             
             popupElement.addEventListener('click', function(event) {
-                if (event.target === popupElement) dismissPopup();
+                if (event.target === popupElement) {
+                    dismissPopup();
+                }
             });
         });
         
+        // Set default delivery deadline
         const deadlineInput = form.querySelector('#deliveryDeadline');
         if (deadlineInput) {
             const now = new Date();
@@ -678,7 +576,9 @@
     
     function initializeContactForm() {
         const form = document.querySelector('.contact-form');
-        if (!form) return;
+        if (!form) {
+            return;
+        }
         
         form.addEventListener('submit', function(event) {
             event.preventDefault();
@@ -714,33 +614,53 @@
     // TRANSACTION TRACKING PAGE
     // ============================================================================
     
+    // State variables shared across tracking functions
     let currentVerifiedPhone = null;
     let currentMagicToken = null;
     let currentUserRole = null;
     let currentTransactionId = null;
     
+    // Guards to prevent duplicate initialization and validation
+    let isValidatingToken = false;
+    let trackingInitialized = false;
+    
     function initializeTrackingPage() {
+        // Only run setup once, regardless of how many times the function is called
+        if (trackingInitialized) {
+            return;
+        }
+        trackingInitialized = true;
+
         const trackForm = document.getElementById('trackForm');
         const phoneForm = document.getElementById('phoneForm');
         
+        // Check URL for token and transaction ID
         const urlToken = getUrlParameter('token');
         const urlId = getUrlParameter('id');
         
-        if (urlToken && urlId) {
+        // If a magic token is present, validate it (synchronously guarded)
+        if (urlToken && urlId && !isValidatingToken) {
+            isValidatingToken = true;
             validateAndDisplayWithToken(urlId, urlToken);
-        } else if (urlId) {
+        } 
+        // If only an ID is present (no token), load the transaction for viewing
+        else if (urlId && !currentTransactionId) {
+            currentTransactionId = urlId;
             loadTransactionById(urlId);
         }
-        
+
+        // Track by Transaction ID form
         if (trackForm) {
             trackForm.addEventListener('submit', async function(event) {
                 event.preventDefault();
                 const transactionId = document.getElementById('trackId').value.trim().toUpperCase();
                 currentTransactionId = transactionId;
+                currentMagicToken = null;
                 loadTransactionById(transactionId);
             });
         }
-        
+
+        // Track by Phone Number form
         if (phoneForm) {
             phoneForm.addEventListener('submit', async function(event) {
                 event.preventDefault();
@@ -765,15 +685,18 @@
                 }
             });
         }
-        
+
+        // Phone verification button
         const verifyBtn = document.getElementById('verifyPhoneBtn');
         if (verifyBtn) {
             verifyBtn.addEventListener('click', function() {
                 const phone = document.getElementById('verifyPhone').value.trim();
+                
                 if (!validateKenyanPhone(phone)) {
                     ToastManager.error('Please enter a valid phone number', 'Invalid Phone');
                     return;
                 }
+                
                 currentVerifiedPhone = phone;
                 currentUserRole = null;
                 document.getElementById('verificationSection').style.display = 'none';
@@ -784,7 +707,7 @@
             });
         }
     }
-    
+
     async function validateAndDisplayWithToken(transactionId, token) {
         ToastManager.info('Verifying your access...', 'Please wait');
         
@@ -793,11 +716,12 @@
             
             if (result.success) {
                 currentMagicToken = token;
-                currentVerifiedPhone = result.role === 'buyer' ? result.transaction.buyer_phone : result.transaction.seller_phone;
+                currentVerifiedPhone = result.role === 'buyer' 
+                    ? result.transaction.buyer_phone 
+                    : result.transaction.seller_phone;
                 currentUserRole = result.role;
                 currentTransactionId = transactionId;
                 renderTransactionDetails(result.transaction, currentVerifiedPhone, token, result.role);
-                ToastManager.success(`Verified.`, 'Access Granted');
             } else {
                 ToastManager.error(result.error || 'Invalid or expired link', 'Access Denied');
                 loadTransactionById(transactionId);
@@ -806,7 +730,7 @@
             ToastManager.error('Could not connect to server.', 'Connection Error');
         }
     }
-    
+
     async function loadTransactionById(transactionId) {
         ToastManager.info('Searching for transaction...', 'Please wait');
         
@@ -825,7 +749,7 @@
             ToastManager.error('Could not connect to server.', 'Connection Error');
         }
     }
-    
+
     async function loadTransactionWithPhone(transactionId, phone) {
         try {
             const transaction = await ApiClient.getTransaction(transactionId);
@@ -842,15 +766,22 @@
             ToastManager.error('Could not connect to server.', 'Connection Error');
         }
     }
-    
+
     async function refreshTransactionDisplay() {
-        if (!currentTransactionId) return;
+        if (!currentTransactionId) {
+            return;
+        }
         
         try {
             const transaction = await ApiClient.getTransaction(currentTransactionId);
             
             if (!transaction.error) {
-                renderTransactionDetails(transaction, currentVerifiedPhone, currentMagicToken, currentUserRole);
+                renderTransactionDetails(
+                    transaction, 
+                    currentVerifiedPhone, 
+                    currentMagicToken, 
+                    currentUserRole
+                );
             }
         } catch (error) {
             console.error('Failed to refresh:', error);
@@ -860,10 +791,25 @@
     async function loadCurrentPayoutSettings(transactionId) {
         try {
             const result = await ApiClient.getPayout(transactionId);
+            
             if (!result.error) {
-                document.querySelector(`input[name="payoutType"][value="${result.payoutType}"]`).checked = true;
-                document.getElementById('payoutNumberInput').value = result.payoutNumber || '';
-                document.getElementById('payoutAccountInput').value = result.payoutAccount || '';
+                const radio = document.querySelector(
+                    'input[name="payoutType"][value="' + result.payoutType + '"]'
+                );
+                if (radio) {
+                    radio.checked = true;
+                }
+                
+                const numInput = document.getElementById('payoutNumberInput');
+                const accInput = document.getElementById('payoutAccountInput');
+                
+                if (numInput) {
+                    numInput.value = result.payoutNumber || '';
+                }
+                if (accInput) {
+                    accInput.value = result.payoutAccount || '';
+                }
+                
                 updatePayoutFieldsVisibility(result.payoutType);
             }
         } catch (error) {
@@ -874,6 +820,10 @@
     function updatePayoutFieldsVisibility(type) {
         const numberContainer = document.getElementById('payoutNumberContainer');
         const accountContainer = document.getElementById('payoutAccountContainer');
+        
+        if (!numberContainer || !accountContainer) {
+            return;
+        }
         
         if (type === 'TILL') {
             numberContainer.style.display = 'block';
@@ -890,218 +840,153 @@
     function renderTransactionDetails(transaction, verifiedPhone, magicToken, userRole) {
         const displayContainer = document.getElementById('transactionDisplay');
         const verificationSection = document.getElementById('verificationSection');
-        if (!displayContainer) return;
+        
+        if (!displayContainer) {
+            return;
+        }
         
         const isBuyer = verifiedPhone === transaction.buyer_phone;
         const isSeller = verifiedPhone === transaction.seller_phone;
         const isBuyerToken = (userRole === 'buyer');
         const isSellerToken = (userRole === 'seller');
 
-        const statusConfig = {
-            [TRANSACTION_STATUS.FUNDS_SECURED]: { class: 'status-secured', text: 'Funds secured' },
-            [TRANSACTION_STATUS.AWAITING_DELIVERY]: { class: 'status-awaiting', text: 'Shipped' },
-            [TRANSACTION_STATUS.DELIVERED]: { class: 'status-delivered', text: 'Delivered' },
-            [TRANSACTION_STATUS.FUNDS_RELEASED]: { class: 'status-released', text: 'Complete' },
-            [TRANSACTION_STATUS.DISPUTED]: { class: 'status-disputed', text: 'Disputed' }
-        };
+        const statusConfig = {};
+        statusConfig[TRANSACTION_STATUS.FUNDS_SECURED] = { class: 'status-secured', text: 'Funds secured' };
+        statusConfig[TRANSACTION_STATUS.AWAITING_DELIVERY] = { class: 'status-awaiting', text: 'Shipped' };
+        statusConfig[TRANSACTION_STATUS.DELIVERED] = { class: 'status-delivered', text: 'Delivered' };
+        statusConfig[TRANSACTION_STATUS.FUNDS_RELEASED] = { class: 'status-released', text: 'Complete' };
+        statusConfig[TRANSACTION_STATUS.DISPUTED] = { class: 'status-disputed', text: 'Disputed' };
         
         const currentStatus = statusConfig[transaction.status] || { class: '', text: transaction.status };
         
-        let detailsHtml = `
-            <div class="transaction-details-card">
-                <div class="transaction-header">
-                    <h3>Transaction ${transaction.id}</h3>
-                    <span class="status-badge ${currentStatus.class}">${currentStatus.text}</span>
-                </div>
-                
-                <div class="transaction-info-grid">
-                    <div class="info-item">
-                        <span class="info-label">Item</span>
-                        <span class="info-value">${transaction.item_name}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Amount</span>
-                        <span class="info-value">${formatKES(transaction.amount)}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Buyer</span>
-                        <span class="info-value">${transaction.buyer_phone}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Seller</span>
-                        <span class="info-value">${transaction.seller_phone}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Initiated</span>
-                        <span class="info-value">${new Date(transaction.created_at).toLocaleString()}</span>
-                    </div>
-        `;
+        // Build the transaction details HTML
+        let detailsHtml = '';
+        
+        detailsHtml += '<div class="transaction-details-card">';
+        detailsHtml += '<div class="transaction-header">';
+        detailsHtml += '<h3>Transaction ' + transaction.id + '</h3>';
+        detailsHtml += '<span class="status-badge ' + currentStatus.class + '">' + currentStatus.text + '</span>';
+        detailsHtml += '</div>';
+        
+        detailsHtml += '<div class="transaction-info-grid">';
+        detailsHtml += '<div class="info-item"><span class="info-label">Item</span><span class="info-value">' + transaction.item_name + '</span></div>';
+        detailsHtml += '<div class="info-item"><span class="info-label">Amount</span><span class="info-value">' + formatKES(transaction.amount) + '</span></div>';
+        detailsHtml += '<div class="info-item"><span class="info-label">Buyer</span><span class="info-value">' + transaction.buyer_phone + '</span></div>';
+        detailsHtml += '<div class="info-item"><span class="info-label">Seller</span><span class="info-value">' + transaction.seller_phone + '</span></div>';
+        detailsHtml += '<div class="info-item"><span class="info-label">Initiated</span><span class="info-value">' + new Date(transaction.created_at).toLocaleString() + '</span></div>';
         
         if (transaction.shipped_at) {
-            detailsHtml += `
-                    <div class="info-item">
-                        <span class="info-label">Shipped</span>
-                        <span class="info-value">${new Date(transaction.shipped_at).toLocaleString()}</span>
-                    </div>
-            `;
+            detailsHtml += '<div class="info-item"><span class="info-label">Shipped</span><span class="info-value">' + new Date(transaction.shipped_at).toLocaleString() + '</span></div>';
         }
         
         if (transaction.released_at) {
-            detailsHtml += `
-                    <div class="info-item">
-                        <span class="info-label">Released</span>
-                        <span class="info-value">${new Date(transaction.released_at).toLocaleString()}</span>
-                    </div>
-            `;
+            detailsHtml += '<div class="info-item"><span class="info-label">Released</span><span class="info-value">' + new Date(transaction.released_at).toLocaleString() + '</span></div>';
         }
         
-        detailsHtml += `</div>`;
+        detailsHtml += '</div>'; // Close transaction-info-grid
         
-        if (isBuyerToken && (transaction.status === TRANSACTION_STATUS.FUNDS_SECURED || 
-                            transaction.status === TRANSACTION_STATUS.AWAITING_DELIVERY ||
-                            transaction.status === TRANSACTION_STATUS.DELIVERED)) {
-            detailsHtml += `
-                <div class="action-section buyer-section">
-                    <p class="role-indicator">You are verified as the Buyer</p>
-                    <button class="btn-release-funds" id="releaseFundsButton" data-transaction-id="${transaction.id}" data-amount="${transaction.amount}">Release Funds to Seller</button>
-                    <button class="btn-dispute" id="raiseDisputeButton">Raise a Dispute</button>
-                </div>
-            `;
+        // Determine which actions to show based on role and status
+        const canRelease = (
+            transaction.status === TRANSACTION_STATUS.FUNDS_SECURED ||
+            transaction.status === TRANSACTION_STATUS.AWAITING_DELIVERY ||
+            transaction.status === TRANSACTION_STATUS.DELIVERED
+        );
+        
+        if (isBuyerToken && canRelease) {
+            detailsHtml += '<div class="action-section buyer-section">';
+            detailsHtml += '<p class="role-indicator">You are verified as the Buyer</p>';
+            detailsHtml += '<button type="button" class="btn-release-funds" id="releaseFundsButton" data-transaction-id="' + transaction.id + '" data-amount="' + transaction.amount + '">Release Funds to Seller</button>';
+            detailsHtml += '<button type="button" class="btn-dispute" id="raiseDisputeButton">Raise a Dispute</button>';
+            detailsHtml += '</div>';
         }
-        else if (isBuyer && !isBuyerToken && (transaction.status === TRANSACTION_STATUS.FUNDS_SECURED || 
-                                              transaction.status === TRANSACTION_STATUS.AWAITING_DELIVERY ||
-                                              transaction.status === TRANSACTION_STATUS.DELIVERED)) {
-            detailsHtml += `
-                <div class="action-section buyer-section">
-                    <p class="role-indicator">You are verified as the Buyer</p>
-                    <button class="btn-resend-link" id="resendLinkButton" data-transaction-id="${transaction.id}">Resend Magic Link</button>
-                    <button class="btn-dispute" id="raiseDisputeButton">Raise a Dispute</button>
-                    <p class="link-hint">A magic link will be sent to your phone to authorize release.</p>
-                </div>
-            `;
+        else if (isBuyer && !isBuyerToken && canRelease) {
+            detailsHtml += '<div class="action-section buyer-section">';
+            detailsHtml += '<p class="role-indicator">You are verified as the Buyer</p>';
+            detailsHtml += '<button type="button" class="btn-resend-link" id="resendLinkButton" data-transaction-id="' + transaction.id + '">Resend Magic Link</button>';
+            detailsHtml += '<button type="button" class="btn-dispute" id="raiseDisputeButton">Raise a Dispute</button>';
+            detailsHtml += '<p class="link-hint">A magic link will be sent to your phone to authorize release.</p>';
+            detailsHtml += '</div>';
         }
         else if ((isSellerToken || isSeller) && transaction.status === TRANSACTION_STATUS.FUNDS_SECURED) {
-            detailsHtml += `
-                <div class="action-section seller-section">
-                    <p class="role-indicator">You are verified as the Seller</p>
-                    <button class="btn-mark-shipped" id="markShippedButton" data-transaction-id="${transaction.id}">Mark Item as Shipped</button>
-                    <button class="btn-payout-settings" id="showPayoutSettingsBtn" style="margin-top: 10px;">Set Payout Method</button>
-                </div>
-            `;
+            detailsHtml += '<div class="action-section seller-section">';
+            detailsHtml += '<p class="role-indicator">You are verified as the Seller</p>';
+            detailsHtml += '<button type="button" class="btn-mark-shipped" id="markShippedButton" data-transaction-id="' + transaction.id + '">Mark Item as Shipped</button>';
+            detailsHtml += '<button type="button" class="btn-payout-settings" id="showPayoutSettingsBtn" style="margin-top:10px">Set Payout Method</button>';
+            detailsHtml += '</div>';
         }
         else if ((isSellerToken || isSeller) && transaction.status === TRANSACTION_STATUS.AWAITING_DELIVERY) {
-            detailsHtml += `
-                <div class="action-section seller-section">
-                    <p class="role-indicator">You are verified as the Seller</p>
-                    <div class="info-message">Waiting for buyer to confirm delivery.</div>
-                </div>
-            `;
+            detailsHtml += '<div class="action-section seller-section">';
+            detailsHtml += '<p class="role-indicator">You are verified as the Seller</p>';
+            detailsHtml += '<div class="info-message">Waiting for buyer to confirm delivery.</div>';
+            detailsHtml += '</div>';
         }
         else if (transaction.status === TRANSACTION_STATUS.FUNDS_RELEASED) {
-            detailsHtml += `
-                <div class="action-section completed-section">
-                    <p class="completion-message">Payment sent to seller.</p>
-                </div>
-            `;
+            detailsHtml += '<div class="action-section completed-section">';
+            detailsHtml += '<p class="completion-message">Payment sent to seller.</p>';
+            detailsHtml += '</div>';
         }
         else if (!verifiedPhone) {
-            detailsHtml += `
-                <div class="action-section viewer-section">
-                    <p class="role-indicator">Verify your phone number to access transaction actions.</p>
-                    <button class="btn-verify-prompt" id="showVerificationBtn">Verify Phone Number</button>
-                </div>
-            `;
+            detailsHtml += '<div class="action-section viewer-section">';
+            detailsHtml += '<p class="role-indicator">Verify your phone number to access transaction actions.</p>';
+            detailsHtml += '<button type="button" class="btn-verify-prompt" id="showVerificationBtn">Verify Phone Number</button>';
+            detailsHtml += '</div>';
+            
             if (verificationSection) {
                 verificationSection.style.display = 'block';
             }
         }
         else {
-            detailsHtml += `
-                <div class="action-section viewer-section">
-                    <p class="role-indicator">View only. You are not authorized to perform actions on this transaction.</p>
-                </div>
-            `;
+            detailsHtml += '<div class="action-section viewer-section">';
+            detailsHtml += '<p class="role-indicator">View only. You are not authorized to perform actions on this transaction.</p>';
+            detailsHtml += '</div>';
         }
         
-        detailsHtml += `</div>`;
+        detailsHtml += '</div>'; // Close transaction-details-card
+        
+        // Update the display
         displayContainer.innerHTML = detailsHtml;
         
-        setTimeout(() => {
+        // Attach event listeners after the DOM is updated
+        setTimeout(function() {
+            
+            // Release Funds Button
             const releaseButton = document.getElementById('releaseFundsButton');
             if (releaseButton) {
                 releaseButton.addEventListener('click', async function() {
-                    const transactionId = this.dataset.transactionId;
+                    const txnId = this.dataset.transactionId;
                     const releaseAmount = parseFloat(this.dataset.amount);
                     
-                    if (!confirm(`Release ${formatKES(releaseAmount)} to seller? This cannot be undone.`)) return;
+                    if (!confirm('Release ' + formatKES(releaseAmount) + ' to seller? This cannot be undone.')) {
+                        return;
+                    }
                     
-                    const needsOtp = releaseAmount > CONFIG.RELEASE_OTP_THRESHOLD;
+                    ToastManager.info('Processing release...', 'Please wait');
                     
-                    const doRelease = async function(otpCode) {
-                        ToastManager.info('Processing release...', 'Please wait');
-                        try {
-                            const result = await ApiClient.releaseFunds(transactionId, currentMagicToken, otpCode || null);
-                            
-                            if (result.success) {
-                                ToastManager.success('Payment sent to seller.', 'Transaction Complete');
-                                await refreshTransactionDisplay();
-                            } else {
-                                ToastManager.error(result.error || 'Failed to release funds.', 'Error');
-                            }
-                        } catch (error) {
-                            ToastManager.error('Could not connect to server.', 'Connection Error');
-                        }
-                    };
-                    
-                    if (needsOtp) {
-                        // Request release OTP first
-                        try {
-                            const otpReq = await ApiClient.requestReleaseOtp(transactionId, currentVerifiedPhone, currentMagicToken);
-                            if (!otpReq.success) {
-                                ToastManager.error(otpReq.error || 'Failed to send code', 'Error');
-                                return;
-                            }
-                        } catch (e) {
-                            ToastManager.error('Could not send verification code.', 'Error');
-                            return;
-                        }
+                    try {
+                        const result = await ApiClient.releaseFunds(txnId, currentMagicToken);
                         
-                        showOtpPopup(
-                            currentVerifiedPhone,
-                            async function(code, callback) {
-                                if (code === '__RESEND__') {
-                                    try {
-                                        await ApiClient.requestReleaseOtp(transactionId, currentVerifiedPhone, currentMagicToken);
-                                        callback('__CLEAR__');
-                                        ToastManager.info('New code sent.', 'OTP Sent');
-                                    } catch (error) {
-                                        callback('Failed to resend code.');
-                                    }
-                                    return;
-                                }
-                                await doRelease(code);
-                                callback(null);
-                            },
-                            function() {
-                                ToastManager.info('Release cancelled.', 'Cancelled');
-                            },
-                            'Verify Release'
-                        );
-                    } else {
-                        await doRelease(null);
+                        if (result.success) {
+                            ToastManager.success('Payment sent to seller.', 'Transaction Complete');
+                            await refreshTransactionDisplay();
+                        } else {
+                            ToastManager.error(result.error || 'Failed to release funds.', 'Error');
+                        }
+                    } catch (error) {
+                        ToastManager.error('Could not connect to server.', 'Connection Error');
                     }
                 });
             }
             
+            // Resend Magic Link Button
             const resendButton = document.getElementById('resendLinkButton');
             if (resendButton) {
                 resendButton.addEventListener('click', async function() {
-                    const transactionId = this.dataset.transactionId;
+                    const txnId = this.dataset.transactionId;
                     
                     ToastManager.info('Sending new magic link...', 'Please wait');
                     
                     try {
-                        const result = await ApiClient.resendMagicLink(transactionId, verifiedPhone);
+                        const result = await ApiClient.resendMagicLink(txnId, verifiedPhone);
                         
                         if (result.success) {
                             ToastManager.success('New magic link sent to your phone.', 'Link Sent');
@@ -1114,70 +999,95 @@
                 });
             }
             
+            // Mark as Shipped Button
             const shipButton = document.getElementById('markShippedButton');
             if (shipButton) {
                 shipButton.addEventListener('click', async function() {
-                    const transactionId = this.dataset.transactionId;
+                    const txnId = this.dataset.transactionId;
                     
-                    if (confirm('Confirm that the item has been shipped?')) {
-                        ToastManager.info('Updating status...', 'Please wait');
+                    if (!confirm('Confirm that the item has been shipped?')) {
+                        return;
+                    }
+                    
+                    ToastManager.info('Updating status...', 'Please wait');
+                    
+                    try {
+                        const result = await ApiClient.updateStatus(
+                            txnId, 
+                            'AWAITING_DELIVERY', 
+                            verifiedPhone, 
+                            currentMagicToken
+                        );
                         
-                        try {
-                            const result = await ApiClient.updateStatus(transactionId, 'AWAITING_DELIVERY', verifiedPhone, currentMagicToken);
-                            
-                            if (result.success) {
-                                ToastManager.success('Marked as shipped.', 'Status Updated');
-                                await refreshTransactionDisplay();
-                            } else {
-                                ToastManager.error(result.error || 'Failed to update status.', 'Error');
-                            }
-                        } catch (error) {
-                            ToastManager.error('Could not connect to server.', 'Connection Error');
+                        if (result.success) {
+                            ToastManager.success('Marked as shipped.', 'Status Updated');
+                            await refreshTransactionDisplay();
+                        } else {
+                            ToastManager.error(result.error || 'Failed to update status.', 'Error');
                         }
+                    } catch (error) {
+                        ToastManager.error('Could not connect to server.', 'Connection Error');
                     }
                 });
             }
             
+            // Raise Dispute Button
             const disputeButton = document.getElementById('raiseDisputeButton');
             if (disputeButton) {
                 disputeButton.addEventListener('click', async function() {
-                    if (confirm('Raise a dispute for this transaction?')) {
-                        const transactionId = releaseButton?.dataset.transactionId || resendButton?.dataset.transactionId;
-                        if (transactionId) {
-                            ToastManager.info('Filing dispute...', 'Please wait');
-                            
-                            try {
-                                const result = await ApiClient.updateStatus(transactionId, 'DISPUTED', verifiedPhone, currentMagicToken);
-                                
-                                if (result.success) {
-                                    ToastManager.warning('Dispute filed. We will contact you.', 'Dispute Filed');
-                                    await refreshTransactionDisplay();
-                                } else {
-                                    ToastManager.error(result.error || 'Failed to raise dispute.', 'Error');
-                                }
-                            } catch (error) {
-                                ToastManager.error('Could not connect to server.', 'Connection Error');
-                            }
+                    const txnId = releaseButton?.dataset.transactionId || resendButton?.dataset.transactionId;
+                    
+                    if (!txnId) {
+                        return;
+                    }
+                    
+                    if (!confirm('Raise a dispute for this transaction?')) {
+                        return;
+                    }
+                    
+                    ToastManager.info('Filing dispute...', 'Please wait');
+                    
+                    try {
+                        const result = await ApiClient.updateStatus(
+                            txnId, 
+                            'DISPUTED', 
+                            verifiedPhone, 
+                            currentMagicToken
+                        );
+                        
+                        if (result.success) {
+                            ToastManager.warning('Dispute filed. We will contact you.', 'Dispute Filed');
+                            await refreshTransactionDisplay();
+                        } else {
+                            ToastManager.error(result.error || 'Failed to raise dispute.', 'Error');
                         }
+                    } catch (error) {
+                        ToastManager.error('Could not connect to server.', 'Connection Error');
                     }
                 });
             }
             
+            // Payout Settings Button
             const payoutBtn = document.getElementById('showPayoutSettingsBtn');
             if (payoutBtn) {
                 payoutBtn.addEventListener('click', function() {
-                    document.getElementById('payoutSettingsSection').style.display = 'block';
-                    loadCurrentPayoutSettings(transaction.id);
+                    const section = document.getElementById('payoutSettingsSection');
+                    if (section) {
+                        section.style.display = 'block';
+                        loadCurrentPayoutSettings(transaction.id);
+                    }
                 });
             }
             
+            // Show Verification Button
             const showVerifyBtn = document.getElementById('showVerificationBtn');
             if (showVerifyBtn && verificationSection) {
                 showVerifyBtn.addEventListener('click', function() {
                     verificationSection.style.display = 'block';
                 });
             }
-        }, 100);
+            
+        }, 0);
     }
 
     // ============================================================================
@@ -1186,8 +1096,9 @@
     
     function initializePayoutSettings() {
         const payoutRadios = document.querySelectorAll('input[name="payoutType"]');
+        
         if (payoutRadios.length > 0) {
-            payoutRadios.forEach(radio => {
+            payoutRadios.forEach(function(radio) {
                 radio.addEventListener('change', function() {
                     updatePayoutFieldsVisibility(this.value);
                 });
@@ -1195,40 +1106,49 @@
         }
         
         const savePayoutBtn = document.getElementById('savePayoutBtn');
-        if (savePayoutBtn) {
-            savePayoutBtn.addEventListener('click', async function() {
-                const payoutType = document.querySelector('input[name="payoutType"]:checked').value;
-                const payoutNumber = document.getElementById('payoutNumberInput').value;
-                const payoutAccount = document.getElementById('payoutAccountInput').value;
-                
-                if (payoutType !== 'MPESA' && !payoutNumber) {
-                    ToastManager.error('Please enter the Till or Paybill number.', 'Required Field');
-                    return;
-                }
-                
-                if (payoutType === 'PAYBILL' && !payoutAccount) {
-                    ToastManager.error('Please enter the account number.', 'Required Field');
-                    return;
-                }
-                
-                ToastManager.info('Updating payout method...', 'Please wait');
-                
-                try {
-                    const result = await ApiClient.updatePayout(currentTransactionId, currentMagicToken, {
-                        payoutType, payoutNumber, payoutAccount
-                    });
-                    
-                    if (result.success) {
-                        ToastManager.success('Payout method updated.', 'Success');
-                        document.getElementById('payoutSettingsSection').style.display = 'none';
-                    } else {
-                        ToastManager.error(result.error || 'Failed to update', 'Error');
-                    }
-                } catch (error) {
-                    ToastManager.error('Could not connect to server.', 'Connection Error');
-                }
-            });
+        if (!savePayoutBtn) {
+            return;
         }
+
+        savePayoutBtn.addEventListener('click', async function() {
+            const checkedRadio = document.querySelector('input[name="payoutType"]:checked');
+            if (!checkedRadio) {
+                return;
+            }
+            
+            const payoutType = checkedRadio.value;
+            const payoutNumber = document.getElementById('payoutNumberInput')?.value || '';
+            const payoutAccount = document.getElementById('payoutAccountInput')?.value || '';
+            
+            if (payoutType !== 'MPESA' && !payoutNumber) {
+                ToastManager.error('Please enter the Till or Paybill number.', 'Required Field');
+                return;
+            }
+            
+            if (payoutType === 'PAYBILL' && !payoutAccount) {
+                ToastManager.error('Please enter the account number.', 'Required Field');
+                return;
+            }
+            
+            ToastManager.info('Updating payout method...', 'Please wait');
+            
+            try {
+                const result = await ApiClient.updatePayout(
+                    currentTransactionId, 
+                    currentMagicToken, 
+                    { payoutType, payoutNumber, payoutAccount }
+                );
+                
+                if (result.success) {
+                    ToastManager.success('Payout method updated.', 'Success');
+                    document.getElementById('payoutSettingsSection').style.display = 'none';
+                } else {
+                    ToastManager.error(result.error || 'Failed to update', 'Error');
+                }
+            } catch (error) {
+                ToastManager.error('Could not connect to server.', 'Connection Error');
+            }
+        });
     }
 
     // ============================================================================
@@ -1241,7 +1161,9 @@
         const overlay = document.getElementById('sidebarOverlay');
         const navigationLinks = document.querySelectorAll('.sidebar-nav .nav-link');
         
-        if (!toggleButton || !sidebar || !overlay) return;
+        if (!toggleButton || !sidebar || !overlay) {
+            return;
+        }
         
         toggleButton.addEventListener('click', function(event) {
             event.stopPropagation();
@@ -1289,7 +1211,10 @@
         document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
             anchor.addEventListener('click', function(event) {
                 const href = this.getAttribute('href');
-                if (href === '#' || href === '#0') return;
+                
+                if (href === '#' || href === '#0') {
+                    return;
+                }
                 
                 const targetElement = document.querySelector(href);
                 if (targetElement) {
@@ -1323,16 +1248,26 @@
     
     async function checkBackendConnection() {
         try {
-            const response = await fetch(`${API_BASE_URL}/health`);
+            const response = await fetch(API_BASE_URL + '/health');
             if (response.ok) {
-                console.log('Backend connected.');
+                console.log('Backend connected successfully.');
             }
         } catch (error) {
-            console.warn('Backend not reachable. Start with: python app.py');
+            console.warn('Backend not reachable. Start the server with: python app.py');
         }
     }
+
+    // Guard to prevent the application from initializing twice
+    let appInitialized = false;
     
     function initializeApplication() {
+        if (appInitialized) {
+            return;
+        }
+        appInitialized = true;
+        
+        console.log('Initializing SecureEscrow Kenya...');
+        
         initializePageLoader();
         initializeMobileNavigation();
         initializeBackToTop();
@@ -1356,6 +1291,7 @@
         }
     }
 
+    // Start the application when the DOM is ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initializeApplication);
     } else {
