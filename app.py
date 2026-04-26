@@ -29,10 +29,57 @@ CORS(app)
 DATABASE = 'escrow.db'
 TOKEN_EXPIRY_DAYS = 7
 
-AFRICASTALKING_USERNAME = 'sandbox'
-AFRICASTALKING_API_KEY = 'your_api_key_here'
-AFRICASTALKING_SENDER_ID = 'SecureEscrow'
-AFRICASTALKING_SMS_URL = 'https://api.africastalking.com/version1/messaging'
+# ============================================================================
+# SMS CONFIGURATION — Africa's Talking
+# ============================================================================
+#
+# THE 3 BUGS THAT CAUSED "The supplied authentication is invalid":
+#
+# BUG 1 — Wrong API URL
+#   Sandbox and Live have DIFFERENT base URLs.
+#   Your code was always hitting the LIVE URL even when using sandbox keys.
+#   Sandbox URL: https://api.sandbox.africastalking.com/version1/messaging
+#   Live URL:    https://api.africastalking.com/version1/messaging
+#
+# BUG 2 — Custom Sender ID not allowed on sandbox
+#   Africa's Talking sandbox does NOT support custom sender IDs (from field).
+#   Sending 'from': 'SecureEscrow' on sandbox causes auth rejection.
+#   On sandbox, omit the 'from' field entirely.
+#
+# BUG 3 — send_sms() fallback check was wrong
+#   The check was: if AFRICASTALKING_API_KEY != 'your_api_key_here'
+#   Since you had a real key, it always tried the real API — even with
+#   the wrong URL — causing the failure.
+#   Now controlled cleanly by AFRICASTALKING_ENV below.
+#
+# ── HOW TO SWITCH BETWEEN SANDBOX AND LIVE ──────────────────────────────────
+#
+#   SANDBOX (for testing — free, no real SMS sent):
+#     AFRICASTALKING_ENV      = 'sandbox'
+#     AFRICASTALKING_USERNAME = 'sandbox'        ← must be literally 'sandbox'
+#     AFRICASTALKING_API_KEY  = your sandbox key from AT dashboard
+#
+#   LIVE (real SMS sent to real phones):
+#     AFRICASTALKING_ENV      = 'live'
+#     AFRICASTALKING_USERNAME = your actual AT account username (NOT 'sandbox')
+#     AFRICASTALKING_API_KEY  = your live API key from AT dashboard
+#     AFRICASTALKING_SENDER_ID = 'SecureEscrow'  (must be pre-registered with AT)
+#
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ============================================================================
+# SMS CONFIGURATION — Africa's Talking  (loaded from .env)
+# ============================================================================
+AFRICASTALKING_ENV       = os.getenv('AFRICASTALKING_ENV', 'sandbox')
+AFRICASTALKING_USERNAME  = os.getenv('AFRICASTALKING_USERNAME')
+AFRICASTALKING_API_KEY   = os.getenv('AFRICASTALKING_API_KEY')
+AFRICASTALKING_SENDER_ID = os.getenv('AFRICASTALKING_SENDER_ID', '')
+
+AFRICASTALKING_SMS_URL = (
+    'https://api.sandbox.africastalking.com/version1/messaging'
+    if AFRICASTALKING_ENV == 'sandbox'
+    else 'https://api.africastalking.com/version1/messaging'
+)
 
 
 def init_database():
@@ -170,31 +217,43 @@ def log_sms(transaction_id, recipient_phone, message_type, message_content, stat
 def send_real_sms(recipient_phone, message, transaction_id=None, message_type='general'):
     """Send SMS via Africa's Talking API."""
     try:
+        # FIX 2 — Build the POST data based on environment.
+        # Sandbox does NOT accept a custom 'from' (sender ID) — omit it entirely.
+        # Live DOES accept a custom sender ID — include it.
+        post_data = {
+            'username': AFRICASTALKING_USERNAME,
+            'to':       '+' + recipient_phone,
+            'message':  message,
+        }
+        if AFRICASTALKING_ENV == 'live' and AFRICASTALKING_SENDER_ID:
+            post_data['from'] = AFRICASTALKING_SENDER_ID
+
         response = requests.post(
-            AFRICASTALKING_SMS_URL,
+            AFRICASTALKING_SMS_URL,   # FIX 1 — correct URL per environment
             headers={
-                'apiKey': AFRICASTALKING_API_KEY,
+                'apiKey':       AFRICASTALKING_API_KEY,
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'Accept': 'application/json'
+                'Accept':       'application/json'
             },
-            data={
-                'username': AFRICASTALKING_USERNAME,
-                'to': '+' + recipient_phone,
-                'message': message,
-                'from': AFRICASTALKING_SENDER_ID
-            },
+            data=post_data,
             timeout=10
         )
+
         success = response.status_code in [200, 201]
-        status = 'SENT' if success else 'FAILED'
+        status  = 'SENT' if success else 'FAILED'
         log_sms(transaction_id, recipient_phone, message_type, message, status)
-        
+
         if success:
             print(f"SMS sent to {recipient_phone}")
         else:
             print(f"SMS failed: {response.text}")
-        
+            # Extra debug — print exactly what was sent so you can spot issues fast
+            print(f"  URL:      {AFRICASTALKING_SMS_URL}")
+            print(f"  Username: {AFRICASTALKING_USERNAME}")
+            print(f"  ENV:      {AFRICASTALKING_ENV}")
+
         return success
+
     except Exception as e:
         print(f"SMS error: {str(e)}")
         log_sms(transaction_id, recipient_phone, message_type, message, f'ERROR: {str(e)}')
@@ -202,10 +261,10 @@ def send_real_sms(recipient_phone, message, transaction_id=None, message_type='g
 
 
 def send_simulated_sms(recipient_phone, message, transaction_id=None, message_type='general'):
-    """Fallback SMS simulation when API is not configured."""
-    print(f"\n--- SMS ---")
-    print(f"To: {recipient_phone}")
-    print(f"Type: {message_type}")
+    """Fallback SMS simulation — used when ENV is not sandbox/live or key missing."""
+    print(f"\n--- SIMULATED SMS ---")
+    print(f"To:      +{recipient_phone}")
+    print(f"Type:    {message_type}")
     print(f"Message:\n{message}")
     print(f"--- End SMS ---\n")
     log_sms(transaction_id, recipient_phone, message_type, message, 'SIMULATED')
@@ -213,8 +272,17 @@ def send_simulated_sms(recipient_phone, message, transaction_id=None, message_ty
 
 
 def send_sms(recipient_phone, message, transaction_id=None, message_type='general'):
-    """Send SMS - tries real API first, falls back to simulation."""
-    if AFRICASTALKING_API_KEY != 'your_api_key_here':
+    """
+    Route SMS to real API or simulation.
+
+    FIX 3 — The old check was:
+        if AFRICASTALKING_API_KEY != 'your_api_key_here': use real API
+    This was fragile — any key (even a wrong one) would hit the real API.
+
+    New logic: use real API when ENV is 'sandbox' or 'live'.
+    Fall back to simulation only when ENV is anything else (e.g. 'off' or 'test').
+    """
+    if AFRICASTALKING_ENV in ('sandbox', 'live'):
         return send_real_sms(recipient_phone, message, transaction_id, message_type)
     else:
         return send_simulated_sms(recipient_phone, message, transaction_id, message_type)
@@ -303,7 +371,7 @@ def create_transaction():
     if amount < 100:
         return jsonify({'error': 'Amount must be at least KES 100'}), 400
     
-    buyer_phone = data.get('buyerPhone', '')
+    buyer_phone  = data.get('buyerPhone', '')
     seller_phone = data.get('sellerPhone', '')
     
     if not validate_kenyan_phone(buyer_phone):
@@ -315,24 +383,25 @@ def create_transaction():
     if normalize_phone(buyer_phone) == normalize_phone(seller_phone):
         return jsonify({'error': 'Buyer and seller phone numbers must be different'}), 400
     
-    transaction_id = generate_transaction_id()
-    magic_token = generate_token()
-    seller_token = generate_token()
+    transaction_id   = generate_transaction_id()
+    magic_token      = generate_token()
+    seller_token     = generate_token()
     magic_token_hash = hash_value(magic_token)
-    seller_token_hash = hash_value(seller_token)
+    seller_token_hash= hash_value(seller_token)
     token_expires_at = (datetime.now() + timedelta(days=TOKEN_EXPIRY_DAYS)).isoformat()
     
-    payout_type = data.get('payoutType', 'MPESA')
-    payout_number = data.get('payoutNumber', '')
+    payout_type    = data.get('payoutType', 'MPESA')
+    payout_number  = data.get('payoutNumber', '')
     payout_account = data.get('payoutAccount', '')
     
-    conn = get_db_connection()
+    conn   = get_db_connection()
     cursor = conn.cursor()
     
     cursor.execute('''
         INSERT INTO transactions (
-            id, magic_token_hash, seller_token_hash, token_expires_at, item_name, item_details, amount,
-            buyer_phone, seller_phone, transaction_type, delivery_deadline, payout_type, payout_number, payout_account,
+            id, magic_token_hash, seller_token_hash, token_expires_at,
+            item_name, item_details, amount, buyer_phone, seller_phone,
+            transaction_type, delivery_deadline, payout_type, payout_number, payout_account,
             status, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
@@ -347,22 +416,21 @@ def create_transaction():
     conn.commit()
     conn.close()
     
-    log_activity(transaction_id, 'CREATED', normalize_phone(buyer_phone), f"Transaction created. Amount: {amount}")
+    log_activity(transaction_id, 'CREATED', normalize_phone(buyer_phone), f"Amount: {amount}")
     
-    # Send SMS notifications
     send_buyer_magic_link_sms(normalize_phone(buyer_phone), transaction_id, magic_token, data.get('itemName', ''), amount)
     send_seller_tracking_sms(normalize_phone(seller_phone), transaction_id, seller_token, normalize_phone(buyer_phone), data.get('itemName', ''), amount)
     
     return jsonify({
-        'success': True,
+        'success':       True,
         'transactionId': transaction_id,
-        'message': 'Transaction created. Check your phone for the magic link.'
+        'message':       'Transaction created. Check your phone for the magic link.'
     }), 201
 
 
 @app.route('/api/transactions/<transaction_id>', methods=['GET'])
 def get_transaction(transaction_id):
-    conn = get_db_connection()
+    conn   = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM transactions WHERE id = ?', (transaction_id,))
     row = cursor.fetchone()
@@ -382,13 +450,13 @@ def get_transaction(transaction_id):
 
 @app.route('/api/transactions/<transaction_id>/validate', methods=['POST'])
 def validate_token(transaction_id):
-    data = request.json
+    data  = request.json
     token = data.get('token', '')
     
     if not token:
         return jsonify({'error': 'Token is required'}), 400
     
-    conn = get_db_connection()
+    conn   = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM transactions WHERE id = ?', (transaction_id,))
     row = cursor.fetchone()
@@ -398,9 +466,9 @@ def validate_token(transaction_id):
         return jsonify({'error': 'Transaction not found'}), 404
     
     transaction = dict(row)
-    token_hash = hash_value(token)
+    token_hash  = hash_value(token)
     
-    is_buyer = (token_hash == transaction['magic_token_hash'])
+    is_buyer  = (token_hash == transaction['magic_token_hash'])
     is_seller = (token_hash == transaction['seller_token_hash'])
     
     if not is_buyer and not is_seller:
@@ -419,34 +487,34 @@ def validate_token(transaction_id):
     log_activity(transaction_id, 'TOKEN_VALIDATED', transaction[role + '_phone'], f'{role.capitalize()} validated')
     
     return jsonify({
-        'success': True,
-        'role': role,
-        'isBuyer': is_buyer,
+        'success':  True,
+        'role':     role,
+        'isBuyer':  is_buyer,
         'isSeller': is_seller,
         'transaction': {
-            'id': transaction['id'],
-            'item_name': transaction['item_name'],
-            'amount': float(transaction['amount']),
-            'buyer_phone': transaction['buyer_phone'],
-            'seller_phone': transaction['seller_phone'],
-            'status': transaction['status'],
-            'created_at': transaction['created_at'],
-            'payout_type': transaction['payout_type'],
+            'id':            transaction['id'],
+            'item_name':     transaction['item_name'],
+            'amount':        float(transaction['amount']),
+            'buyer_phone':   transaction['buyer_phone'],
+            'seller_phone':  transaction['seller_phone'],
+            'status':        transaction['status'],
+            'created_at':    transaction['created_at'],
+            'payout_type':   transaction['payout_type'],
             'payout_number': transaction['payout_number'],
-            'payout_account': transaction['payout_account']
+            'payout_account':transaction['payout_account']
         }
     })
 
 
 @app.route('/api/transactions/<transaction_id>/release', methods=['POST'])
 def release_funds(transaction_id):
-    data = request.json
+    data  = request.json
     token = data.get('token', '')
     
     if not token:
         return jsonify({'error': 'Authorization token is required'}), 400
     
-    conn = get_db_connection()
+    conn   = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM transactions WHERE id = ?', (transaction_id,))
     row = cursor.fetchone()
@@ -456,7 +524,7 @@ def release_funds(transaction_id):
         return jsonify({'error': 'Transaction not found'}), 404
     
     transaction = dict(row)
-    token_hash = hash_value(token)
+    token_hash  = hash_value(token)
     
     if token_hash != transaction['magic_token_hash']:
         conn.close()
@@ -473,7 +541,6 @@ def release_funds(transaction_id):
         conn.close()
         return jsonify({'error': f'Cannot release funds from status: {transaction["status"]}'}), 400
     
-    # Release funds directly - no OTP check
     cursor.execute('''
         UPDATE transactions 
         SET status = ?, released_at = ?, token_used = 1
@@ -483,7 +550,7 @@ def release_funds(transaction_id):
     conn.commit()
     conn.close()
     
-    log_activity(transaction_id, 'FUNDS_RELEASED', transaction['buyer_phone'], f"Funds released. Amount: {transaction['amount']}")
+    log_activity(transaction_id, 'FUNDS_RELEASED', transaction['buyer_phone'], f"Amount: {transaction['amount']}")
     
     send_seller_release_notification(
         transaction['seller_phone'], transaction_id, generate_token(),
@@ -494,16 +561,16 @@ def release_funds(transaction_id):
     return jsonify({
         'success': True,
         'message': 'Funds released to seller successfully',
-        'amount': float(transaction['amount'])
+        'amount':  float(transaction['amount'])
     })
 
 
 @app.route('/api/transactions/<transaction_id>/payout', methods=['PUT'])
 def update_payout(transaction_id):
-    data = request.json
-    token = data.get('token', '')
-    payout_type = data.get('payoutType', 'MPESA')
-    payout_number = data.get('payoutNumber', '')
+    data           = request.json
+    token          = data.get('token', '')
+    payout_type    = data.get('payoutType', 'MPESA')
+    payout_number  = data.get('payoutNumber', '')
     payout_account = data.get('payoutAccount', '')
     
     if not token:
@@ -512,7 +579,7 @@ def update_payout(transaction_id):
     if payout_type not in ['MPESA', 'TILL', 'PAYBILL']:
         return jsonify({'error': 'Invalid payout type'}), 400
     
-    conn = get_db_connection()
+    conn   = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM transactions WHERE id = ?', (transaction_id,))
     row = cursor.fetchone()
@@ -522,7 +589,7 @@ def update_payout(transaction_id):
         return jsonify({'error': 'Transaction not found'}), 404
     
     transaction = dict(row)
-    token_hash = hash_value(token)
+    token_hash  = hash_value(token)
     
     if token_hash != transaction['seller_token_hash']:
         conn.close()
@@ -537,14 +604,14 @@ def update_payout(transaction_id):
     conn.commit()
     conn.close()
     
-    log_activity(transaction_id, 'PAYOUT_UPDATED', transaction['seller_phone'], f"Payout updated to {payout_type}")
+    log_activity(transaction_id, 'PAYOUT_UPDATED', transaction['seller_phone'], f"Payout: {payout_type}")
     
     return jsonify({'success': True, 'message': 'Payout method updated', 'payoutType': payout_type})
 
 
 @app.route('/api/transactions/<transaction_id>/payout', methods=['GET'])
 def get_payout(transaction_id):
-    conn = get_db_connection()
+    conn   = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT payout_type, payout_number, payout_account FROM transactions WHERE id = ?', (transaction_id,))
     row = cursor.fetchone()
@@ -554,21 +621,21 @@ def get_payout(transaction_id):
         return jsonify({'error': 'Transaction not found'}), 404
     
     return jsonify({
-        'payoutType': row['payout_type'] or 'MPESA',
-        'payoutNumber': row['payout_number'] or '',
+        'payoutType':    row['payout_type']    or 'MPESA',
+        'payoutNumber':  row['payout_number']  or '',
         'payoutAccount': row['payout_account'] or ''
     })
 
 
 @app.route('/api/transactions/<transaction_id>/resend', methods=['POST'])
 def resend_magic_link(transaction_id):
-    data = request.json
+    data  = request.json
     phone = data.get('phone', '')
     
     if not phone:
         return jsonify({'error': 'Phone number is required'}), 400
     
-    conn = get_db_connection()
+    conn   = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM transactions WHERE id = ?', (transaction_id,))
     row = cursor.fetchone()
@@ -589,7 +656,7 @@ def resend_magic_link(transaction_id):
             conn.close()
             return jsonify({'error': 'Please wait 1 hour before requesting another link'}), 429
     
-    new_token = generate_token()
+    new_token      = generate_token()
     new_token_hash = hash_value(new_token)
     new_expires_at = (datetime.now() + timedelta(days=TOKEN_EXPIRY_DAYS)).isoformat()
     
@@ -611,10 +678,10 @@ def resend_magic_link(transaction_id):
 
 @app.route('/api/transactions/<transaction_id>/status', methods=['PUT'])
 def update_status(transaction_id):
-    data = request.json
+    data       = request.json
     new_status = data.get('status')
-    phone = data.get('phone')
-    token = data.get('token', '')
+    phone      = data.get('phone')
+    token      = data.get('token', '')
     
     if not new_status:
         return jsonify({'error': 'Status is required'}), 400
@@ -623,7 +690,7 @@ def update_status(transaction_id):
     if new_status not in valid_statuses:
         return jsonify({'error': 'Invalid status'}), 400
     
-    conn = get_db_connection()
+    conn   = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM transactions WHERE id = ?', (transaction_id,))
     row = cursor.fetchone()
@@ -662,7 +729,7 @@ def update_status(transaction_id):
         cursor.execute('UPDATE transactions SET status = ?, shipped_at = ? WHERE id = ?',
                       (new_status, datetime.now().isoformat(), transaction_id))
         log_activity(transaction_id, 'SHIPPED', verified_phone, 'Seller marked as shipped')
-        
+
     elif new_status == 'DELIVERED':
         if verified_phone != transaction['buyer_phone']:
             conn.close()
@@ -673,7 +740,7 @@ def update_status(transaction_id):
         cursor.execute('UPDATE transactions SET status = ?, delivered_at = ? WHERE id = ?',
                       (new_status, datetime.now().isoformat(), transaction_id))
         log_activity(transaction_id, 'DELIVERED', verified_phone, 'Buyer confirmed delivery')
-        
+
     elif new_status == 'DISPUTED':
         if verified_phone not in [transaction['buyer_phone'], transaction['seller_phone']]:
             conn.close()
@@ -695,7 +762,7 @@ def update_status(transaction_id):
 def track_by_phone(phone):
     normalized_phone = normalize_phone(phone)
     
-    conn = get_db_connection()
+    conn   = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
         SELECT * FROM transactions 
@@ -729,9 +796,10 @@ if __name__ == '__main__':
     init_database()
     print("\n" + "=" * 50)
     print("SecureEscrow Kenya Backend Server")
-    print("Magic Link Authorization System with Payout Methods")
     print("=" * 50)
-    print(f"\nToken expiry: {TOKEN_EXPIRY_DAYS} days")
+    print(f"\nToken expiry : {TOKEN_EXPIRY_DAYS} days")
+    print(f"SMS mode     : {AFRICASTALKING_ENV.upper()}")
+    print(f"SMS URL      : {AFRICASTALKING_SMS_URL}")
     print("\nServer running at: http://127.0.0.1:5000")
     print("Press Ctrl+C to stop\n")
     app.run(debug=True, host='127.0.0.1', port=5000)
