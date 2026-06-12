@@ -4,6 +4,9 @@
 
 
 
+
+
+
 /**
  * SecureEscrow Kenya - Frontend Client
  * Magic Link Authorization System with Payout Methods
@@ -154,18 +157,36 @@ const API_BASE_URL = 'https://your-app-name.onrender.com/api';
     
     function initializePageLoader() {
         const loader = document.getElementById('pageLoader');
-        if (!loader) {
-            return;
+        if (!loader) return;
+
+        const statusEl = document.getElementById('loaderStatus');
+        const statusMessages = [
+            'Initializing secure environment…',
+            'Verifying encryption layer…',
+            'Loading transaction engine…',
+            'Ready'
+        ];
+
+        if (statusEl) {
+            let msgIdx = 0;
+            const interval = setInterval(function() {
+                msgIdx++;
+                if (msgIdx >= statusMessages.length) { clearInterval(interval); return; }
+                statusEl.style.opacity = '0';
+                setTimeout(function() {
+                    statusEl.textContent = statusMessages[msgIdx];
+                    statusEl.style.opacity = '1';
+                }, 200);
+            }, Math.floor(CONFIG.LOADER_DELAY / statusMessages.length));
         }
-        
+
         setTimeout(function() {
             loader.classList.add('fade-out');
-            
             setTimeout(function() {
                 if (loader && loader.parentNode) {
                     loader.parentNode.removeChild(loader);
                 }
-            }, 500);
+            }, 600);
         }, CONFIG.LOADER_DELAY);
     }
 

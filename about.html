@@ -5,6 +5,8 @@
 
 
 
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -42,29 +44,35 @@
 
 <body>
     <!-- Loader: wave line loader -->
-    <div class="page-loader" id="pageLoader">
+        <div class="page-loader" id="pageLoader">
+        <div class="loader-corner loader-corner-tl"></div>
+        <div class="loader-corner loader-corner-tr"></div>
+        <div class="loader-corner loader-corner-bl"></div>
+        <div class="loader-corner loader-corner-br"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
         <div class="loader-content">
             <div class="loader-shield">
-                <svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
-                    <path class="shield-outline" d="M25 2L6 10v15c0 10 19 21 19 21s19-11 19-21V10L25 2z" fill="none"
-                        stroke="#2ecc71" stroke-width="2" />
-                    <path class="shield-check" d="M18 25l6 6l12-12" fill="none" stroke="#2ecc71" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" />
+                <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path class="shield-bg-fill" d="M40 6L12 17v18c0 14 28 31 28 31s28-17 28-31V17L40 6z" fill="rgba(34,197,94,0.07)"/>
+                    <path class="shield-outline" d="M40 6L12 17v18c0 14 28 31 28 31s28-17 28-31V17L40 6z" fill="none" stroke="rgba(34,197,94,0.35)" stroke-width="1.5" stroke-linejoin="round"/>
+                    <path class="shield-inner" d="M40 6L12 17v18c0 14 28 31 28 31s28-17 28-31V17L40 6z" fill="none" stroke="#22c55e" stroke-width="2" stroke-linejoin="round"/>
+                    <path class="shield-check" d="M27 40l10 10 20-18" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </div>
             <div class="loader-text">
-                <span class="loader-brand">Secure<span>Escrow</span></span>
+                <span class="loader-brand">Secure<span>Escrow</span> Kenya</span>
                 <span class="loader-tagline">Securing Your Transaction</span>
             </div>
-            <div class="loader-wave">
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-            </div>
+            <div class="loader-progress"><div class="loader-progress-fill"></div></div>
+            <span class="loader-status" id="loaderStatus">Initializing secure environment…</span>
         </div>
     </div>
+
+
 
     <div class="app-wrapper">
         <header class="site-header">
