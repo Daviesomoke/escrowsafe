@@ -13,39 +13,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Compliance - SecureEscrow Kenya</title>
+    <title>Regulatory Compliance | SecureEscrow Kenya</title>
+    <meta name="description" content="SecureEscrow Kenya regulatory compliance information covering AML, KYC, data protection, CBK guidelines, M-PESA integration, and consumer protection.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://securescrowkenya.com/compliance.html">
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <style>
+        /* Legal page layout */
+        .legal-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 48px;
+            align-items: start;
+            padding: 56px 0 80px;
+        }
+        .legal-sidebar {
+            position: sticky;
+            top: 88px;
+        }
+        .legal-doc-meta {
+            background: var(--ink);
+            border-radius: var(--radius-lg);
+            padding: 22px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-dark);
+            position: relative;
+            overflow: hidden;
+        }
+        .legal-doc-meta::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--green), var(--green-dark));
+        }
+        .doc-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--green);
+            background: rgba(34,197,94,0.1);
+            border: 1px solid rgba(34,197,94,0.2);
+            padding: 5px 10px;
+            border-radius: var(--radius-pill);
+            margin-bottom: 14px;
+        }
+        .doc-badge svg { flex-shrink: 0; }
+        .doc-title-small {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 6px;
+            letter-spacing: -0.2px;
+        }
+        .doc-updated {
+            font-size: 11.5px;
+            color: rgba(255,255,255,0.35);
+            font-family: var(--font-mono);
+        }
+        .toc-heading {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            padding-left: 2px;
+        }
+        .toc-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .toc-link {
+            display: block;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 7px 12px;
+            border-radius: var(--radius-sm);
+            border-left: 2px solid transparent;
+            transition: all var(--transition);
+            line-height: 1.4;
+        }
+        .toc-link:hover {
+            color: var(--green-dark);
+            background: var(--green-dim);
+            border-left-color: var(--green);
+        }
+        .toc-link.active {
+            color: var(--green-dark);
+            background: var(--green-dim);
+            border-left-color: var(--green);
+            font-weight: 600;
+        }
+        .legal-body {
+            min-width: 0;
+        }
+        .legal-body h1.page-title {
+            margin-bottom: 6px;
+        }
+        .legal-body .last-updated {
+            margin-bottom: 28px;
+            padding-bottom: 28px;
+            border-bottom: 1px solid var(--border);
+        }
+        .legal-body h2 {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 36px 0 10px;
+            padding-top: 36px;
+            border-top: 1px solid var(--border);
+            letter-spacing: -0.3px;
+            scroll-margin-top: 88px;
+        }
+        .legal-body h2:first-of-type {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+        .legal-body h3 {
+            font-size: 14.5px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 20px 0 8px;
+        }
+        .legal-body p {
+            font-size: 14.5px;
+            color: var(--text-secondary);
+            margin-bottom: 14px;
+            line-height: 1.8;
+        }
+        .legal-body ul {
+            margin: 8px 0 16px 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .legal-body ul li {
+            font-size: 14px;
+            color: var(--text-secondary);
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.65;
+        }
+        .legal-body ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 5px;
+            height: 5px;
+            background: var(--green);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .legal-body ul li strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        .agreement-notice {
+            background: #f0fdf6;
+            border: 1px solid rgba(34,197,94,0.2);
+            border-left: 3px solid var(--green);
+            border-radius: var(--radius-md);
+            padding: 16px 18px;
+            margin-bottom: 28px;
+        }
+        .agreement-notice p {
+            margin: 0;
+            font-size: 14px;
+            color: #166534;
+        }
+        @media (max-width: 900px) {
+            .legal-layout {
+                grid-template-columns: 1fr;
+                gap: 32px;
+                padding: 40px 0 64px;
+            }
+            .legal-sidebar { position: static; }
+        }
+        @media (max-width: 575px) {
+            .legal-layout { padding: 28px 0 48px; gap: 24px; }
+            .legal-body h2 { font-size: 15px; }
+        }
+    </style>
 </head>
 
 <body>
-
-    <!-- Wave line loader -->
     <div class="page-loader" id="pageLoader">
+        <div class="loader-corner loader-corner-tl"></div>
+        <div class="loader-corner loader-corner-tr"></div>
+        <div class="loader-corner loader-corner-bl"></div>
+        <div class="loader-corner loader-corner-br"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
         <div class="loader-content">
             <div class="loader-shield">
-                <svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
-                    <path class="shield-outline" d="M25 2L6 10v15c0 10 19 21 19 21s19-11 19-21V10L25 2z" fill="none"
-                        stroke="#2ecc71" stroke-width="2" />
-                    <path class="shield-check" d="M18 25l6 6l12-12" fill="none" stroke="#2ecc71" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" />
+                <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path class="shield-bg-fill" d="M40 6L12 17v18c0 14 28 31 28 31s28-17 28-31V17L40 6z" fill="rgba(34,197,94,0.07)"/>
+                    <path class="shield-outline" d="M40 6L12 17v18c0 14 28 31 28 31s28-17 28-31V17L40 6z" fill="none" stroke="rgba(34,197,94,0.35)" stroke-width="1.5" stroke-linejoin="round"/>
+                    <path class="shield-inner" d="M40 6L12 17v18c0 14 28 31 28 31s28-17 28-31V17L40 6z" fill="none" stroke="#22c55e" stroke-width="2" stroke-linejoin="round"/>
+                    <path class="shield-check" d="M27 40l10 10 20-18" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </div>
             <div class="loader-text">
-                <span class="loader-brand">Secure<span>Escrow</span></span>
+                <span class="loader-brand">Secure<span>Escrow</span> Kenya</span>
                 <span class="loader-tagline">Securing Your Transaction</span>
             </div>
-            <div class="loader-wave">
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-            </div>
+            <div class="loader-progress"><div class="loader-progress-fill"></div></div>
+            <span class="loader-status" id="loaderStatus">Initializing secure environment…</span>
         </div>
     </div>
 
     <div class="app-wrapper">
-
         <header class="site-header">
             <div class="header-container">
                 <div class="header-brand">
@@ -53,51 +245,39 @@
                         <span class="brand-text">Secure<span class="brand-accent">Escrow</span> Kenya</span>
                     </a>
                 </div>
-
-                <!-- Mobile Menu Toggle (Hamburger/X) -->
                 <div class="mobile-menu-toggle" id="menuToggle">
                     <span class="toggle-bar"></span>
                     <span class="toggle-bar"></span>
                     <span class="toggle-bar"></span>
                 </div>
-
-                <!-- Overlay Background -->
                 <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-                <!-- Mobile Sidebar -->
                 <nav class="mobile-sidebar" id="mobileSidebar">
                     <ul class="sidebar-nav">
                         <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
                         <li class="nav-item"><a href="how.html" class="nav-link">How It Works</a></li>
                         <li class="nav-item"><a href="about.html" class="nav-link">About Us</a></li>
                         <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
-                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start
-                                Transaction</a></li>
+                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start Transaction</a></li>
                     </ul>
                 </nav>
-
-                <!-- Desktop Navigation -->
                 <nav class="primary-nav">
                     <ul class="nav-list">
                         <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
                         <li class="nav-item"><a href="how.html" class="nav-link">How It Works</a></li>
                         <li class="nav-item"><a href="about.html" class="nav-link">About Us</a></li>
                         <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
-                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start
-                                Transaction</a></li>
+                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start Transaction</a></li>
                     </ul>
                 </nav>
             </div>
         </header>
 
-        <!-- Trust Indicators - Authentic Design -->
         <div class="trust-strip">
             <div class="container">
                 <div class="trust-strip-inner">
                     <div class="trust-metric">
                         <div class="metric-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                             </svg>
@@ -107,28 +287,22 @@
                             <span class="metric-sub">Integrated with M-PESA</span>
                         </div>
                     </div>
-
                     <div class="trust-divider"></div>
-
                     <div class="trust-metric">
                         <div class="metric-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                             </svg>
                         </div>
                         <div class="metric-text">
-                            <span class="metric-main">Buyer & Seller Protection</span>
+                            <span class="metric-main">Buyer &amp; Seller Protection</span>
                             <span class="metric-sub">Dispute Resolution Included</span>
                         </div>
                     </div>
-
                     <div class="trust-divider"></div>
-
                     <div class="trust-metric">
                         <div class="metric-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <polyline points="12 6 12 12 16 14"></polyline>
                             </svg>
@@ -143,176 +317,188 @@
         </div>
 
         <main class="page-content">
-            <div class="legal-content">
-                <h1 class="page-title">Regulatory Compliance</h1>
-                <p class="last-updated">Last Updated: January 15, 2026</p>
+            <div class="container">
+                <div class="legal-layout">
 
-                <p>SecureEscrow Kenya operates in full compliance with all applicable Kenyan laws and regulations
-                    governing financial services, data protection, and electronic transactions.</p>
+                    <!-- Sidebar -->
+                    <aside class="legal-sidebar">
+                        <div class="legal-doc-meta">
+                            <div class="doc-badge">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                                </svg>
+                                Compliance
+                            </div>
+                            <div class="doc-title-small">Regulatory Compliance</div>
+                            <div class="doc-updated">Last Updated: January 15, 2026</div>
+                        </div>
+                        <div class="toc-heading">Contents</div>
+                        <ul class="toc-list" id="tocList">
+                    <li><a href="#licensing" class="toc-link">1. Licensing and Registration</a></li>
+                    <li><a href="#aml" class="toc-link">2. Anti-Money Laundering</a></li>
+                    <li><a href="#data" class="toc-link">3. Data Protection</a></li>
+                    <li><a href="#financial" class="toc-link">4. Financial Conduct</a></li>
+                    <li><a href="#electronic" class="toc-link">5. Electronic Transactions</a></li>
+                    <li><a href="#consumer" class="toc-link">6. Consumer Protection</a></li>
+                    <li><a href="#tax" class="toc-link">7. Tax Compliance</a></li>
+                    <li><a href="#mpesa" class="toc-link">8. M-PESA Integration</a></li>
+                    <li><a href="#complaints" class="toc-link">9. Complaint Handling</a></li>
+                    <li><a href="#updates" class="toc-link">10. Regulatory Updates</a></li>
+                    <li><a href="#audit" class="toc-link">11. Audit and Certification</a></li>
+                    <li><a href="#contact" class="toc-link">12. Contact Compliance</a></li>
+                        </ul>
+                    </aside>
 
-                <h2>1. Licensing and Registration</h2>
-                <p>SecureEscrow Kenya Limited is a duly registered company in the Republic of Kenya.</p>
-                <ul>
-                    <li><strong>Company Registration Number:</strong> PVT-2024-123456</li>
-                    <li><strong>KRA PIN:</strong> P051234567X</li>
-                    <li><strong>Registered Office:</strong> Westlands Business Centre, 7th Floor, Wing B, Nairobi</li>
-                </ul>
+                    <!-- Body -->
+                    <div class="legal-body">
+                        <h1 class="page-title">Regulatory Compliance</h1>
+                        <p class="last-updated">Last Updated: January 15, 2026</p>
 
-                <h2>2. Anti-Money Laundering (AML) Compliance</h2>
-                <h3>2.1 POCAMLA Compliance</h3>
-                <p>SecureEscrow Kenya complies with the Proceeds of Crime and Anti-Money Laundering Act (POCAMLA) and
-                    its regulations. Our AML program includes:</p>
-                <ul>
-                    <li>Customer Due Diligence (CDD) for all users</li>
-                    <li>Enhanced Due Diligence (EDD) for high-risk transactions</li>
-                    <li>Transaction monitoring and suspicious activity reporting</li>
-                    <li>Staff training on AML obligations</li>
-                    <li>Independent annual AML audit</li>
-                </ul>
+                        <p>SecureEscrow Kenya operates in full compliance with all applicable Kenyan laws and regulations governing financial services, data protection, and electronic transactions.</p>
 
-                <h3>2.2 Know Your Customer (KYC)</h3>
-                <p>All users must complete KYC verification before initiating transactions above KES 100,000.
-                    Verification requires:</p>
-                <ul>
-                    <li>Valid government-issued identification</li>
-                    <li>Proof of address (utility bill or bank statement)</li>
-                    <li>KRA PIN certificate</li>
-                    <li>Source of funds declaration for large transactions</li>
-                </ul>
+                        <h2 id="licensing">1. Licensing and Registration</h2>
+                        <p>SecureEscrow Kenya Limited is a duly registered company in the Republic of Kenya.</p>
+                        <ul>
+                            <li><strong>Company Registration Number:</strong> PVT-2024-123456</li>
+                            <li><strong>KRA PIN:</strong> P051234567X</li>
+                            <li><strong>Registered Office:</strong> Westlands Business Centre, 7th Floor, Wing B, Nairobi</li>
+                        </ul>
 
-                <h3>2.3 Suspicious Transaction Reporting</h3>
-                <p>We are obligated to report suspicious transactions to the Financial Reporting Centre (FRC). We may
-                    not disclose to users that a report has been filed.</p>
+                        <h2 id="aml">2. Anti-Money Laundering (AML) Compliance</h2>
+                        <h3>2.1 POCAMLA Compliance</h3>
+                        <p>SecureEscrow Kenya complies with the Proceeds of Crime and Anti-Money Laundering Act (POCAMLA) and its regulations. Our AML program includes:</p>
+                        <ul>
+                            <li>Customer Due Diligence (CDD) for all users</li>
+                            <li>Enhanced Due Diligence (EDD) for high-risk transactions</li>
+                            <li>Transaction monitoring and suspicious activity reporting</li>
+                            <li>Staff training on AML obligations</li>
+                            <li>Independent annual AML audit</li>
+                        </ul>
+                        <h3>2.2 Know Your Customer (KYC)</h3>
+                        <p>All users must complete KYC verification before initiating transactions above KES 100,000. Verification requires:</p>
+                        <ul>
+                            <li>Valid government-issued identification</li>
+                            <li>Proof of address (utility bill or bank statement)</li>
+                            <li>KRA PIN certificate</li>
+                            <li>Source of funds declaration for large transactions</li>
+                        </ul>
+                        <h3>2.3 Suspicious Transaction Reporting</h3>
+                        <p>We are obligated to report suspicious transactions to the Financial Reporting Centre (FRC). We may not disclose to users that a report has been filed.</p>
 
-                <h2>3. Data Protection Compliance</h2>
-                <h3>3.1 Data Protection Act, 2019</h3>
-                <p>SecureEscrow Kenya is registered as a Data Controller and Data Processor under the Data Protection
-                    Act, 2019.</p>
-                <ul>
-                    <li><strong>Registration Number:</strong> ODPC/DPR/2024/789</li>
-                </ul>
+                        <h2 id="data">3. Data Protection Compliance</h2>
+                        <h3>3.1 Data Protection Act, 2019</h3>
+                        <p>SecureEscrow Kenya is registered as a Data Controller and Data Processor under the Data Protection Act, 2019.</p>
+                        <ul>
+                            <li><strong>Registration Number:</strong> ODPC/DPR/2024/789</li>
+                        </ul>
+                        <h3>3.2 Data Protection Principles</h3>
+                        <p>We adhere to the following principles:</p>
+                        <ul>
+                            <li>Lawfulness, fairness, and transparency in data processing</li>
+                            <li>Purpose limitation — data collected only for specified purposes</li>
+                            <li>Data minimization — collecting only what is necessary</li>
+                            <li>Accuracy of personal data</li>
+                            <li>Storage limitation — data retained only as necessary</li>
+                            <li>Integrity and confidentiality of data</li>
+                        </ul>
+                        <h3>3.3 Cross-Border Data Transfers</h3>
+                        <p>Any transfer of personal data outside Kenya complies with the Data Protection Act requirements, including appropriate safeguards and user consent.</p>
 
-                <h3>3.2 Data Protection Principles</h3>
-                <p>We adhere to the following principles:</p>
-                <ul>
-                    <li>Lawfulness, fairness, and transparency in data processing</li>
-                    <li>Purpose limitation - data collected only for specified purposes</li>
-                    <li>Data minimization - collecting only what is necessary</li>
-                    <li>Accuracy of personal data</li>
-                    <li>Storage limitation - data retained only as necessary</li>
-                    <li>Integrity and confidentiality of data</li>
-                </ul>
+                        <h2 id="financial">4. Financial Conduct Compliance</h2>
+                        <h3>4.1 Central Bank of Kenya Guidelines</h3>
+                        <p>While SecureEscrow is not a bank or deposit-taking institution, we follow CBK guidelines on:</p>
+                        <ul>
+                            <li>Consumer protection in financial services</li>
+                            <li>Transparency in fee disclosure</li>
+                            <li>Complaint handling procedures</li>
+                        </ul>
+                        <h3>4.2 Trust Account Management</h3>
+                        <p>All client funds are held in segregated trust accounts with:</p>
+                        <ul>
+                            <li>Licensed commercial banks regulated by CBK</li>
+                            <li>Complete separation from operating accounts</li>
+                            <li>Regular reconciliation and audit</li>
+                            <li>Client fund protection insurance</li>
+                        </ul>
 
-                <h3>3.3 Cross-Border Data Transfers</h3>
-                <p>Any transfer of personal data outside Kenya complies with the Data Protection Act requirements,
-                    including appropriate safeguards and user consent.</p>
+                        <h2 id="electronic">5. Electronic Transactions Compliance</h2>
+                        <h3>5.1 Kenya Information and Communications Act</h3>
+                        <p>Our electronic transactions comply with the Kenya Information and Communications Act, including:</p>
+                        <ul>
+                            <li>Legal recognition of electronic records and signatures</li>
+                            <li>Secure electronic communication protocols</li>
+                            <li>Consumer protection in electronic commerce</li>
+                        </ul>
 
-                <h2>4. Financial Conduct Compliance</h2>
-                <h3>4.1 Central Bank of Kenya Guidelines</h3>
-                <p>While SecureEscrow is not a bank or deposit-taking institution, we follow CBK guidelines on:</p>
-                <ul>
-                    <li>Consumer protection in financial services</li>
-                    <li>Transparency in fee disclosure</li>
-                    <li>Complaint handling procedures</li>
-                </ul>
+                        <h2 id="consumer">6. Consumer Protection Compliance</h2>
+                        <h3>6.1 Consumer Protection Act</h3>
+                        <p>We comply with the Consumer Protection Act by:</p>
+                        <ul>
+                            <li>Providing clear and accurate information about services and fees</li>
+                            <li>Maintaining a fair dispute resolution process</li>
+                            <li>Prohibiting unfair business practices</li>
+                            <li>Ensuring transparency in all communications</li>
+                        </ul>
 
-                <h3>4.2 Trust Account Management</h3>
-                <p>All client funds are held in segregated trust accounts with:</p>
-                <ul>
-                    <li>Licensed commercial banks regulated by CBK</li>
-                    <li>Complete separation from operating accounts</li>
-                    <li>Regular reconciliation and audit</li>
-                    <li>Client fund protection insurance</li>
-                </ul>
+                        <h2 id="tax">7. Tax Compliance</h2>
+                        <h3>7.1 Tax Obligations</h3>
+                        <p>SecureEscrow Kenya complies with all tax obligations including:</p>
+                        <ul>
+                            <li>Corporate Income Tax</li>
+                            <li>Value Added Tax (VAT) where applicable</li>
+                            <li>Withholding Tax on payments</li>
+                            <li>Digital Service Tax (DST) compliance</li>
+                        </ul>
+                        <h3>7.2 User Tax Obligations</h3>
+                        <p>Users are responsible for their own tax obligations. SecureEscrow may provide transaction records to tax authorities as required by law.</p>
 
-                <h2>5. Electronic Transactions Compliance</h2>
-                <h3>5.1 Kenya Information and Communications Act</h3>
-                <p>Our electronic transactions comply with the Kenya Information and Communications Act, including:</p>
-                <ul>
-                    <li>Legal recognition of electronic records and signatures</li>
-                    <li>Secure electronic communication protocols</li>
-                    <li>Consumer protection in electronic commerce</li>
-                </ul>
+                        <h2 id="mpesa">8. M-PESA Integration Compliance</h2>
+                        <p>As a Safaricom partner, we comply with:</p>
+                        <ul>
+                            <li>Safaricom M-PESA API Terms of Service</li>
+                            <li>M-PESA Consumer Protection Guidelines</li>
+                            <li>Transaction limits and reporting requirements</li>
+                        </ul>
 
-                <h2>6. Consumer Protection Compliance</h2>
-                <h3>6.1 Consumer Protection Act</h3>
-                <p>We comply with the Consumer Protection Act by:</p>
-                <ul>
-                    <li>Providing clear and accurate information about services and fees</li>
-                    <li>Maintaining a fair dispute resolution process</li>
-                    <li>Prohibiting unfair business practices</li>
-                    <li>Ensuring transparency in all communications</li>
-                </ul>
+                        <h2 id="complaints">9. Complaint Handling</h2>
+                        <p>We maintain a formal complaint handling procedure in compliance with regulatory requirements. Complaints may be escalated to:</p>
+                        <ul>
+                            <li>SecureEscrow Compliance Officer</li>
+                            <li>Financial Reporting Centre (for AML concerns)</li>
+                            <li>Office of the Data Protection Commissioner (for privacy concerns)</li>
+                            <li>Competition Authority of Kenya (for consumer protection issues)</li>
+                        </ul>
 
-                <h2>7. Tax Compliance</h2>
-                <h3>7.1 Tax Obligations</h3>
-                <p>SecureEscrow Kenya complies with all tax obligations including:</p>
-                <ul>
-                    <li>Corporate Income Tax</li>
-                    <li>Value Added Tax (VAT) where applicable</li>
-                    <li>Withholding Tax on payments</li>
-                    <li>Digital Service Tax (DST) compliance</li>
-                </ul>
+                        <h2 id="updates">10. Regulatory Updates</h2>
+                        <p>We monitor regulatory developments and update our compliance program accordingly. Material changes affecting users will be communicated through our website or direct notification.</p>
 
-                <h3>7.2 User Tax Obligations</h3>
-                <p>Users are responsible for their own tax obligations. SecureEscrow may provide transaction records to
-                    tax authorities as required by law.</p>
+                        <h2 id="audit">11. Audit and Certification</h2>
+                        <p>SecureEscrow undergoes:</p>
+                        <ul>
+                            <li>Annual financial audit by registered auditors</li>
+                            <li>Quarterly trust account reconciliation</li>
+                            <li>Annual AML compliance audit</li>
+                            <li>Regular data protection impact assessments</li>
+                        </ul>
 
-                <h2>8. M-PESA Integration Compliance</h2>
-                <p>As a Safaricom partner, we comply with:</p>
-                <ul>
-                    <li>Safaricom M-PESA API Terms of Service</li>
-                    <li>M-PESA Consumer Protection Guidelines</li>
-                    <li>Transaction limits and reporting requirements</li>
-                </ul>
+                        <h2 id="contact">12. Contact Compliance Department</h2>
+                        <p>For compliance-related inquiries or to report concerns:</p>
+                        <p>Compliance Officer<br>SecureEscrow Kenya Limited<br>Westlands Business Centre, 7th Floor, Wing B<br>Nairobi, Kenya<br>Email: compliance@securescrowkenya.com<br>Confidential Hotline: +254 700 000 999</p>
 
-                <h2>9. Complaint Handling</h2>
-                <p>We maintain a formal complaint handling procedure in compliance with regulatory requirements.
-                    Complaints may be escalated to:</p>
-                <ul>
-                    <li>SecureEscrow Compliance Officer</li>
-                    <li>Financial Reporting Centre (for AML concerns)</li>
-                    <li>Office of the Data Protection Commissioner (for privacy concerns)</li>
-                    <li>Competition Authority of Kenya (for consumer protection issues)</li>
-                </ul>
+                    </div>
 
-                <h2>10. Regulatory Updates</h2>
-                <p>We monitor regulatory developments and update our compliance program accordingly. Material changes
-                    affecting users will be communicated through our website or direct notification.</p>
-
-                <h2>11. Audit and Certification</h2>
-                <p>SecureEscrow undergoes:</p>
-                <ul>
-                    <li>Annual financial audit by registered auditors</li>
-                    <li>Quarterly trust account reconciliation</li>
-                    <li>Annual AML compliance audit</li>
-                    <li>Regular data protection impact assessments</li>
-                </ul>
-
-                <h2>12. Contact Compliance Department</h2>
-                <p>For compliance-related inquiries or to report concerns:</p>
-                <p>
-                    Compliance Officer<br>
-                    SecureEscrow Kenya Limited<br>
-                    Westlands Business Centre, 7th Floor, Wing B<br>
-                    Nairobi, Kenya<br>
-                    Email: compliance@secureescrow.co.ke<br>
-                    Confidential Hotline: +254 700 000 999
-                </p>
+                </div>
             </div>
         </main>
 
-        <!-- Footer -->
         <footer class="site-footer">
             <div class="footer-container">
                 <div class="footer-grid">
                     <div class="footer-column">
                         <h4 class="footer-heading">SecureEscrow Kenya</h4>
-                        <p class="footer-text">Protecting Kenyan online transactions through trusted third-party
-                            mediation since 2024.</p>
+                        <p class="footer-text">Protecting Kenyan online transactions through trusted third-party mediation since 2026.</p>
                         <p class="footer-badge">Licensed and Regulated</p>
                     </div>
-
                     <div class="footer-column">
                         <h4 class="footer-heading">Quick Access</h4>
                         <ul class="footer-links">
@@ -322,7 +508,6 @@
                             <li><a href="contact.html">Contact</a></li>
                         </ul>
                     </div>
-
                     <div class="footer-column">
                         <h4 class="footer-heading">Resources</h4>
                         <ul class="footer-links">
@@ -332,7 +517,6 @@
                             <li><a href="#">Transaction Safety</a></li>
                         </ul>
                     </div>
-
                     <div class="footer-column">
                         <h4 class="footer-heading">Legal</h4>
                         <ul class="footer-links">
@@ -343,13 +527,10 @@
                         </ul>
                     </div>
                 </div>
-
                 <div class="footer-bottom">
                     <p>&copy; 2026 SecureEscrow Kenya Limited. All rights reserved.</p>
                 </div>
             </div>
-
-            <!-- Live Activity Ticker -->
             <div class="live-activity">
                 <div class="container">
                     <div class="activity-header">
@@ -358,26 +539,40 @@
                     </div>
                     <div class="ticker-wrapper">
                         <div class="ticker-content" id="activityTicker">
-                            <span class="ticker-item">🇰🇪 Nairobi: KES 45,000 secured for iPhone 15</span>
-                            <span class="ticker-item">🇰🇪 Mombasa: KES 12,500 vehicle deposit protected</span>
-                            <span class="ticker-item">🇰🇪 Kisumu: KES 8,900 freelance payment in escrow</span>
-                            <span class="ticker-item">🇰🇪 Nakuru: KES 185,000 land purchase secured</span>
-                            <span class="ticker-item">🇰🇪 Eldoret: KES 32,000 laptop transaction protected</span>
-                            <span class="ticker-item">🇰🇪 Nairobi: KES 45,000 secured for iPhone 15</span>
-                            <span class="ticker-item">🇰🇪 Mombasa: KES 12,500 vehicle deposit protected</span>
-                            <span class="ticker-item">🇰🇪 Kisumu: KES 8,900 freelance payment in escrow</span>
-                            <span class="ticker-item">🇰🇪 Nakuru: KES 185,000 land purchase secured</span>
-                            <span class="ticker-item">🇰🇪 Eldoret: KES 32,000 laptop transaction protected</span>
+                            <span class="ticker-item">Nairobi: KES 45,000 secured for iPhone 15</span>
+                            <span class="ticker-item">Mombasa: KES 12,500 vehicle deposit protected</span>
+                            <span class="ticker-item">Kisumu: KES 8,900 freelance payment in escrow</span>
+                            <span class="ticker-item">Nakuru: KES 185,000 land purchase secured</span>
+                            <span class="ticker-item">Eldoret: KES 32,000 laptop transaction protected</span>
+                            <span class="ticker-item">Nairobi: KES 45,000 secured for iPhone 15</span>
+                            <span class="ticker-item">Mombasa: KES 12,500 vehicle deposit protected</span>
+                            <span class="ticker-item">Kisumu: KES 8,900 freelance payment in escrow</span>
+                            <span class="ticker-item">Nakuru: KES 185,000 land purchase secured</span>
+                            <span class="ticker-item">Eldoret: KES 32,000 laptop transaction protected</span>
                         </div>
                     </div>
                 </div>
             </div>
-
         </footer>
     </div>
 
     <script src="script.js"></script>
-
+    <script>
+    (function() {
+        var links = document.querySelectorAll('.toc-link');
+        var headings = Array.from(document.querySelectorAll('.legal-body h2[id]'));
+        if (!links.length || !headings.length) return;
+        function onScroll() {
+            var scrollY = window.scrollY + 110;
+            var active = headings[0];
+            headings.forEach(function(h) { if (h.offsetTop <= scrollY) active = h; });
+            links.forEach(function(l) {
+                l.classList.toggle('active', l.getAttribute('href') === '#' + active.id);
+            });
+        }
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+    })();
+    </script>
 </body>
-
 </html>

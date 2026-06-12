@@ -13,39 +13,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms of Service - SecureEscrow Kenya</title>
+    <title>Terms of Service | SecureEscrow Kenya</title>
+    <meta name="description" content="Terms of Service governing the use of SecureEscrow Kenya. Read about eligibility, escrow services, fees, dispute resolution, and governing law.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://securescrowkenya.com/terms-of-service.html">
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <style>
+        /* Legal page layout */
+        .legal-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 48px;
+            align-items: start;
+            padding: 56px 0 80px;
+        }
+        .legal-sidebar {
+            position: sticky;
+            top: 88px;
+        }
+        .legal-doc-meta {
+            background: var(--ink);
+            border-radius: var(--radius-lg);
+            padding: 22px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-dark);
+            position: relative;
+            overflow: hidden;
+        }
+        .legal-doc-meta::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--green), var(--green-dark));
+        }
+        .doc-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--green);
+            background: rgba(34,197,94,0.1);
+            border: 1px solid rgba(34,197,94,0.2);
+            padding: 5px 10px;
+            border-radius: var(--radius-pill);
+            margin-bottom: 14px;
+        }
+        .doc-badge svg { flex-shrink: 0; }
+        .doc-title-small {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 6px;
+            letter-spacing: -0.2px;
+        }
+        .doc-updated {
+            font-size: 11.5px;
+            color: rgba(255,255,255,0.35);
+            font-family: var(--font-mono);
+        }
+        .toc-heading {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            padding-left: 2px;
+        }
+        .toc-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .toc-link {
+            display: block;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 7px 12px;
+            border-radius: var(--radius-sm);
+            border-left: 2px solid transparent;
+            transition: all var(--transition);
+            line-height: 1.4;
+        }
+        .toc-link:hover {
+            color: var(--green-dark);
+            background: var(--green-dim);
+            border-left-color: var(--green);
+        }
+        .toc-link.active {
+            color: var(--green-dark);
+            background: var(--green-dim);
+            border-left-color: var(--green);
+            font-weight: 600;
+        }
+        .legal-body {
+            min-width: 0;
+        }
+        .legal-body h1.page-title {
+            margin-bottom: 6px;
+        }
+        .legal-body .last-updated {
+            margin-bottom: 28px;
+            padding-bottom: 28px;
+            border-bottom: 1px solid var(--border);
+        }
+        .legal-body h2 {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 36px 0 10px;
+            padding-top: 36px;
+            border-top: 1px solid var(--border);
+            letter-spacing: -0.3px;
+            scroll-margin-top: 88px;
+        }
+        .legal-body h2:first-of-type {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+        .legal-body h3 {
+            font-size: 14.5px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 20px 0 8px;
+        }
+        .legal-body p {
+            font-size: 14.5px;
+            color: var(--text-secondary);
+            margin-bottom: 14px;
+            line-height: 1.8;
+        }
+        .legal-body ul {
+            margin: 8px 0 16px 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .legal-body ul li {
+            font-size: 14px;
+            color: var(--text-secondary);
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.65;
+        }
+        .legal-body ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 5px;
+            height: 5px;
+            background: var(--green);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .legal-body ul li strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        .agreement-notice {
+            background: #f0fdf6;
+            border: 1px solid rgba(34,197,94,0.2);
+            border-left: 3px solid var(--green);
+            border-radius: var(--radius-md);
+            padding: 16px 18px;
+            margin-bottom: 28px;
+        }
+        .agreement-notice p {
+            margin: 0;
+            font-size: 14px;
+            color: #166534;
+        }
+        @media (max-width: 900px) {
+            .legal-layout {
+                grid-template-columns: 1fr;
+                gap: 32px;
+                padding: 40px 0 64px;
+            }
+            .legal-sidebar { position: static; }
+        }
+        @media (max-width: 575px) {
+            .legal-layout { padding: 28px 0 48px; gap: 24px; }
+            .legal-body h2 { font-size: 15px; }
+        }
+    </style>
 </head>
 
 <body>
-
-    <!-- Wave line loader -->
     <div class="page-loader" id="pageLoader">
+        <div class="loader-corner loader-corner-tl"></div>
+        <div class="loader-corner loader-corner-tr"></div>
+        <div class="loader-corner loader-corner-bl"></div>
+        <div class="loader-corner loader-corner-br"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
         <div class="loader-content">
             <div class="loader-shield">
-                <svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
-                    <path class="shield-outline" d="M25 2L6 10v15c0 10 19 21 19 21s19-11 19-21V10L25 2z" fill="none"
-                        stroke="#2ecc71" stroke-width="2" />
-                    <path class="shield-check" d="M18 25l6 6l12-12" fill="none" stroke="#2ecc71" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" />
+                <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path class="shield-bg-fill" d="M40 6L12 17v18c0 14 28 31 28 31s28-17 28-31V17L40 6z" fill="rgba(34,197,94,0.07)"/>
+                    <path class="shield-outline" d="M40 6L12 17v18c0 14 28 31 28 31s28-17 28-31V17L40 6z" fill="none" stroke="rgba(34,197,94,0.35)" stroke-width="1.5" stroke-linejoin="round"/>
+                    <path class="shield-inner" d="M40 6L12 17v18c0 14 28 31 28 31s28-17 28-31V17L40 6z" fill="none" stroke="#22c55e" stroke-width="2" stroke-linejoin="round"/>
+                    <path class="shield-check" d="M27 40l10 10 20-18" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </div>
             <div class="loader-text">
-                <span class="loader-brand">Secure<span>Escrow</span></span>
+                <span class="loader-brand">Secure<span>Escrow</span> Kenya</span>
                 <span class="loader-tagline">Securing Your Transaction</span>
             </div>
-            <div class="loader-wave">
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-            </div>
+            <div class="loader-progress"><div class="loader-progress-fill"></div></div>
+            <span class="loader-status" id="loaderStatus">Initializing secure environment…</span>
         </div>
     </div>
 
     <div class="app-wrapper">
-
         <header class="site-header">
             <div class="header-container">
                 <div class="header-brand">
@@ -53,44 +245,33 @@
                         <span class="brand-text">Secure<span class="brand-accent">Escrow</span> Kenya</span>
                     </a>
                 </div>
-        
-                <!-- Mobile Menu Toggle (Hamburger/X) -->
                 <div class="mobile-menu-toggle" id="menuToggle">
                     <span class="toggle-bar"></span>
                     <span class="toggle-bar"></span>
                     <span class="toggle-bar"></span>
                 </div>
-        
-                <!-- Overlay Background -->
                 <div class="sidebar-overlay" id="sidebarOverlay"></div>
-        
-                <!-- Mobile Sidebar -->
                 <nav class="mobile-sidebar" id="mobileSidebar">
                     <ul class="sidebar-nav">
                         <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
                         <li class="nav-item"><a href="how.html" class="nav-link">How It Works</a></li>
                         <li class="nav-item"><a href="about.html" class="nav-link">About Us</a></li>
                         <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
-                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start
-                                Transaction</a></li>
+                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start Transaction</a></li>
                     </ul>
                 </nav>
-        
-                <!-- Desktop Navigation -->
                 <nav class="primary-nav">
                     <ul class="nav-list">
                         <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
                         <li class="nav-item"><a href="how.html" class="nav-link">How It Works</a></li>
                         <li class="nav-item"><a href="about.html" class="nav-link">About Us</a></li>
                         <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
-                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start
-                                Transaction</a></li>
+                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start Transaction</a></li>
                     </ul>
                 </nav>
             </div>
         </header>
 
-        <!-- Trust Indicators - Authentic Design -->
         <div class="trust-strip">
             <div class="container">
                 <div class="trust-strip-inner">
@@ -106,9 +287,7 @@
                             <span class="metric-sub">Integrated with M-PESA</span>
                         </div>
                     </div>
-        
                     <div class="trust-divider"></div>
-        
                     <div class="trust-metric">
                         <div class="metric-icon">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -116,13 +295,11 @@
                             </svg>
                         </div>
                         <div class="metric-text">
-                            <span class="metric-main">Buyer & Seller Protection</span>
+                            <span class="metric-main">Buyer &amp; Seller Protection</span>
                             <span class="metric-sub">Dispute Resolution Included</span>
                         </div>
                     </div>
-        
                     <div class="trust-divider"></div>
-        
                     <div class="trust-metric">
                         <div class="metric-icon">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -140,166 +317,158 @@
         </div>
 
         <main class="page-content">
-            <div class="legal-content">
-                <h1 class="page-title">Terms of Service</h1>
-                <p class="last-updated">Last Updated: January 15, 2026</p>
+            <div class="container">
+                <div class="legal-layout">
 
-                <p>Welcome to SecureEscrow Kenya. By accessing or using our escrow services, you agree to be bound by
-                    these Terms of Service. Please read them carefully before proceeding with any transaction.</p>
+                    <!-- Sidebar -->
+                    <aside class="legal-sidebar">
+                        <div class="legal-doc-meta">
+                            <div class="doc-badge">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                Legal Document
+                            </div>
+                            <div class="doc-title-small">Terms of Service</div>
+                            <div class="doc-updated">Last Updated: January 15, 2026</div>
+                        </div>
+                        <div class="toc-heading">Contents</div>
+                        <ul class="toc-list" id="tocList">
+                    <li><a href="#definitions" class="toc-link">1. Definitions</a></li>
+                    <li><a href="#eligibility" class="toc-link">2. Eligibility</a></li>
+                    <li><a href="#account" class="toc-link">3. Account Registration</a></li>
+                    <li><a href="#services" class="toc-link">4. Escrow Services</a></li>
+                    <li><a href="#fees" class="toc-link">5. Fees and Payment</a></li>
+                    <li><a href="#disputes" class="toc-link">6. Dispute Resolution</a></li>
+                    <li><a href="#prohibited" class="toc-link">7. Prohibited Activities</a></li>
+                    <li><a href="#liability" class="toc-link">8. Limitation of Liability</a></li>
+                    <li><a href="#indemnification" class="toc-link">9. Indemnification</a></li>
+                    <li><a href="#termination" class="toc-link">10. Termination</a></li>
+                    <li><a href="#modifications" class="toc-link">11. Modifications</a></li>
+                    <li><a href="#governing" class="toc-link">12. Governing Law</a></li>
+                    <li><a href="#contact" class="toc-link">13. Contact Information</a></li>
+                        </ul>
+                    </aside>
 
-                <h2>1. Definitions</h2>
-                <p>In these Terms of Service:</p>
-                <ul>
-                    <li><strong>"SecureEscrow," "we," "us," or "our"</strong> refers to SecureEscrow Kenya Limited, a
-                        company registered in Kenya.</li>
-                    <li><strong>"User," "you," or "your"</strong> refers to any individual or entity using our escrow
-                        services.</li>
-                    <li><strong>"Buyer"</strong> refers to the party depositing funds into escrow for a transaction.
-                    </li>
-                    <li><strong>"Seller"</strong> refers to the party providing goods or services in exchange for escrow
-                        funds.</li>
-                    <li><strong>"Escrow Agreement"</strong> refers to the specific terms agreed upon for each individual
-                        transaction.</li>
-                    <li><strong>"Transaction"</strong> refers to the entire process from fund deposit to release or
-                        refund.</li>
-                </ul>
+                    <!-- Body -->
+                    <div class="legal-body">
+                        <h1 class="page-title">Terms of Service</h1>
+                        <p class="last-updated">Last Updated: January 15, 2026</p>
 
-                <h2>2. Eligibility</h2>
-                <p>To use SecureEscrow Kenya services, you must:</p>
-                <ul>
-                    <li>Be at least 18 years of age</li>
-                    <li>Have the legal capacity to enter into binding contracts</li>
-                    <li>Provide accurate and complete identification information</li>
-                    <li>Not be prohibited from using our services under Kenyan law</li>
-                </ul>
+                        <p>Welcome to SecureEscrow Kenya. By accessing or using our escrow services, you agree to be bound by these Terms of Service. Please read them carefully before proceeding with any transaction.</p>
 
-                <h2>3. Account Registration</h2>
-                <h3>3.1 Account Creation</h3>
-                <p>To initiate or participate in an escrow transaction, you must register for an account. You agree to
-                    provide accurate, current, and complete information during registration.</p>
+                        <h2 id="definitions">1. Definitions</h2>
+                        <p>In these Terms of Service:</p>
+                        <ul>
+                            <li><strong>"SecureEscrow," "we," "us," or "our"</strong> refers to SecureEscrow Kenya Limited, a company registered in Kenya.</li>
+                            <li><strong>"User," "you," or "your"</strong> refers to any individual or entity using our escrow services.</li>
+                            <li><strong>"Buyer"</strong> refers to the party depositing funds into escrow for a transaction.</li>
+                            <li><strong>"Seller"</strong> refers to the party providing goods or services in exchange for escrow funds.</li>
+                            <li><strong>"Escrow Agreement"</strong> refers to the specific terms agreed upon for each individual transaction.</li>
+                            <li><strong>"Transaction"</strong> refers to the entire process from fund deposit to release or refund.</li>
+                        </ul>
 
-                <h3>3.2 Account Security</h3>
-                <p>You are responsible for maintaining the confidentiality of your account credentials. You agree to
-                    notify us immediately of any unauthorized access or use of your account.</p>
+                        <h2 id="eligibility">2. Eligibility</h2>
+                        <p>To use SecureEscrow Kenya services, you must:</p>
+                        <ul>
+                            <li>Be at least 18 years of age</li>
+                            <li>Have the legal capacity to enter into binding contracts</li>
+                            <li>Provide accurate and complete identification information</li>
+                            <li>Not be prohibited from using our services under Kenyan law</li>
+                        </ul>
 
-                <h3>3.3 Verification</h3>
-                <p>We reserve the right to verify your identity and business information at any time. This may include
-                    requesting government-issued identification, business registration documents, or proof of address.
-                </p>
+                        <h2 id="account">3. Account Registration</h2>
+                        <h3>3.1 Account Creation</h3>
+                        <p>To initiate or participate in an escrow transaction, you must register for an account. You agree to provide accurate, current, and complete information during registration.</p>
+                        <h3>3.2 Account Security</h3>
+                        <p>You are responsible for maintaining the confidentiality of your account credentials. You agree to notify us immediately of any unauthorized access or use of your account.</p>
+                        <h3>3.3 Verification</h3>
+                        <p>We reserve the right to verify your identity and business information at any time. This may include requesting government-issued identification, business registration documents, or proof of address.</p>
 
-                <h2>4. Escrow Services</h2>
-                <h3>4.1 Transaction Initiation</h3>
-                <p>An escrow transaction begins when a Buyer and Seller agree on terms and the Buyer deposits funds into
-                    our designated trust account.</p>
+                        <h2 id="services">4. Escrow Services</h2>
+                        <h3>4.1 Transaction Initiation</h3>
+                        <p>An escrow transaction begins when a Buyer and Seller agree on terms and the Buyer deposits funds into our designated trust account.</p>
+                        <h3>4.2 Fund Holding</h3>
+                        <p>All escrow funds are held in segregated trust accounts with licensed Kenyan financial institutions. These funds are not commingled with our operating accounts.</p>
+                        <h3>4.3 Inspection Period</h3>
+                        <p>Unless otherwise specified in the Escrow Agreement, Buyers have a 48-hour inspection period from confirmed delivery to examine goods or verify service completion.</p>
+                        <h3>4.4 Fund Release</h3>
+                        <p>Funds are released to the Seller only upon Buyer confirmation of satisfactory receipt. If the Buyer fails to respond within the inspection period, funds may be automatically released according to the Escrow Agreement.</p>
 
-                <h3>4.2 Fund Holding</h3>
-                <p>All escrow funds are held in segregated trust accounts with licensed Kenyan financial institutions.
-                    These funds are not commingled with our operating accounts.</p>
+                        <h2 id="fees">5. Fees and Payment</h2>
+                        <h3>5.1 Service Fees</h3>
+                        <p>SecureEscrow charges a service fee calculated as a percentage of the transaction amount. Current fee rates are published on our website and may be updated with notice.</p>
+                        <h3>5.2 Payment Methods</h3>
+                        <p>We accept payments via M-PESA, bank transfer, and approved payment cards. All payments must be made in Kenyan Shillings (KES) unless otherwise agreed.</p>
+                        <h3>5.3 Fee Responsibility</h3>
+                        <p>Unless otherwise specified in the Escrow Agreement, the Buyer is responsible for paying the escrow service fee in addition to the transaction amount.</p>
 
-                <h3>4.3 Inspection Period</h3>
-                <p>Unless otherwise specified in the Escrow Agreement, Buyers have a 48-hour inspection period from
-                    confirmed delivery to examine goods or verify service completion.</p>
+                        <h2 id="disputes">6. Dispute Resolution</h2>
+                        <h3>6.1 Dispute Initiation</h3>
+                        <p>Either party may initiate a dispute within the inspection period by contacting our support team. Upon dispute initiation, funds are frozen pending resolution.</p>
+                        <h3>6.2 Resolution Process</h3>
+                        <p>We encourage parties to resolve disputes amicably. If mutual resolution is not achieved, SecureEscrow will provide neutral arbitration based on the Escrow Agreement and available evidence.</p>
+                        <h3>6.3 Arbitration Decision</h3>
+                        <p>Our arbitration decisions are final and binding on both parties. Funds will be disbursed according to the arbitration outcome.</p>
 
-                <h3>4.4 Fund Release</h3>
-                <p>Funds are released to the Seller only upon Buyer confirmation of satisfactory receipt. If the Buyer
-                    fails to respond within the inspection period, funds may be automatically released according to the
-                    Escrow Agreement.</p>
+                        <h2 id="prohibited">7. Prohibited Activities</h2>
+                        <p>You agree not to use SecureEscrow services for:</p>
+                        <ul>
+                            <li>Illegal activities or transactions prohibited by Kenyan law</li>
+                            <li>Fraudulent or deceptive practices</li>
+                            <li>Money laundering or terrorist financing</li>
+                            <li>Transactions involving prohibited items (weapons, illegal drugs, etc.)</li>
+                            <li>Circumventing our fee structure</li>
+                        </ul>
 
-                <h2>5. Fees and Payment</h2>
-                <h3>5.1 Service Fees</h3>
-                <p>SecureEscrow charges a service fee calculated as a percentage of the transaction amount. Current fee
-                    rates are published on our website and may be updated with notice.</p>
+                        <h2 id="liability">8. Limitation of Liability</h2>
+                        <p>To the maximum extent permitted by law, SecureEscrow Kenya shall not be liable for:</p>
+                        <ul>
+                            <li>Indirect, incidental, or consequential damages</li>
+                            <li>Loss of profits, business, or anticipated savings</li>
+                            <li>Damages resulting from third-party actions or omissions</li>
+                            <li>Damages exceeding the total fees paid for the specific transaction</li>
+                        </ul>
 
-                <h3>5.2 Payment Methods</h3>
-                <p>We accept payments via M-PESA, bank transfer, and approved payment cards. All payments must be made
-                    in Kenyan Shillings (KES) unless otherwise agreed.</p>
+                        <h2 id="indemnification">9. Indemnification</h2>
+                        <p>You agree to indemnify and hold harmless SecureEscrow Kenya, its officers, directors, employees, and agents from any claims, damages, or expenses arising from your use of our services or violation of these Terms.</p>
 
-                <h3>5.3 Fee Responsibility</h3>
-                <p>Unless otherwise specified in the Escrow Agreement, the Buyer is responsible for paying the escrow
-                    service fee in addition to the transaction amount.</p>
+                        <h2 id="termination">10. Termination</h2>
+                        <p>We reserve the right to suspend or terminate your account at our discretion, particularly in cases of suspected fraud, violation of these Terms, or as required by law.</p>
 
-                <h2>6. Dispute Resolution</h2>
-                <h3>6.1 Dispute Initiation</h3>
-                <p>Either party may initiate a dispute within the inspection period by contacting our support team. Upon
-                    dispute initiation, funds are frozen pending resolution.</p>
+                        <h2 id="modifications">11. Modifications to Terms</h2>
+                        <p>We may modify these Terms at any time. Material changes will be communicated via email or website notice. Continued use of our services constitutes acceptance of modified Terms.</p>
 
-                <h3>6.2 Resolution Process</h3>
-                <p>We encourage parties to resolve disputes amicably. If mutual resolution is not achieved, SecureEscrow
-                    will provide neutral arbitration based on the Escrow Agreement and available evidence.</p>
+                        <h2 id="governing">12. Governing Law</h2>
+                        <p>These Terms are governed by and construed in accordance with the laws of the Republic of Kenya. Any disputes shall be subject to the exclusive jurisdiction of Kenyan courts.</p>
 
-                <h3>6.3 Arbitration Decision</h3>
-                <p>Our arbitration decisions are final and binding on both parties. Funds will be disbursed according to
-                    the arbitration outcome.</p>
+                        <h2 id="contact">13. Contact Information</h2>
+                        <p>For questions about these Terms of Service, contact us at:</p>
+                        <p>SecureEscrow Kenya Limited<br>Westlands Business Centre, 7th Floor, Wing B<br>Nairobi, Kenya<br>Email: legal@securescrowkenya.com<br>Phone: +254 700 000 000</p>
 
-                <h2>7. Prohibited Activities</h2>
-                <p>You agree not to use SecureEscrow services for:</p>
-                <ul>
-                    <li>Illegal activities or transactions prohibited by Kenyan law</li>
-                    <li>Fraudulent or deceptive practices</li>
-                    <li>Money laundering or terrorist financing</li>
-                    <li>Transactions involving prohibited items (weapons, illegal drugs, etc.)</li>
-                    <li>Circumventing our fee structure</li>
-                </ul>
+                    </div>
 
-                <h2>8. Limitation of Liability</h2>
-                <p>To the maximum extent permitted by law, SecureEscrow Kenya shall not be liable for:</p>
-                <ul>
-                    <li>Indirect, incidental, or consequential damages</li>
-                    <li>Loss of profits, business, or anticipated savings</li>
-                    <li>Damages resulting from third-party actions or omissions</li>
-                    <li>Damages exceeding the total fees paid for the specific transaction</li>
-                </ul>
-
-                <h2>9. Indemnification</h2>
-                <p>You agree to indemnify and hold harmless SecureEscrow Kenya, its officers, directors, employees, and
-                    agents from any claims, damages, or expenses arising from your use of our services or violation of
-                    these Terms.</p>
-
-                <h2>10. Termination</h2>
-                <p>We reserve the right to suspend or terminate your account at our discretion, particularly in cases of
-                    suspected fraud, violation of these Terms, or as required by law.</p>
-
-                <h2>11. Modifications to Terms</h2>
-                <p>We may modify these Terms at any time. Material changes will be communicated via email or website
-                    notice. Continued use of our services constitutes acceptance of modified Terms.</p>
-
-                <h2>12. Governing Law</h2>
-                <p>These Terms are governed by and construed in accordance with the laws of the Republic of Kenya. Any
-                    disputes shall be subject to the exclusive jurisdiction of Kenyan courts.</p>
-
-                <h2>13. Contact Information</h2>
-                <p>For questions about these Terms of Service, contact us at:</p>
-                <p>
-                    SecureEscrow Kenya Limited<br>
-                    Westlands Business Centre, 7th Floor, Wing B<br>
-                    Nairobi, Kenya<br>
-                    Email: legal@secureescrow.co.ke<br>
-                    Phone: +254 700 000 000
-                </p>
+                </div>
             </div>
         </main>
 
-        <!-- Footer -->
         <footer class="site-footer">
             <div class="footer-container">
                 <div class="footer-grid">
                     <div class="footer-column">
                         <h4 class="footer-heading">SecureEscrow Kenya</h4>
-                        <p class="footer-text">Protecting Kenyan online transactions through trusted third-party
-                            mediation since 2024.</p>
+                        <p class="footer-text">Protecting Kenyan online transactions through trusted third-party mediation since 2026.</p>
                         <p class="footer-badge">Licensed and Regulated</p>
                     </div>
-
                     <div class="footer-column">
                         <h4 class="footer-heading">Quick Access</h4>
                         <ul class="footer-links">
                             <li><a href="index.html">Home</a></li>
-                            <li><a href="how-it-works.html">How It Works</a></li>
+                            <li><a href="how.html">How It Works</a></li>
                             <li><a href="about.html">About Us</a></li>
                             <li><a href="contact.html">Contact</a></li>
                         </ul>
                     </div>
-
                     <div class="footer-column">
                         <h4 class="footer-heading">Resources</h4>
                         <ul class="footer-links">
@@ -309,7 +478,6 @@
                             <li><a href="#">Transaction Safety</a></li>
                         </ul>
                     </div>
-
                     <div class="footer-column">
                         <h4 class="footer-heading">Legal</h4>
                         <ul class="footer-links">
@@ -320,13 +488,10 @@
                         </ul>
                     </div>
                 </div>
-
                 <div class="footer-bottom">
                     <p>&copy; 2026 SecureEscrow Kenya Limited. All rights reserved.</p>
                 </div>
             </div>
-
-            <!-- Live Activity Ticker -->
             <div class="live-activity">
                 <div class="container">
                     <div class="activity-header">
@@ -335,26 +500,40 @@
                     </div>
                     <div class="ticker-wrapper">
                         <div class="ticker-content" id="activityTicker">
-                            <span class="ticker-item">🇰🇪 Nairobi: KES 45,000 secured for iPhone 15</span>
-                            <span class="ticker-item">🇰🇪 Mombasa: KES 12,500 vehicle deposit protected</span>
-                            <span class="ticker-item">🇰🇪 Kisumu: KES 8,900 freelance payment in escrow</span>
-                            <span class="ticker-item">🇰🇪 Nakuru: KES 185,000 land purchase secured</span>
-                            <span class="ticker-item">🇰🇪 Eldoret: KES 32,000 laptop transaction protected</span>
-                            <span class="ticker-item">🇰🇪 Nairobi: KES 45,000 secured for iPhone 15</span>
-                            <span class="ticker-item">🇰🇪 Mombasa: KES 12,500 vehicle deposit protected</span>
-                            <span class="ticker-item">🇰🇪 Kisumu: KES 8,900 freelance payment in escrow</span>
-                            <span class="ticker-item">🇰🇪 Nakuru: KES 185,000 land purchase secured</span>
-                            <span class="ticker-item">🇰🇪 Eldoret: KES 32,000 laptop transaction protected</span>
+                            <span class="ticker-item">Nairobi: KES 45,000 secured for iPhone 15</span>
+                            <span class="ticker-item">Mombasa: KES 12,500 vehicle deposit protected</span>
+                            <span class="ticker-item">Kisumu: KES 8,900 freelance payment in escrow</span>
+                            <span class="ticker-item">Nakuru: KES 185,000 land purchase secured</span>
+                            <span class="ticker-item">Eldoret: KES 32,000 laptop transaction protected</span>
+                            <span class="ticker-item">Nairobi: KES 45,000 secured for iPhone 15</span>
+                            <span class="ticker-item">Mombasa: KES 12,500 vehicle deposit protected</span>
+                            <span class="ticker-item">Kisumu: KES 8,900 freelance payment in escrow</span>
+                            <span class="ticker-item">Nakuru: KES 185,000 land purchase secured</span>
+                            <span class="ticker-item">Eldoret: KES 32,000 laptop transaction protected</span>
                         </div>
                     </div>
                 </div>
             </div>
-
         </footer>
     </div>
 
     <script src="script.js"></script>
-
+    <script>
+    (function() {
+        var links = document.querySelectorAll('.toc-link');
+        var headings = Array.from(document.querySelectorAll('.legal-body h2[id]'));
+        if (!links.length || !headings.length) return;
+        function onScroll() {
+            var scrollY = window.scrollY + 110;
+            var active = headings[0];
+            headings.forEach(function(h) { if (h.offsetTop <= scrollY) active = h; });
+            links.forEach(function(l) {
+                l.classList.toggle('active', l.getAttribute('href') === '#' + active.id);
+            });
+        }
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+    })();
+    </script>
 </body>
-
 </html>

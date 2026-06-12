@@ -7,45 +7,237 @@
 
 
 
-><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Policy - SecureEscrow Kenya</title>
+    <title>Privacy Policy | SecureEscrow Kenya</title>
+    <meta name="description" content="Privacy Policy for SecureEscrow Kenya. Learn how we collect, use, and protect your personal information in compliance with Kenyan data protection law.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://securescrowkenya.com/privacy-policy.html">
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <style>
+        /* Legal page layout */
+        .legal-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 48px;
+            align-items: start;
+            padding: 56px 0 80px;
+        }
+        .legal-sidebar {
+            position: sticky;
+            top: 88px;
+        }
+        .legal-doc-meta {
+            background: var(--ink);
+            border-radius: var(--radius-lg);
+            padding: 22px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-dark);
+            position: relative;
+            overflow: hidden;
+        }
+        .legal-doc-meta::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--green), var(--green-dark));
+        }
+        .doc-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--green);
+            background: rgba(34,197,94,0.1);
+            border: 1px solid rgba(34,197,94,0.2);
+            padding: 5px 10px;
+            border-radius: var(--radius-pill);
+            margin-bottom: 14px;
+        }
+        .doc-badge svg { flex-shrink: 0; }
+        .doc-title-small {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 6px;
+            letter-spacing: -0.2px;
+        }
+        .doc-updated {
+            font-size: 11.5px;
+            color: rgba(255,255,255,0.35);
+            font-family: var(--font-mono);
+        }
+        .toc-heading {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            padding-left: 2px;
+        }
+        .toc-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .toc-link {
+            display: block;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 7px 12px;
+            border-radius: var(--radius-sm);
+            border-left: 2px solid transparent;
+            transition: all var(--transition);
+            line-height: 1.4;
+        }
+        .toc-link:hover {
+            color: var(--green-dark);
+            background: var(--green-dim);
+            border-left-color: var(--green);
+        }
+        .toc-link.active {
+            color: var(--green-dark);
+            background: var(--green-dim);
+            border-left-color: var(--green);
+            font-weight: 600;
+        }
+        .legal-body {
+            min-width: 0;
+        }
+        .legal-body h1.page-title {
+            margin-bottom: 6px;
+        }
+        .legal-body .last-updated {
+            margin-bottom: 28px;
+            padding-bottom: 28px;
+            border-bottom: 1px solid var(--border);
+        }
+        .legal-body h2 {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 36px 0 10px;
+            padding-top: 36px;
+            border-top: 1px solid var(--border);
+            letter-spacing: -0.3px;
+            scroll-margin-top: 88px;
+        }
+        .legal-body h2:first-of-type {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+        .legal-body h3 {
+            font-size: 14.5px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 20px 0 8px;
+        }
+        .legal-body p {
+            font-size: 14.5px;
+            color: var(--text-secondary);
+            margin-bottom: 14px;
+            line-height: 1.8;
+        }
+        .legal-body ul {
+            margin: 8px 0 16px 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .legal-body ul li {
+            font-size: 14px;
+            color: var(--text-secondary);
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.65;
+        }
+        .legal-body ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 5px;
+            height: 5px;
+            background: var(--green);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .legal-body ul li strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        .agreement-notice {
+            background: #f0fdf6;
+            border: 1px solid rgba(34,197,94,0.2);
+            border-left: 3px solid var(--green);
+            border-radius: var(--radius-md);
+            padding: 16px 18px;
+            margin-bottom: 28px;
+        }
+        .agreement-notice p {
+            margin: 0;
+            font-size: 14px;
+            color: #166534;
+        }
+        @media (max-width: 900px) {
+            .legal-layout {
+                grid-template-columns: 1fr;
+                gap: 32px;
+                padding: 40px 0 64px;
+            }
+            .legal-sidebar { position: static; }
+        }
+        @media (max-width: 575px) {
+            .legal-layout { padding: 28px 0 48px; gap: 24px; }
+            .legal-body h2 { font-size: 15px; }
+        }
+    </style>
 </head>
 
 <body>
-
-    <!-- Wave line loader -->
     <div class="page-loader" id="pageLoader">
+        <div class="loader-corner loader-corner-tl"></div>
+        <div class="loader-corner loader-corner-tr"></div>
+        <div class="loader-corner loader-corner-bl"></div>
+        <div class="loader-corner loader-corner-br"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
         <div class="loader-content">
             <div class="loader-shield">
-                <svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
-                    <path class="shield-outline" d="M25 2L6 10v15c0 10 19 21 19 21s19-11 19-21V10L25 2z" fill="none"
-                        stroke="#2ecc71" stroke-width="2" />
-                    <path class="shield-check" d="M18 25l6 6l12-12" fill="none" stroke="#2ecc71" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" />
+                <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path class="shield-bg-fill" d="M40 6L12 17v18c0 14 28 31 28 31s28-17 28-31V17L40 6z" fill="rgba(34,197,94,0.07)"/>
+                    <path class="shield-outline" d="M40 6L12 17v18c0 14 28 31 28 31s28-17 28-31V17L40 6z" fill="none" stroke="rgba(34,197,94,0.35)" stroke-width="1.5" stroke-linejoin="round"/>
+                    <path class="shield-inner" d="M40 6L12 17v18c0 14 28 31 28 31s28-17 28-31V17L40 6z" fill="none" stroke="#22c55e" stroke-width="2" stroke-linejoin="round"/>
+                    <path class="shield-check" d="M27 40l10 10 20-18" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </div>
             <div class="loader-text">
-                <span class="loader-brand">Secure<span>Escrow</span></span>
+                <span class="loader-brand">Secure<span>Escrow</span> Kenya</span>
                 <span class="loader-tagline">Securing Your Transaction</span>
             </div>
-            <div class="loader-wave">
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-            </div>
+            <div class="loader-progress"><div class="loader-progress-fill"></div></div>
+            <span class="loader-status" id="loaderStatus">Initializing secure environment…</span>
         </div>
     </div>
 
     <div class="app-wrapper">
-
         <header class="site-header">
             <div class="header-container">
                 <div class="header-brand">
@@ -53,44 +245,33 @@
                         <span class="brand-text">Secure<span class="brand-accent">Escrow</span> Kenya</span>
                     </a>
                 </div>
-        
-                <!-- Mobile Menu Toggle (Hamburger/X) -->
                 <div class="mobile-menu-toggle" id="menuToggle">
                     <span class="toggle-bar"></span>
                     <span class="toggle-bar"></span>
                     <span class="toggle-bar"></span>
                 </div>
-        
-                <!-- Overlay Background -->
                 <div class="sidebar-overlay" id="sidebarOverlay"></div>
-        
-                <!-- Mobile Sidebar -->
                 <nav class="mobile-sidebar" id="mobileSidebar">
                     <ul class="sidebar-nav">
                         <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
                         <li class="nav-item"><a href="how.html" class="nav-link">How It Works</a></li>
                         <li class="nav-item"><a href="about.html" class="nav-link">About Us</a></li>
                         <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
-                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start
-                                Transaction</a></li>
+                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start Transaction</a></li>
                     </ul>
                 </nav>
-        
-                <!-- Desktop Navigation -->
                 <nav class="primary-nav">
                     <ul class="nav-list">
                         <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
-                        <li class="nav-item"><a href="how-it-works.html" class="nav-link">How It Works</a></li>
+                        <li class="nav-item"><a href="how.html" class="nav-link">How It Works</a></li>
                         <li class="nav-item"><a href="about.html" class="nav-link">About Us</a></li>
                         <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
-                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start
-                                Transaction</a></li>
+                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start Transaction</a></li>
                     </ul>
                 </nav>
             </div>
         </header>
 
-        <!-- Trust Indicators - Authentic Design -->
         <div class="trust-strip">
             <div class="container">
                 <div class="trust-strip-inner">
@@ -106,9 +287,7 @@
                             <span class="metric-sub">Integrated with M-PESA</span>
                         </div>
                     </div>
-        
                     <div class="trust-divider"></div>
-        
                     <div class="trust-metric">
                         <div class="metric-icon">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -116,13 +295,11 @@
                             </svg>
                         </div>
                         <div class="metric-text">
-                            <span class="metric-main">Buyer & Seller Protection</span>
+                            <span class="metric-main">Buyer &amp; Seller Protection</span>
                             <span class="metric-sub">Dispute Resolution Included</span>
                         </div>
                     </div>
-        
                     <div class="trust-divider"></div>
-        
                     <div class="trust-metric">
                         <div class="metric-icon">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -140,156 +317,170 @@
         </div>
 
         <main class="page-content">
-            <div class="legal-content">
-                <h1 class="page-title">Privacy Policy</h1>
-                <p class="last-updated">Last Updated: January 15, 2026</p>
+            <div class="container">
+                <div class="legal-layout">
 
-                <p>SecureEscrow Kenya is committed to protecting your privacy. This Privacy Policy explains how we
-                    collect, use, disclose, and safeguard your information when you use our escrow services.</p>
+                    <!-- Sidebar -->
+                    <aside class="legal-sidebar">
+                        <div class="legal-doc-meta">
+                            <div class="doc-badge">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                </svg>
+                                Privacy
+                            </div>
+                            <div class="doc-title-small">Privacy Policy</div>
+                            <div class="doc-updated">Last Updated: January 15, 2026</div>
+                        </div>
+                        <div class="toc-heading">Contents</div>
+                        <ul class="toc-list" id="tocList">
+                    <li><a href="#collect" class="toc-link">1. Information We Collect</a></li>
+                    <li><a href="#use" class="toc-link">2. How We Use Your Information</a></li>
+                    <li><a href="#sharing" class="toc-link">3. Information Sharing</a></li>
+                    <li><a href="#security" class="toc-link">4. Data Security</a></li>
+                    <li><a href="#retention" class="toc-link">5. Data Retention</a></li>
+                    <li><a href="#rights" class="toc-link">6. Your Rights</a></li>
+                    <li><a href="#cookies" class="toc-link">7. Cookies and Tracking</a></li>
+                    <li><a href="#third-party" class="toc-link">8. Third-Party Links</a></li>
+                    <li><a href="#children" class="toc-link">9. Children's Privacy</a></li>
+                    <li><a href="#transfers" class="toc-link">10. International Transfers</a></li>
+                    <li><a href="#changes" class="toc-link">11. Policy Changes</a></li>
+                    <li><a href="#contact" class="toc-link">12. Contact Us</a></li>
+                        </ul>
+                    </aside>
 
-                <h2>1. Information We Collect</h2>
-                <h3>1.1 Personal Information</h3>
-                <p>We collect information that identifies you personally, including:</p>
-                <ul>
-                    <li>Full name and contact information (email, phone, address)</li>
-                    <li>Government-issued identification (National ID, Passport, KRA PIN)</li>
-                    <li>Date of birth and nationality</li>
-                    <li>M-PESA registered phone number</li>
-                    <li>Bank account details for fund disbursement</li>
-                </ul>
+                    <!-- Body -->
+                    <div class="legal-body">
+                        <h1 class="page-title">Privacy Policy</h1>
+                        <p class="last-updated">Last Updated: January 15, 2026</p>
 
-                <h3>1.2 Transaction Information</h3>
-                <p>We collect details about your escrow transactions, including:</p>
-                <ul>
-                    <li>Transaction amounts and dates</li>
-                    <li>Item descriptions and agreed terms</li>
-                    <li>Communication between buyers and sellers</li>
-                    <li>Delivery and tracking information</li>
-                    <li>Dispute history and resolution outcomes</li>
-                </ul>
+                        <p>SecureEscrow Kenya is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our escrow services.</p>
 
-                <h3>1.3 Technical Information</h3>
-                <p>When you visit our website, we automatically collect:</p>
-                <ul>
-                    <li>IP address and device information</li>
-                    <li>Browser type and version</li>
-                    <li>Pages visited and time spent</li>
-                    <li>Referring website or source</li>
-                </ul>
+                        <h2 id="collect">1. Information We Collect</h2>
+                        <h3>1.1 Personal Information</h3>
+                        <p>We collect information that identifies you personally, including:</p>
+                        <ul>
+                            <li>Full name and contact information (email, phone, address)</li>
+                            <li>Government-issued identification (National ID, Passport, KRA PIN)</li>
+                            <li>Date of birth and nationality</li>
+                            <li>M-PESA registered phone number</li>
+                            <li>Bank account details for fund disbursement</li>
+                        </ul>
+                        <h3>1.2 Transaction Information</h3>
+                        <p>We collect details about your escrow transactions, including:</p>
+                        <ul>
+                            <li>Transaction amounts and dates</li>
+                            <li>Item descriptions and agreed terms</li>
+                            <li>Communication between buyers and sellers</li>
+                            <li>Delivery and tracking information</li>
+                            <li>Dispute history and resolution outcomes</li>
+                        </ul>
+                        <h3>1.3 Technical Information</h3>
+                        <p>When you visit our website, we automatically collect:</p>
+                        <ul>
+                            <li>IP address and device information</li>
+                            <li>Browser type and version</li>
+                            <li>Pages visited and time spent</li>
+                            <li>Referring website or source</li>
+                        </ul>
 
-                <h2>2. How We Use Your Information</h2>
-                <p>We use collected information to:</p>
-                <ul>
-                    <li>Process and manage escrow transactions</li>
-                    <li>Verify identity and prevent fraud</li>
-                    <li>Communicate about transactions and account updates</li>
-                    <li>Improve our services and user experience</li>
-                    <li>Comply with legal and regulatory requirements</li>
-                    <li>Resolve disputes and enforce our Terms of Service</li>
-                </ul>
+                        <h2 id="use">2. How We Use Your Information</h2>
+                        <p>We use collected information to:</p>
+                        <ul>
+                            <li>Process and manage escrow transactions</li>
+                            <li>Verify identity and prevent fraud</li>
+                            <li>Communicate about transactions and account updates</li>
+                            <li>Improve our services and user experience</li>
+                            <li>Comply with legal and regulatory requirements</li>
+                            <li>Resolve disputes and enforce our Terms of Service</li>
+                        </ul>
 
-                <h2>3. Information Sharing and Disclosure</h2>
-                <h3>3.1 Transaction Parties</h3>
-                <p>To facilitate escrow transactions, we share necessary information between Buyers and Sellers,
-                    including names, contact details, and transaction specifics.</p>
+                        <h2 id="sharing">3. Information Sharing and Disclosure</h2>
+                        <h3>3.1 Transaction Parties</h3>
+                        <p>To facilitate escrow transactions, we share necessary information between Buyers and Sellers, including names, contact details, and transaction specifics.</p>
+                        <h3>3.2 Service Providers</h3>
+                        <p>We may share information with trusted third-party service providers who assist with:</p>
+                        <ul>
+                            <li>Payment processing (M-PESA, banks)</li>
+                            <li>Identity verification</li>
+                            <li>Fraud prevention</li>
+                            <li>Email and SMS communications</li>
+                        </ul>
+                        <h3>3.3 Legal Requirements</h3>
+                        <p>We may disclose information when required by law, court order, or government regulation, including compliance with Kenyan financial and anti-money laundering laws.</p>
+                        <h3>3.4 Business Transfers</h3>
+                        <p>In the event of a merger, acquisition, or sale of assets, your information may be transferred as part of the transaction.</p>
 
-                <h3>3.2 Service Providers</h3>
-                <p>We may share information with trusted third-party service providers who assist with:</p>
-                <ul>
-                    <li>Payment processing (M-PESA, banks)</li>
-                    <li>Identity verification</li>
-                    <li>Fraud prevention</li>
-                    <li>Email and SMS communications</li>
-                </ul>
+                        <h2 id="security">4. Data Security</h2>
+                        <p>We implement industry-standard security measures to protect your information:</p>
+                        <ul>
+                            <li>Encryption of data in transit and at rest</li>
+                            <li>Secure servers with restricted access</li>
+                            <li>Regular security audits and vulnerability testing</li>
+                            <li>Employee training on data protection</li>
+                            <li>Multi-factor authentication for account access</li>
+                        </ul>
 
-                <h3>3.3 Legal Requirements</h3>
-                <p>We may disclose information when required by law, court order, or government regulation, including
-                    compliance with Kenyan financial and anti-money laundering laws.</p>
+                        <h2 id="retention">5. Data Retention</h2>
+                        <p>We retain your information for as long as necessary to:</p>
+                        <ul>
+                            <li>Provide our escrow services</li>
+                            <li>Comply with legal obligations (typically 7 years for financial records)</li>
+                            <li>Resolve disputes and enforce agreements</li>
+                            <li>Maintain business records for legitimate purposes</li>
+                        </ul>
 
-                <h3>3.4 Business Transfers</h3>
-                <p>In the event of a merger, acquisition, or sale of assets, your information may be transferred as part
-                    of the transaction.</p>
+                        <h2 id="rights">6. Your Rights</h2>
+                        <p>Under Kenyan data protection laws, you have the right to:</p>
+                        <ul>
+                            <li>Access your personal information</li>
+                            <li>Request correction of inaccurate data</li>
+                            <li>Object to processing of your information</li>
+                            <li>Request deletion of your data (subject to legal retention requirements)</li>
+                            <li>Withdraw consent for marketing communications</li>
+                            <li>Lodge a complaint with the Office of the Data Protection Commissioner</li>
+                        </ul>
 
-                <h2>4. Data Security</h2>
-                <p>We implement industry-standard security measures to protect your information:</p>
-                <ul>
-                    <li>Encryption of data in transit and at rest</li>
-                    <li>Secure servers with restricted access</li>
-                    <li>Regular security audits and vulnerability testing</li>
-                    <li>Employee training on data protection</li>
-                    <li>Multi-factor authentication for account access</li>
-                </ul>
+                        <h2 id="cookies">7. Cookies and Tracking</h2>
+                        <p>We use cookies and similar technologies to:</p>
+                        <ul>
+                            <li>Maintain session information</li>
+                            <li>Remember user preferences</li>
+                            <li>Analyze website usage and performance</li>
+                            <li>Prevent fraudulent activity</li>
+                        </ul>
+                        <p>You can control cookie settings through your browser preferences.</p>
 
-                <h2>5. Data Retention</h2>
-                <p>We retain your information for as long as necessary to:</p>
-                <ul>
-                    <li>Provide our escrow services</li>
-                    <li>Comply with legal obligations (typically 7 years for financial records)</li>
-                    <li>Resolve disputes and enforce agreements</li>
-                    <li>Maintain business records for legitimate purposes</li>
-                </ul>
+                        <h2 id="third-party">8. Third-Party Links</h2>
+                        <p>Our website may contain links to third-party websites. We are not responsible for the privacy practices or content of these external sites.</p>
 
-                <h2>6. Your Rights</h2>
-                <p>Under Kenyan data protection laws, you have the right to:</p>
-                <ul>
-                    <li>Access your personal information</li>
-                    <li>Request correction of inaccurate data</li>
-                    <li>Object to processing of your information</li>
-                    <li>Request deletion of your data (subject to legal retention requirements)</li>
-                    <li>Withdraw consent for marketing communications</li>
-                    <li>Lodge a complaint with the Office of the Data Protection Commissioner</li>
-                </ul>
+                        <h2 id="children">9. Children's Privacy</h2>
+                        <p>Our services are not intended for individuals under 18 years of age. We do not knowingly collect information from minors.</p>
 
-                <h2>7. Cookies and Tracking</h2>
-                <p>We use cookies and similar technologies to:</p>
-                <ul>
-                    <li>Maintain session information</li>
-                    <li>Remember user preferences</li>
-                    <li>Analyze website usage and performance</li>
-                    <li>Prevent fraudulent activity</li>
-                </ul>
-                <p>You can control cookie settings through your browser preferences.</p>
+                        <h2 id="transfers">10. International Data Transfers</h2>
+                        <p>Your information may be transferred to and processed in countries outside Kenya. We ensure appropriate safeguards are in place for such transfers.</p>
 
-                <h2>8. Third-Party Links</h2>
-                <p>Our website may contain links to third-party websites. We are not responsible for the privacy
-                    practices or content of these external sites.</p>
+                        <h2 id="changes">11. Changes to Privacy Policy</h2>
+                        <p>We may update this Privacy Policy periodically. Material changes will be communicated via email or website notice.</p>
 
-                <h2>9. Children's Privacy</h2>
-                <p>Our services are not intended for individuals under 18 years of age. We do not knowingly collect
-                    information from minors.</p>
+                        <h2 id="contact">12. Contact Us</h2>
+                        <p>For privacy-related questions or to exercise your rights, contact our Data Protection Officer:</p>
+                        <p>Data Protection Officer<br>SecureEscrow Kenya Limited<br>Westlands Business Centre, 7th Floor, Wing B<br>Nairobi, Kenya<br>Email: privacy@securescrowkenya.com<br>Phone: +254 700 000 000</p>
 
-                <h2>10. International Data Transfers</h2>
-                <p>Your information may be transferred to and processed in countries outside Kenya. We ensure
-                    appropriate safeguards are in place for such transfers.</p>
+                    </div>
 
-                <h2>11. Changes to Privacy Policy</h2>
-                <p>We may update this Privacy Policy periodically. Material changes will be communicated via email or
-                    website notice.</p>
-
-                <h2>12. Contact Us</h2>
-                <p>For privacy-related questions or to exercise your rights, contact our Data Protection Officer:</p>
-                <p>
-                    Data Protection Officer<br>
-                    SecureEscrow Kenya Limited<br>
-                    Westlands Business Centre, 7th Floor, Wing B<br>
-                    Nairobi, Kenya<br>
-                    Email: privacy@secureescrow.co.ke<br>
-                    Phone: +254 700 000 000
-                </p>
+                </div>
             </div>
         </main>
 
-        <!-- Footer (Same as above) -->
         <footer class="site-footer">
             <div class="footer-container">
                 <div class="footer-grid">
                     <div class="footer-column">
                         <h4 class="footer-heading">SecureEscrow Kenya</h4>
-                        <p class="footer-text">Protecting Kenyan online transactions through trusted third-party
-                            mediation since 2024.</p>
+                        <p class="footer-text">Protecting Kenyan online transactions through trusted third-party mediation since 2026.</p>
                         <p class="footer-badge">Licensed and Regulated</p>
                     </div>
-
                     <div class="footer-column">
                         <h4 class="footer-heading">Quick Access</h4>
                         <ul class="footer-links">
@@ -299,7 +490,6 @@
                             <li><a href="contact.html">Contact</a></li>
                         </ul>
                     </div>
-
                     <div class="footer-column">
                         <h4 class="footer-heading">Resources</h4>
                         <ul class="footer-links">
@@ -309,7 +499,6 @@
                             <li><a href="#">Transaction Safety</a></li>
                         </ul>
                     </div>
-
                     <div class="footer-column">
                         <h4 class="footer-heading">Legal</h4>
                         <ul class="footer-links">
@@ -320,13 +509,10 @@
                         </ul>
                     </div>
                 </div>
-
                 <div class="footer-bottom">
                     <p>&copy; 2026 SecureEscrow Kenya Limited. All rights reserved.</p>
                 </div>
             </div>
-
-            <!-- Live Activity Ticker -->
             <div class="live-activity">
                 <div class="container">
                     <div class="activity-header">
@@ -335,26 +521,40 @@
                     </div>
                     <div class="ticker-wrapper">
                         <div class="ticker-content" id="activityTicker">
-                            <span class="ticker-item">🇰🇪 Nairobi: KES 45,000 secured for iPhone 15</span>
-                            <span class="ticker-item">🇰🇪 Mombasa: KES 12,500 vehicle deposit protected</span>
-                            <span class="ticker-item">🇰🇪 Kisumu: KES 8,900 freelance payment in escrow</span>
-                            <span class="ticker-item">🇰🇪 Nakuru: KES 185,000 land purchase secured</span>
-                            <span class="ticker-item">🇰🇪 Eldoret: KES 32,000 laptop transaction protected</span>
-                            <span class="ticker-item">🇰🇪 Nairobi: KES 45,000 secured for iPhone 15</span>
-                            <span class="ticker-item">🇰🇪 Mombasa: KES 12,500 vehicle deposit protected</span>
-                            <span class="ticker-item">🇰🇪 Kisumu: KES 8,900 freelance payment in escrow</span>
-                            <span class="ticker-item">🇰🇪 Nakuru: KES 185,000 land purchase secured</span>
-                            <span class="ticker-item">🇰🇪 Eldoret: KES 32,000 laptop transaction protected</span>
+                            <span class="ticker-item">Nairobi: KES 45,000 secured for iPhone 15</span>
+                            <span class="ticker-item">Mombasa: KES 12,500 vehicle deposit protected</span>
+                            <span class="ticker-item">Kisumu: KES 8,900 freelance payment in escrow</span>
+                            <span class="ticker-item">Nakuru: KES 185,000 land purchase secured</span>
+                            <span class="ticker-item">Eldoret: KES 32,000 laptop transaction protected</span>
+                            <span class="ticker-item">Nairobi: KES 45,000 secured for iPhone 15</span>
+                            <span class="ticker-item">Mombasa: KES 12,500 vehicle deposit protected</span>
+                            <span class="ticker-item">Kisumu: KES 8,900 freelance payment in escrow</span>
+                            <span class="ticker-item">Nakuru: KES 185,000 land purchase secured</span>
+                            <span class="ticker-item">Eldoret: KES 32,000 laptop transaction protected</span>
                         </div>
                     </div>
                 </div>
             </div>
-
         </footer>
     </div>
 
     <script src="script.js"></script>
-
+    <script>
+    (function() {
+        var links = document.querySelectorAll('.toc-link');
+        var headings = Array.from(document.querySelectorAll('.legal-body h2[id]'));
+        if (!links.length || !headings.length) return;
+        function onScroll() {
+            var scrollY = window.scrollY + 110;
+            var active = headings[0];
+            headings.forEach(function(h) { if (h.offsetTop <= scrollY) active = h; });
+            links.forEach(function(l) {
+                l.classList.toggle('active', l.getAttribute('href') === '#' + active.id);
+            });
+        }
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+    })();
+    </script>
 </body>
-
 </html>

@@ -7,46 +7,237 @@
 
 
 
-
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escrow Agreement - SecureEscrow Kenya</title>
+    <title>Escrow Agreement | SecureEscrow Kenya</title>
+    <meta name="description" content="Standard Escrow Agreement governing all transactions on SecureEscrow Kenya. Covers buyer and seller obligations, fund release, dispute resolution, and cancellations.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://securescrowkenya.com/escrow-agreement.html">
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <style>
+        /* Legal page layout */
+        .legal-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 48px;
+            align-items: start;
+            padding: 56px 0 80px;
+        }
+        .legal-sidebar {
+            position: sticky;
+            top: 88px;
+        }
+        .legal-doc-meta {
+            background: var(--ink);
+            border-radius: var(--radius-lg);
+            padding: 22px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-dark);
+            position: relative;
+            overflow: hidden;
+        }
+        .legal-doc-meta::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--green), var(--green-dark));
+        }
+        .doc-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--green);
+            background: rgba(34,197,94,0.1);
+            border: 1px solid rgba(34,197,94,0.2);
+            padding: 5px 10px;
+            border-radius: var(--radius-pill);
+            margin-bottom: 14px;
+        }
+        .doc-badge svg { flex-shrink: 0; }
+        .doc-title-small {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 6px;
+            letter-spacing: -0.2px;
+        }
+        .doc-updated {
+            font-size: 11.5px;
+            color: rgba(255,255,255,0.35);
+            font-family: var(--font-mono);
+        }
+        .toc-heading {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            padding-left: 2px;
+        }
+        .toc-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .toc-link {
+            display: block;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 7px 12px;
+            border-radius: var(--radius-sm);
+            border-left: 2px solid transparent;
+            transition: all var(--transition);
+            line-height: 1.4;
+        }
+        .toc-link:hover {
+            color: var(--green-dark);
+            background: var(--green-dim);
+            border-left-color: var(--green);
+        }
+        .toc-link.active {
+            color: var(--green-dark);
+            background: var(--green-dim);
+            border-left-color: var(--green);
+            font-weight: 600;
+        }
+        .legal-body {
+            min-width: 0;
+        }
+        .legal-body h1.page-title {
+            margin-bottom: 6px;
+        }
+        .legal-body .last-updated {
+            margin-bottom: 28px;
+            padding-bottom: 28px;
+            border-bottom: 1px solid var(--border);
+        }
+        .legal-body h2 {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 36px 0 10px;
+            padding-top: 36px;
+            border-top: 1px solid var(--border);
+            letter-spacing: -0.3px;
+            scroll-margin-top: 88px;
+        }
+        .legal-body h2:first-of-type {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+        .legal-body h3 {
+            font-size: 14.5px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 20px 0 8px;
+        }
+        .legal-body p {
+            font-size: 14.5px;
+            color: var(--text-secondary);
+            margin-bottom: 14px;
+            line-height: 1.8;
+        }
+        .legal-body ul {
+            margin: 8px 0 16px 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .legal-body ul li {
+            font-size: 14px;
+            color: var(--text-secondary);
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.65;
+        }
+        .legal-body ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 5px;
+            height: 5px;
+            background: var(--green);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .legal-body ul li strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        .agreement-notice {
+            background: #f0fdf6;
+            border: 1px solid rgba(34,197,94,0.2);
+            border-left: 3px solid var(--green);
+            border-radius: var(--radius-md);
+            padding: 16px 18px;
+            margin-bottom: 28px;
+        }
+        .agreement-notice p {
+            margin: 0;
+            font-size: 14px;
+            color: #166534;
+        }
+        @media (max-width: 900px) {
+            .legal-layout {
+                grid-template-columns: 1fr;
+                gap: 32px;
+                padding: 40px 0 64px;
+            }
+            .legal-sidebar { position: static; }
+        }
+        @media (max-width: 575px) {
+            .legal-layout { padding: 28px 0 48px; gap: 24px; }
+            .legal-body h2 { font-size: 15px; }
+        }
+    </style>
 </head>
 
 <body>
-
-    <!-- Wave line loader -->
     <div class="page-loader" id="pageLoader">
+        <div class="loader-corner loader-corner-tl"></div>
+        <div class="loader-corner loader-corner-tr"></div>
+        <div class="loader-corner loader-corner-bl"></div>
+        <div class="loader-corner loader-corner-br"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
+        <div class="loader-particle"></div>
         <div class="loader-content">
             <div class="loader-shield">
-                <svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
-                    <path class="shield-outline" d="M25 2L6 10v15c0 10 19 21 19 21s19-11 19-21V10L25 2z" fill="none"
-                        stroke="#2ecc71" stroke-width="2" />
-                    <path class="shield-check" d="M18 25l6 6l12-12" fill="none" stroke="#2ecc71" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" />
+                <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path class="shield-bg-fill" d="M40 6L12 17v18c0 14 28 31 28 31s28-17 28-31V17L40 6z" fill="rgba(34,197,94,0.07)"/>
+                    <path class="shield-outline" d="M40 6L12 17v18c0 14 28 31 28 31s28-17 28-31V17L40 6z" fill="none" stroke="rgba(34,197,94,0.35)" stroke-width="1.5" stroke-linejoin="round"/>
+                    <path class="shield-inner" d="M40 6L12 17v18c0 14 28 31 28 31s28-17 28-31V17L40 6z" fill="none" stroke="#22c55e" stroke-width="2" stroke-linejoin="round"/>
+                    <path class="shield-check" d="M27 40l10 10 20-18" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </div>
             <div class="loader-text">
-                <span class="loader-brand">Secure<span>Escrow</span></span>
+                <span class="loader-brand">Secure<span>Escrow</span> Kenya</span>
                 <span class="loader-tagline">Securing Your Transaction</span>
             </div>
-            <div class="loader-wave">
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-            </div>
+            <div class="loader-progress"><div class="loader-progress-fill"></div></div>
+            <span class="loader-status" id="loaderStatus">Initializing secure environment…</span>
         </div>
     </div>
 
     <div class="app-wrapper">
-
         <header class="site-header">
             <div class="header-container">
                 <div class="header-brand">
@@ -54,51 +245,39 @@
                         <span class="brand-text">Secure<span class="brand-accent">Escrow</span> Kenya</span>
                     </a>
                 </div>
-
-                <!-- Mobile Menu Toggle (Hamburger/X) -->
                 <div class="mobile-menu-toggle" id="menuToggle">
                     <span class="toggle-bar"></span>
                     <span class="toggle-bar"></span>
                     <span class="toggle-bar"></span>
                 </div>
-
-                <!-- Overlay Background -->
                 <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-                <!-- Mobile Sidebar -->
                 <nav class="mobile-sidebar" id="mobileSidebar">
                     <ul class="sidebar-nav">
                         <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
                         <li class="nav-item"><a href="how.html" class="nav-link">How It Works</a></li>
                         <li class="nav-item"><a href="about.html" class="nav-link">About Us</a></li>
                         <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
-                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start
-                                Transaction</a></li>
+                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start Transaction</a></li>
                     </ul>
                 </nav>
-
-                <!-- Desktop Navigation -->
                 <nav class="primary-nav">
                     <ul class="nav-list">
                         <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
                         <li class="nav-item"><a href="how.html" class="nav-link">How It Works</a></li>
                         <li class="nav-item"><a href="about.html" class="nav-link">About Us</a></li>
                         <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
-                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start
-                                Transaction</a></li>
+                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start Transaction</a></li>
                     </ul>
                 </nav>
             </div>
         </header>
 
-        <!-- Trust Indicators - Authentic Design -->
         <div class="trust-strip">
             <div class="container">
                 <div class="trust-strip-inner">
                     <div class="trust-metric">
                         <div class="metric-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                             </svg>
@@ -108,28 +287,22 @@
                             <span class="metric-sub">Integrated with M-PESA</span>
                         </div>
                     </div>
-
                     <div class="trust-divider"></div>
-
                     <div class="trust-metric">
                         <div class="metric-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                             </svg>
                         </div>
                         <div class="metric-text">
-                            <span class="metric-main">Buyer & Seller Protection</span>
+                            <span class="metric-main">Buyer &amp; Seller Protection</span>
                             <span class="metric-sub">Dispute Resolution Included</span>
                         </div>
                     </div>
-
                     <div class="trust-divider"></div>
-
                     <div class="trust-metric">
                         <div class="metric-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <polyline points="12 6 12 12 16 14"></polyline>
                             </svg>
@@ -144,155 +317,161 @@
         </div>
 
         <main class="page-content">
-            <div class="legal-content">
-                <h1 class="page-title">Escrow Agreement</h1>
-                <p class="last-updated">Standard Agreement Version 2.1 - Effective January 15, 2026</p>
+            <div class="container">
+                <div class="legal-layout">
 
-                <div class="agreement-notice">
-                    <p><strong>Important Notice:</strong> This is the standard Escrow Agreement that governs all
-                        transactions conducted through SecureEscrow Kenya. By initiating an escrow transaction, all
-                        parties acknowledge and accept these terms.</p>
+                    <!-- Sidebar -->
+                    <aside class="legal-sidebar">
+                        <div class="legal-doc-meta">
+                            <div class="doc-badge">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                                </svg>
+                                Agreement v2.1
+                            </div>
+                            <div class="doc-title-small">Escrow Agreement</div>
+                            <div class="doc-updated">Standard Agreement v2.1 — Effective January 15, 2026</div>
+                        </div>
+                        <div class="toc-heading">Contents</div>
+                        <ul class="toc-list" id="tocList">
+                    <li><a href="#parties" class="toc-link">1. Parties to Agreement</a></li>
+                    <li><a href="#terms" class="toc-link">2. Transaction Terms</a></li>
+                    <li><a href="#agent" class="toc-link">3. Escrow Agent Duties</a></li>
+                    <li><a href="#buyer" class="toc-link">4. Buyer Obligations</a></li>
+                    <li><a href="#seller" class="toc-link">5. Seller Obligations</a></li>
+                    <li><a href="#release" class="toc-link">6. Acceptance and Release</a></li>
+                    <li><a href="#disputes" class="toc-link">7. Dispute Resolution</a></li>
+                    <li><a href="#cancellation" class="toc-link">8. Cancellation and Refunds</a></li>
+                    <li><a href="#fees" class="toc-link">9. Fees</a></li>
+                    <li><a href="#limitations" class="toc-link">10. Limitations of Liability</a></li>
+                    <li><a href="#comms" class="toc-link">11. Communications</a></li>
+                    <li><a href="#amendments" class="toc-link">12. Amendments</a></li>
+                    <li><a href="#governing" class="toc-link">13. Governing Law</a></li>
+                    <li><a href="#entire" class="toc-link">14. Entire Agreement</a></li>
+                        </ul>
+                    </aside>
+
+                    <!-- Body -->
+                    <div class="legal-body">
+                        <h1 class="page-title">Escrow Agreement</h1>
+                        <p class="last-updated">Standard Agreement v2.1 — Effective January 15, 2026</p>
+
+                        <div class="agreement-notice">
+                            <p><strong>Important Notice:</strong> This is the standard Escrow Agreement that governs all transactions conducted through SecureEscrow Kenya. By initiating an escrow transaction, all parties acknowledge and accept these terms.</p>
+                        </div>
+
+                        <h2 id="parties">1. Parties to Agreement</h2>
+                        <p>This Escrow Agreement is entered into by and between:</p>
+                        <ul>
+                            <li><strong>Buyer:</strong> The party depositing funds into escrow</li>
+                            <li><strong>Seller:</strong> The party providing goods or services</li>
+                            <li><strong>SecureEscrow Kenya Limited:</strong> The neutral third-party escrow agent</li>
+                        </ul>
+
+                        <h2 id="terms">2. Transaction Terms</h2>
+                        <h3>2.1 Description of Goods or Services</h3>
+                        <p>The Seller agrees to provide the goods or services as described in the transaction details, including specifications, quantity, quality, and any other material terms.</p>
+                        <h3>2.2 Purchase Price</h3>
+                        <p>The Buyer agrees to deposit the full purchase price plus applicable escrow fees into the designated escrow account.</p>
+                        <h3>2.3 Delivery Terms</h3>
+                        <p>The Seller shall deliver the goods or complete the services by the agreed deadline. For physical goods, the Seller shall provide valid tracking information upon shipment.</p>
+                        <h3>2.4 Inspection Period</h3>
+                        <p>The Buyer shall have forty-eight (48) hours from confirmed delivery to inspect the goods or verify service completion ("Inspection Period").</p>
+
+                        <h2 id="agent">3. Escrow Agent Duties</h2>
+                        <p>SecureEscrow Kenya agrees to:</p>
+                        <ul>
+                            <li>Hold all funds in a segregated trust account with a licensed Kenyan bank</li>
+                            <li>Notify the Seller when funds are secured and ready for fulfillment</li>
+                            <li>Notify the Buyer when delivery is confirmed or service completed</li>
+                            <li>Release funds to the Seller upon Buyer approval or as otherwise provided herein</li>
+                            <li>Maintain accurate records of all transactions</li>
+                            <li>Provide neutral dispute resolution services if required</li>
+                        </ul>
+
+                        <h2 id="buyer">4. Buyer Obligations</h2>
+                        <p>The Buyer agrees to:</p>
+                        <ul>
+                            <li>Deposit the full purchase price plus escrow fees before the Seller is obligated to perform</li>
+                            <li>Inspect goods or verify services within the Inspection Period</li>
+                            <li>Notify SecureEscrow of acceptance or rejection within the Inspection Period</li>
+                            <li>Not unreasonably withhold acceptance of conforming goods or services</li>
+                            <li>Provide accurate delivery information and contact details</li>
+                        </ul>
+
+                        <h2 id="seller">5. Seller Obligations</h2>
+                        <p>The Seller agrees to:</p>
+                        <ul>
+                            <li>Deliver goods or perform services exactly as described in the transaction details</li>
+                            <li>Meet the agreed delivery deadline</li>
+                            <li>Provide valid tracking information for shipped goods</li>
+                            <li>Respond promptly to Buyer inquiries regarding the transaction</li>
+                            <li>Accept return of goods if they do not conform to the description</li>
+                            <li>Not request release of funds outside the SecureEscrow platform</li>
+                        </ul>
+
+                        <h2 id="release">6. Acceptance and Release</h2>
+                        <h3>6.1 Buyer Acceptance</h3>
+                        <p>If the Buyer confirms acceptance during the Inspection Period, SecureEscrow shall release funds to the Seller within twenty-four (24) hours.</p>
+                        <h3>6.2 Automatic Release</h3>
+                        <p>If the Buyer fails to respond within the Inspection Period after confirmed delivery, funds may be automatically released to the Seller, provided tracking shows delivery was completed.</p>
+                        <h3>6.3 Buyer Rejection</h3>
+                        <p>If the Buyer rejects the goods or services, they must provide specific reasons. SecureEscrow shall freeze funds pending resolution.</p>
+
+                        <h2 id="disputes">7. Dispute Resolution</h2>
+                        <h3>7.1 Negotiation Period</h3>
+                        <p>Upon dispute initiation, parties shall have five (5) business days to resolve the matter amicably.</p>
+                        <h3>7.2 Escrow Agent Determination</h3>
+                        <p>If parties cannot resolve the dispute, SecureEscrow shall review all evidence and make a binding determination regarding fund disbursement.</p>
+                        <h3>7.3 Evidence Considered</h3>
+                        <p>SecureEscrow may consider: tracking information, delivery confirmation, photographs, correspondence between parties, and the original transaction description.</p>
+
+                        <h2 id="cancellation">8. Cancellation and Refunds</h2>
+                        <h3>8.1 Before Shipment</h3>
+                        <p>Either party may cancel before the Seller ships goods or begins service. Escrow fees are non-refundable.</p>
+                        <h3>8.2 After Shipment</h3>
+                        <p>Cancellation after shipment is subject to the Seller's return policy and the dispute resolution process.</p>
+                        <h3>8.3 Seller Non-Performance</h3>
+                        <p>If the Seller fails to deliver by the deadline and cannot provide reasonable assurance of delivery, the Buyer may cancel and receive a full refund of the purchase price.</p>
+
+                        <h2 id="fees">9. Fees</h2>
+                        <p>The escrow service fee is non-refundable once the transaction is initiated. In the event of cancellation, the fee structure published on our website shall apply.</p>
+
+                        <h2 id="limitations">10. Limitations of Escrow Agent Liability</h2>
+                        <p>SecureEscrow Kenya's liability is limited to the proper disbursement of funds according to this Agreement. We are not liable for:</p>
+                        <ul>
+                            <li>The quality, safety, or legality of goods or services</li>
+                            <li>The accuracy of descriptions provided by Sellers</li>
+                            <li>Delivery delays caused by third-party carriers</li>
+                            <li>Any consequential or incidental damages</li>
+                        </ul>
+
+                        <h2 id="comms">11. Communications</h2>
+                        <p>All communications regarding the transaction shall be conducted through the SecureEscrow platform. Parties agree not to attempt to circumvent the escrow process.</p>
+
+                        <h2 id="amendments">12. Amendments</h2>
+                        <p>This Agreement may only be amended by mutual written consent of all parties, including SecureEscrow Kenya.</p>
+
+                        <h2 id="governing">13. Governing Law</h2>
+                        <p>This Agreement shall be governed by and construed in accordance with the laws of the Republic of Kenya.</p>
+
+                        <h2 id="entire">14. Entire Agreement</h2>
+                        <p>This Escrow Agreement, together with the transaction details and SecureEscrow's Terms of Service, constitutes the entire agreement between the parties regarding the escrow transaction.</p>
+
+                    </div>
+
                 </div>
-
-                <h2>1. Parties to Agreement</h2>
-                <p>This Escrow Agreement is entered into by and between:</p>
-                <ul>
-                    <li><strong>Buyer:</strong> The party depositing funds into escrow</li>
-                    <li><strong>Seller:</strong> The party providing goods or services</li>
-                    <li><strong>SecureEscrow Kenya Limited:</strong> The neutral third-party escrow agent</li>
-                </ul>
-
-                <h2>2. Transaction Terms</h2>
-                <h3>2.1 Description of Goods or Services</h3>
-                <p>The Seller agrees to provide the goods or services as described in the transaction details, including
-                    specifications, quantity, quality, and any other material terms.</p>
-
-                <h3>2.2 Purchase Price</h3>
-                <p>The Buyer agrees to deposit the full purchase price plus applicable escrow fees into the designated
-                    escrow account.</p>
-
-                <h3>2.3 Delivery Terms</h3>
-                <p>The Seller shall deliver the goods or complete the services by the agreed deadline. For physical
-                    goods, the Seller shall provide valid tracking information upon shipment.</p>
-
-                <h3>2.4 Inspection Period</h3>
-                <p>The Buyer shall have forty-eight (48) hours from confirmed delivery to inspect the goods or verify
-                    service completion ("Inspection Period").</p>
-
-                <h2>3. Escrow Agent Duties</h2>
-                <p>SecureEscrow Kenya agrees to:</p>
-                <ul>
-                    <li>Hold all funds in a segregated trust account with a licensed Kenyan bank</li>
-                    <li>Notify the Seller when funds are secured and ready for fulfillment</li>
-                    <li>Notify the Buyer when delivery is confirmed or service completed</li>
-                    <li>Release funds to the Seller upon Buyer approval or as otherwise provided herein</li>
-                    <li>Maintain accurate records of all transactions</li>
-                    <li>Provide neutral dispute resolution services if required</li>
-                </ul>
-
-                <h2>4. Buyer Obligations</h2>
-                <p>The Buyer agrees to:</p>
-                <ul>
-                    <li>Deposit the full purchase price plus escrow fees before the Seller is obligated to perform</li>
-                    <li>Inspect goods or verify services within the Inspection Period</li>
-                    <li>Notify SecureEscrow of acceptance or rejection within the Inspection Period</li>
-                    <li>Not unreasonably withhold acceptance of conforming goods or services</li>
-                    <li>Provide accurate delivery information and contact details</li>
-                </ul>
-
-                <h2>5. Seller Obligations</h2>
-                <p>The Seller agrees to:</p>
-                <ul>
-                    <li>Deliver goods or perform services exactly as described in the transaction details</li>
-                    <li>Meet the agreed delivery deadline</li>
-                    <li>Provide valid tracking information for shipped goods</li>
-                    <li>Respond promptly to Buyer inquiries regarding the transaction</li>
-                    <li>Accept return of goods if they do not conform to the description</li>
-                    <li>Not request release of funds outside the SecureEscrow platform</li>
-                </ul>
-
-                <h2>6. Acceptance and Release</h2>
-                <h3>6.1 Buyer Acceptance</h3>
-                <p>If the Buyer confirms acceptance during the Inspection Period, SecureEscrow shall release funds to
-                    the Seller within twenty-four (24) hours.</p>
-
-                <h3>6.2 Automatic Release</h3>
-                <p>If the Buyer fails to respond within the Inspection Period after confirmed delivery, funds may be
-                    automatically released to the Seller, provided tracking shows delivery was completed.</p>
-
-                <h3>6.3 Buyer Rejection</h3>
-                <p>If the Buyer rejects the goods or services, they must provide specific reasons. SecureEscrow shall
-                    freeze funds pending resolution.</p>
-
-                <h2>7. Dispute Resolution</h2>
-                <h3>7.1 Negotiation Period</h3>
-                <p>Upon dispute initiation, parties shall have five (5) business days to resolve the matter amicably.
-                </p>
-
-                <h3>7.2 Escrow Agent Determination</h3>
-                <p>If parties cannot resolve the dispute, SecureEscrow shall review all evidence and make a binding
-                    determination regarding fund disbursement.</p>
-
-                <h3>7.3 Evidence Considered</h3>
-                <p>SecureEscrow may consider: tracking information, delivery confirmation, photographs, correspondence
-                    between parties, and the original transaction description.</p>
-
-                <h2>8. Cancellation and Refunds</h2>
-                <h3>8.1 Before Shipment</h3>
-                <p>Either party may cancel before the Seller ships goods or begins service. Escrow fees are
-                    non-refundable.</p>
-
-                <h3>8.2 After Shipment</h3>
-                <p>Cancellation after shipment is subject to the Seller's return policy and the dispute resolution
-                    process.</p>
-
-                <h3>8.3 Seller Non-Performance</h3>
-                <p>If the Seller fails to deliver by the deadline and cannot provide reasonable assurance of delivery,
-                    the Buyer may cancel and receive a full refund of the purchase price.</p>
-
-                <h2>9. Fees</h2>
-                <p>The escrow service fee is non-refundable once the transaction is initiated. In the event of
-                    cancellation, the fee structure published on our website shall apply.</p>
-
-                <h2>10. Limitations of Escrow Agent Liability</h2>
-                <p>SecureEscrow Kenya's liability is limited to the proper disbursement of funds according to this
-                    Agreement. We are not liable for:</p>
-                <ul>
-                    <li>The quality, safety, or legality of goods or services</li>
-                    <li>The accuracy of descriptions provided by Sellers</li>
-                    <li>Delivery delays caused by third-party carriers</li>
-                    <li>Any consequential or incidental damages</li>
-                </ul>
-
-                <h2>11. Communications</h2>
-                <p>All communications regarding the transaction shall be conducted through the SecureEscrow platform.
-                    Parties agree not to attempt to circumvent the escrow process.</p>
-
-                <h2>12. Amendments</h2>
-                <p>This Agreement may only be amended by mutual written consent of all parties, including SecureEscrow
-                    Kenya.</p>
-
-                <h2>13. Governing Law</h2>
-                <p>This Agreement shall be governed by and construed in accordance with the laws of the Republic of
-                    Kenya.</p>
-
-                <h2>14. Entire Agreement</h2>
-                <p>This Escrow Agreement, together with the transaction details and SecureEscrow's Terms of Service,
-                    constitutes the entire agreement between the parties regarding the escrow transaction.</p>
             </div>
         </main>
 
-        <!-- Footer -->
         <footer class="site-footer">
             <div class="footer-container">
                 <div class="footer-grid">
                     <div class="footer-column">
                         <h4 class="footer-heading">SecureEscrow Kenya</h4>
-                        <p class="footer-text">Protecting Kenyan online transactions through trusted third-party
-                            mediation since 2024.</p>
+                        <p class="footer-text">Protecting Kenyan online transactions through trusted third-party mediation since 2026.</p>
                         <p class="footer-badge">Licensed and Regulated</p>
                     </div>
-
                     <div class="footer-column">
                         <h4 class="footer-heading">Quick Access</h4>
                         <ul class="footer-links">
@@ -302,7 +481,6 @@
                             <li><a href="contact.html">Contact</a></li>
                         </ul>
                     </div>
-
                     <div class="footer-column">
                         <h4 class="footer-heading">Resources</h4>
                         <ul class="footer-links">
@@ -312,7 +490,6 @@
                             <li><a href="#">Transaction Safety</a></li>
                         </ul>
                     </div>
-
                     <div class="footer-column">
                         <h4 class="footer-heading">Legal</h4>
                         <ul class="footer-links">
@@ -323,13 +500,10 @@
                         </ul>
                     </div>
                 </div>
-
                 <div class="footer-bottom">
                     <p>&copy; 2026 SecureEscrow Kenya Limited. All rights reserved.</p>
                 </div>
             </div>
-
-            <!-- Live Activity Ticker -->
             <div class="live-activity">
                 <div class="container">
                     <div class="activity-header">
@@ -338,26 +512,40 @@
                     </div>
                     <div class="ticker-wrapper">
                         <div class="ticker-content" id="activityTicker">
-                            <span class="ticker-item">🇰🇪 Nairobi: KES 45,000 secured for iPhone 15</span>
-                            <span class="ticker-item">🇰🇪 Mombasa: KES 12,500 vehicle deposit protected</span>
-                            <span class="ticker-item">🇰🇪 Kisumu: KES 8,900 freelance payment in escrow</span>
-                            <span class="ticker-item">🇰🇪 Nakuru: KES 185,000 land purchase secured</span>
-                            <span class="ticker-item">🇰🇪 Eldoret: KES 32,000 laptop transaction protected</span>
-                            <span class="ticker-item">🇰🇪 Nairobi: KES 45,000 secured for iPhone 15</span>
-                            <span class="ticker-item">🇰🇪 Mombasa: KES 12,500 vehicle deposit protected</span>
-                            <span class="ticker-item">🇰🇪 Kisumu: KES 8,900 freelance payment in escrow</span>
-                            <span class="ticker-item">🇰🇪 Nakuru: KES 185,000 land purchase secured</span>
-                            <span class="ticker-item">🇰🇪 Eldoret: KES 32,000 laptop transaction protected</span>
+                            <span class="ticker-item">Nairobi: KES 45,000 secured for iPhone 15</span>
+                            <span class="ticker-item">Mombasa: KES 12,500 vehicle deposit protected</span>
+                            <span class="ticker-item">Kisumu: KES 8,900 freelance payment in escrow</span>
+                            <span class="ticker-item">Nakuru: KES 185,000 land purchase secured</span>
+                            <span class="ticker-item">Eldoret: KES 32,000 laptop transaction protected</span>
+                            <span class="ticker-item">Nairobi: KES 45,000 secured for iPhone 15</span>
+                            <span class="ticker-item">Mombasa: KES 12,500 vehicle deposit protected</span>
+                            <span class="ticker-item">Kisumu: KES 8,900 freelance payment in escrow</span>
+                            <span class="ticker-item">Nakuru: KES 185,000 land purchase secured</span>
+                            <span class="ticker-item">Eldoret: KES 32,000 laptop transaction protected</span>
                         </div>
                     </div>
                 </div>
             </div>
-
         </footer>
     </div>
 
     <script src="script.js"></script>
-
+    <script>
+    (function() {
+        var links = document.querySelectorAll('.toc-link');
+        var headings = Array.from(document.querySelectorAll('.legal-body h2[id]'));
+        if (!links.length || !headings.length) return;
+        function onScroll() {
+            var scrollY = window.scrollY + 110;
+            var active = headings[0];
+            headings.forEach(function(h) { if (h.offsetTop <= scrollY) active = h; });
+            links.forEach(function(l) {
+                l.classList.toggle('active', l.getAttribute('href') === '#' + active.id);
+            });
+        }
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+    })();
+    </script>
 </body>
-
 </html>
