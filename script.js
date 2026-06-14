@@ -7,6 +7,7 @@
 
 
 
+
 /**
  * SecureEscrow Kenya - Frontend Client
  * Magic Link Authorization System with Payout Methods
@@ -24,11 +25,16 @@
 
 
     // ---------------------------------------------------------------
-//  When deploying to Render, replace the URL below with your
-//  actual Render backend URL, e.g.:
-//  const API_BASE_URL = 'https://your-app-name.onrender.com/api';
-// ---------------------------------------------------------------
-const API_BASE_URL = 'https://your-app-name.onrender.com/api';
+    //  When deploying to Render, replace the URL below with your
+    //  actual Render backend URL, e.g.:
+    //  const API_BASE_URL = 'https://your-app-name.onrender.com/api';
+    //
+    //  NOTE: the backend now restricts CORS to specific origins via the
+    //  ALLOWED_ORIGINS environment variable (see app.py / .env.example).
+    //  Make sure the domain this script is served from is included in
+    //  that list, or API requests will be blocked by the browser.
+    // ---------------------------------------------------------------
+    const API_BASE_URL = 'https://your-app-name.onrender.com/api';
     
 
     
@@ -121,8 +127,9 @@ const API_BASE_URL = 'https://your-app-name.onrender.com/api';
             return response.json();
         },
         
-        async getPayout(transactionId) {
-            const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/payout`);
+        async getPayout(transactionId, token) {
+            const url = `${API_BASE_URL}/transactions/${transactionId}/payout?token=${encodeURIComponent(token || '')}`;
+            const response = await fetch(url);
             return response.json();
         }
     };
@@ -149,6 +156,47 @@ const API_BASE_URL = 'https://your-app-name.onrender.com/api';
     function getUrlParameter(name) {
         const urlParams = new URLSearchParams(window.location.search);
         return urlParams.get(name);
+    }
+
+    /**
+     * Escape a value for safe insertion into innerHTML.
+     * SECURITY: transaction.item_name (and other user-supplied fields)
+     * must never be inserted into innerHTML without this - otherwise a
+     * malicious "item name" containing HTML/script could execute in the
+     * browser of anyone viewing the transaction (stored XSS).
+     */
+    function escapeHtml(value) {
+        if (value === null || value === undefined) {
+            return '';
+        }
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    /**
+     * Remove the magic-link "token" (and optionally "id") query
+     * parameters from the visible URL without reloading the page.
+     *
+     * SECURITY: magic tokens arrive via SMS as part of a URL. Once the
+     * page has read and validated the token, leaving it visible in the
+     * address bar means it persists in browser history, can be leaked
+     * via the Referer header on outbound links, or seen by anyone
+     * looking at the screen/screenshots. We strip it immediately after
+     * use while keeping the transaction id for convenience.
+     */
+    function stripTokenFromUrl() {
+        if (!window.history || !window.history.replaceState) {
+            return;
+        }
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('token')) {
+            url.searchParams.delete('token');
+            window.history.replaceState({}, document.title, url.pathname + (url.search ? url.search : '') + url.hash);
+        }
     }
 
     // ============================================================================
@@ -514,7 +562,7 @@ const API_BASE_URL = 'https://your-app-name.onrender.com/api';
                             <div class="payment-summary">
                                 <div class="summary-item">
                                     <span class="summary-label">Item</span>
-                                    <span class="summary-value">${itemNameInput.value}</span>
+                                    <span class="summary-value">${escapeHtml(itemNameInput.value)}</span>
                                 </div>
                                 <div class="summary-divider"></div>
                                 <div class="summary-item">
@@ -757,6 +805,10 @@ const API_BASE_URL = 'https://your-app-name.onrender.com/api';
             }
         } catch (error) {
             ToastManager.error('Could not connect to server.', 'Connection Error');
+        } finally {
+            // SECURITY: always remove the token from the visible URL once
+            // it has been used, regardless of outcome.
+            stripTokenFromUrl();
         }
     }
 
@@ -817,9 +869,9 @@ const API_BASE_URL = 'https://your-app-name.onrender.com/api';
         }
     }
 
-    async function loadCurrentPayoutSettings(transactionId) {
+    async function loadCurrentPayoutSettings(transactionId, token) {
         try {
-            const result = await ApiClient.getPayout(transactionId);
+            const result = await ApiClient.getPayout(transactionId, token);
             
             if (!result.error) {
                 const radio = document.querySelector(
@@ -873,9 +925,15 @@ const API_BASE_URL = 'https://your-app-name.onrender.com/api';
         if (!displayContainer) {
             return;
         }
-        
-        const isBuyer = verifiedPhone === transaction.buyer_phone;
-        const isSeller = verifiedPhone === transaction.seller_phone;
+
+        // The /track/<phone> endpoint returns a masked summary (no
+        // buyer_phone/seller_phone, but includes role + counterparty_phone)
+        // to avoid exposing the full counterparty number. Detect which
+        // shape we were given.
+        const hasFullPhones = (transaction.buyer_phone !== undefined && transaction.seller_phone !== undefined);
+
+        const isBuyer  = hasFullPhones ? (verifiedPhone === transaction.buyer_phone)  : (transaction.role === 'buyer');
+        const isSeller = hasFullPhones ? (verifiedPhone === transaction.seller_phone) : (transaction.role === 'seller');
         const isBuyerToken = (userRole === 'buyer');
         const isSellerToken = (userRole === 'seller');
 
@@ -893,15 +951,30 @@ const API_BASE_URL = 'https://your-app-name.onrender.com/api';
         
         detailsHtml += '<div class="transaction-details-card">';
         detailsHtml += '<div class="transaction-header">';
-        detailsHtml += '<h3>Transaction ' + transaction.id + '</h3>';
+        detailsHtml += '<h3>Transaction ' + escapeHtml(transaction.id) + '</h3>';
         detailsHtml += '<span class="status-badge ' + currentStatus.class + '">' + currentStatus.text + '</span>';
         detailsHtml += '</div>';
         
         detailsHtml += '<div class="transaction-info-grid">';
-        detailsHtml += '<div class="info-item"><span class="info-label">Item</span><span class="info-value">' + transaction.item_name + '</span></div>';
+        // SECURITY: item_name is user-supplied free text. It is escaped
+        // here to prevent stored XSS - never insert it raw into innerHTML.
+        detailsHtml += '<div class="info-item"><span class="info-label">Item</span><span class="info-value">' + escapeHtml(transaction.item_name) + '</span></div>';
         detailsHtml += '<div class="info-item"><span class="info-label">Amount</span><span class="info-value">' + formatKES(transaction.amount) + '</span></div>';
-        detailsHtml += '<div class="info-item"><span class="info-label">Buyer</span><span class="info-value">' + transaction.buyer_phone + '</span></div>';
-        detailsHtml += '<div class="info-item"><span class="info-label">Seller</span><span class="info-value">' + transaction.seller_phone + '</span></div>';
+
+        if (hasFullPhones) {
+            detailsHtml += '<div class="info-item"><span class="info-label">Buyer</span><span class="info-value">' + escapeHtml(transaction.buyer_phone) + '</span></div>';
+            detailsHtml += '<div class="info-item"><span class="info-label">Seller</span><span class="info-value">' + escapeHtml(transaction.seller_phone) + '</span></div>';
+        } else {
+            const yourLabel = isBuyer ? 'You (Buyer)' : (isSeller ? 'You (Seller)' : 'You');
+            const otherLabel = isBuyer ? 'Seller' : 'Buyer';
+            if (verifiedPhone) {
+                detailsHtml += '<div class="info-item"><span class="info-label">' + escapeHtml(yourLabel) + '</span><span class="info-value">' + escapeHtml(verifiedPhone) + '</span></div>';
+            }
+            if (transaction.counterparty_phone) {
+                detailsHtml += '<div class="info-item"><span class="info-label">' + escapeHtml(otherLabel) + '</span><span class="info-value">' + escapeHtml(transaction.counterparty_phone) + '</span></div>';
+            }
+        }
+
         detailsHtml += '<div class="info-item"><span class="info-label">Initiated</span><span class="info-value">' + new Date(transaction.created_at).toLocaleString() + '</span></div>';
         
         if (transaction.shipped_at) {
@@ -1103,7 +1176,7 @@ const API_BASE_URL = 'https://your-app-name.onrender.com/api';
                     const section = document.getElementById('payoutSettingsSection');
                     if (section) {
                         section.style.display = 'block';
-                        loadCurrentPayoutSettings(transaction.id);
+                        loadCurrentPayoutSettings(transaction.id, magicToken);
                     }
                 });
             }

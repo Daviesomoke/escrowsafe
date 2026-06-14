@@ -8,15 +8,30 @@
 
 
 
-
 """
 SecureEscrow Kenya - Backend Server
 Magic Link Authorization System with Payout Methods
 Run with: python app.py
+
+SECURITY HARDENING NOTES (read before deploying)
+--------------------------------------------------
+- CORS is now restricted to ALLOWED_ORIGINS (set via env var, comma separated).
+- Rate limiting is applied via Flask-Limiter (see requirements.txt).
+- Magic tokens are now single-use and enforced server-side (token_used).
+- Transaction IDs use 8 random characters (was 6) for higher entropy.
+- /api/transactions/track/<phone> masks phone numbers and strips
+  sensitive fields (payout details, item details).
+- /api/transactions/<id>/payout (GET) now requires the seller's token.
+- All free-text inputs are length-limited and stripped of HTML tags.
+- SMS logs store a redacted version of magic links (token removed).
+- debug mode and host binding are controlled via environment variables.
+- A request body size cap (MAX_CONTENT_LENGTH) is enforced.
 """
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import sqlite3
 import hashlib
 import secrets
@@ -29,48 +44,67 @@ import time
 import requests
 
 app = Flask(__name__)
-CORS(app)
+
+# ============================================================================
+# CORE CONFIG
+# ============================================================================
 
 DATABASE = 'escrow.db'
 TOKEN_EXPIRY_DAYS = 7
 
+# Cap request bodies at 32 KB - plenty for this API, blocks abuse uploads
+app.config['MAX_CONTENT_LENGTH'] = 32 * 1024
+
 # ============================================================================
-# SMS CONFIGURATION — Africa's Talking
+# CORS - restrict to known frontend origins only
 # ============================================================================
 #
-# THE 3 BUGS THAT CAUSED "The supplied authentication is invalid":
+# Set ALLOWED_ORIGINS in your .env / Render environment, comma separated:
+#   ALLOWED_ORIGINS=https://securescrowkenya.com,https://www.securescrowkenya.com
 #
-# BUG 1 — Wrong API URL
-#   Sandbox and Live have DIFFERENT base URLs.
-#   Your code was always hitting the LIVE URL even when using sandbox keys.
-#   Sandbox URL: https://api.sandbox.africastalking.com/version1/messaging
-#   Live URL:    https://api.africastalking.com/version1/messaging
+# For local development the defaults below also allow the common
+# Live Server / localhost ports.
+
+_default_origins = (
+    'https://securescrowkenya.com,'
+    'https://www.securescrowkenya.com,'
+    'http://127.0.0.1:5500,'
+    'http://localhost:5500'
+)
+ALLOWED_ORIGINS = [
+    o.strip() for o in os.getenv('ALLOWED_ORIGINS', _default_origins).split(',')
+    if o.strip()
+]
+
+CORS(app, resources={r"/api/*": {"origins": ALLOWED_ORIGINS}})
+
+# ============================================================================
+# RATE LIMITING
+# ============================================================================
 #
-# BUG 2 — Custom Sender ID not allowed on sandbox
-#   Africa's Talking sandbox does NOT support custom sender IDs (from field).
-#   Sending 'from': 'SecureEscrow' on sandbox causes auth rejection.
-#   On sandbox, omit the 'from' field entirely.
+# Default storage is in-memory, which is fine for a single Render instance.
+# For multi-instance deployments, set RATELIMIT_STORAGE_URI to a shared
+# Redis URL.
+
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=['200 per hour'],
+    storage_uri=os.getenv('RATELIMIT_STORAGE_URI', 'memory://')
+)
+
+# ============================================================================
+# FRONTEND BASE URL (used to build magic links sent via SMS)
+# ============================================================================
 #
-# BUG 3 — send_sms() fallback check was wrong
-#   The check was: if AFRICASTALKING_API_KEY != 'your_api_key_here'
-#   Since you had a real key, it always tried the real API — even with
-#   the wrong URL — causing the failure.
-#   Now controlled cleanly by AFRICASTALKING_ENV below.
+# IMPORTANT: set this to your live frontend URL in production, e.g.
+#   FRONTEND_BASE_URL=https://securescrowkenya.com/track.html
 #
-# ── HOW TO SWITCH BETWEEN SANDBOX AND LIVE ──────────────────────────────────
-#
-#   SANDBOX (for testing — free, no real SMS sent):
-#     AFRICASTALKING_ENV      = 'sandbox'
-#     AFRICASTALKING_USERNAME = 'sandbox'        ← must be literally 'sandbox'
-#     AFRICASTALKING_API_KEY  = your sandbox key from AT dashboard
-#
-#   LIVE (real SMS sent to real phones):
-#     AFRICASTALKING_ENV      = 'live'
-#     AFRICASTALKING_USERNAME = your actual AT account username (NOT 'sandbox')
-#     AFRICASTALKING_API_KEY  = your live API key from AT dashboard
-#     AFRICASTALKING_SENDER_ID = 'SecureEscrow'  (must be pre-registered with AT)
-#
-# ─────────────────────────────────────────────────────────────────────────────
+# The previous hardcoded value (http://127.0.0.1:5500/track.html) only
+# works on the developer's own machine - real users would receive a
+# broken link.
+
+FRONTEND_BASE_URL = os.getenv('FRONTEND_BASE_URL', 'http://127.0.0.1:5500/track.html')
 
 # ============================================================================
 # SMS CONFIGURATION — Africa's Talking  (loaded from .env)
@@ -86,12 +120,23 @@ AFRICASTALKING_SMS_URL = (
     else 'https://api.africastalking.com/version1/messaging'
 )
 
+# ============================================================================
+# INPUT LIMITS
+# ============================================================================
+
+MAX_ITEM_NAME_LEN     = 120
+MAX_ITEM_DETAILS_LEN  = 1000
+MAX_PAYOUT_FIELD_LEN  = 40
+MAX_DEADLINE_LEN      = 60
+MAX_TXN_TYPE_LEN      = 40
+MAX_AMOUNT            = 10_000_000  # KES 10,000,000 sanity cap
+
 
 def init_database():
     """Create database tables if they don't exist."""
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
-    
+
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS transactions (
             id TEXT PRIMARY KEY,
@@ -119,7 +164,7 @@ def init_database():
             last_resend_at TEXT
         )
     ''')
-    
+
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS activity_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -130,7 +175,7 @@ def init_database():
             created_at TEXT NOT NULL
         )
     ''')
-    
+
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS sms_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -142,7 +187,7 @@ def init_database():
             created_at TEXT NOT NULL
         )
     ''')
-    
+
     conn.commit()
     conn.close()
     print("Database initialized.")
@@ -155,8 +200,11 @@ def get_db_connection():
 
 
 def generate_transaction_id():
+    # 8 chars from a 32-character set => 32^8 (~1.1 trillion) combinations.
+    # Previously 6 chars (~1 billion) - increased for better resistance
+    # against ID enumeration/guessing attacks.
     chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-    random_part = ''.join(random.choices(chars, k=6))
+    random_part = ''.join(secrets.choice(chars) for _ in range(8))
     return f'ESC-{random_part}'
 
 
@@ -183,6 +231,40 @@ def normalize_phone(phone):
     return clean_phone
 
 
+def mask_phone(phone):
+    """Mask a phone number for display, e.g. 254712345678 -> 2547****678"""
+    if not phone or len(phone) < 6:
+        return '****'
+    return phone[:4] + '****' + phone[-3:]
+
+
+def sanitize_text(value, max_len):
+    """Strip HTML tags/control characters and enforce a max length.
+
+    This is defense-in-depth against stored XSS - the frontend should
+    also escape output, but we never want raw markup persisted either.
+    """
+    if value is None:
+        return ''
+    value = str(value)
+    # Remove anything that looks like an HTML tag
+    value = re.sub(r'<[^>]*>', '', value)
+    # Strip control characters (keep normal whitespace)
+    value = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', value)
+    return value.strip()[:max_len]
+
+
+def redact_link_for_log(message):
+    """Replace any ?id=...&token=... query string in a message with a
+    redacted placeholder before it is written to sms_logs, so raw
+    magic tokens are never persisted in plaintext logs."""
+    return re.sub(
+        r'(\?id=[^\s&]+&token=)[^\s]+',
+        r'\1[REDACTED]',
+        message
+    )
+
+
 def log_activity(transaction_id, action, actor_phone=None, details=''):
     max_retries = 3
     for attempt in range(max_retries):
@@ -203,6 +285,7 @@ def log_activity(transaction_id, action, actor_phone=None, details=''):
 
 def log_sms(transaction_id, recipient_phone, message_type, message_content, status):
     max_retries = 3
+    safe_content = redact_link_for_log(message_content)
     for attempt in range(max_retries):
         try:
             conn = get_db_connection()
@@ -210,7 +293,7 @@ def log_sms(transaction_id, recipient_phone, message_type, message_content, stat
             cursor.execute('''
                 INSERT INTO sms_logs (transaction_id, recipient_phone, message_type, message_content, status, created_at)
                 VALUES (?, ?, ?, ?, ?, ?)
-            ''', (transaction_id, recipient_phone, message_type, message_content, status, datetime.now().isoformat()))
+            ''', (transaction_id, recipient_phone, message_type, safe_content, status, datetime.now().isoformat()))
             conn.commit()
             conn.close()
             return
@@ -222,9 +305,6 @@ def log_sms(transaction_id, recipient_phone, message_type, message_content, stat
 def send_real_sms(recipient_phone, message, transaction_id=None, message_type='general'):
     """Send SMS via Africa's Talking API."""
     try:
-        # FIX 2 — Build the POST data based on environment.
-        # Sandbox does NOT accept a custom 'from' (sender ID) — omit it entirely.
-        # Live DOES accept a custom sender ID — include it.
         post_data = {
             'username': AFRICASTALKING_USERNAME,
             'to':       '+' + recipient_phone,
@@ -234,7 +314,7 @@ def send_real_sms(recipient_phone, message, transaction_id=None, message_type='g
             post_data['from'] = AFRICASTALKING_SENDER_ID
 
         response = requests.post(
-            AFRICASTALKING_SMS_URL,   # FIX 1 — correct URL per environment
+            AFRICASTALKING_SMS_URL,
             headers={
                 'apiKey':       AFRICASTALKING_API_KEY,
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -251,17 +331,15 @@ def send_real_sms(recipient_phone, message, transaction_id=None, message_type='g
         if success:
             print(f"SMS sent to {recipient_phone}")
         else:
-            print(f"SMS failed: {response.text}")
-            # Extra debug — print exactly what was sent so you can spot issues fast
-            print(f"  URL:      {AFRICASTALKING_SMS_URL}")
-            print(f"  Username: {AFRICASTALKING_USERNAME}")
-            print(f"  ENV:      {AFRICASTALKING_ENV}")
+            # Do NOT print credentials (username/env) - only non-sensitive
+            # diagnostic info, to avoid leaking account details into logs.
+            print(f"SMS failed (status {response.status_code}) for {message_type}")
 
         return success
 
     except Exception as e:
-        print(f"SMS error: {str(e)}")
-        log_sms(transaction_id, recipient_phone, message_type, message, f'ERROR: {str(e)}')
+        print(f"SMS error: {type(e).__name__}")
+        log_sms(transaction_id, recipient_phone, message_type, message, 'ERROR')
         return False
 
 
@@ -277,16 +355,7 @@ def send_simulated_sms(recipient_phone, message, transaction_id=None, message_ty
 
 
 def send_sms(recipient_phone, message, transaction_id=None, message_type='general'):
-    """
-    Route SMS to real API or simulation.
-
-    FIX 3 — The old check was:
-        if AFRICASTALKING_API_KEY != 'your_api_key_here': use real API
-    This was fragile — any key (even a wrong one) would hit the real API.
-
-    New logic: use real API when ENV is 'sandbox' or 'live'.
-    Fall back to simulation only when ENV is anything else (e.g. 'off' or 'test').
-    """
+    """Route SMS to real API or simulation based on AFRICASTALKING_ENV."""
     if AFRICASTALKING_ENV in ('sandbox', 'live'):
         return send_real_sms(recipient_phone, message, transaction_id, message_type)
     else:
@@ -294,9 +363,8 @@ def send_sms(recipient_phone, message, transaction_id=None, message_type='genera
 
 
 def send_buyer_magic_link_sms(buyer_phone, transaction_id, magic_token, item_name, amount):
-    base_url = "http://127.0.0.1:5500/track.html"
-    magic_link = f"{base_url}?id={transaction_id}&token={magic_token}"
-    
+    magic_link = f"{FRONTEND_BASE_URL}?id={transaction_id}&token={magic_token}"
+
     message = f"""SecureEscrow Kenya
 Transaction: {transaction_id}
 Item: {item_name}
@@ -306,14 +374,13 @@ Release funds: {magic_link}
 
 Keep this link private. Do not share.
 Expires in {TOKEN_EXPIRY_DAYS} days."""
-    
+
     return send_sms(buyer_phone, message, transaction_id, 'buyer_magic_link')
 
 
 def send_seller_tracking_sms(seller_phone, transaction_id, seller_token, buyer_phone, item_name, amount):
-    base_url = "http://127.0.0.1:5500/track.html"
-    tracking_link = f"{base_url}?id={transaction_id}&token={seller_token}"
-    
+    tracking_link = f"{FRONTEND_BASE_URL}?id={transaction_id}&token={seller_token}"
+
     message = f"""SecureEscrow Kenya
 Transaction: {transaction_id}
 Buyer: {buyer_phone}
@@ -325,20 +392,19 @@ Status: Funds Secured - Awaiting Delivery
 Track: {tracking_link}
 
 Prepare item for delivery."""
-    
+
     return send_sms(seller_phone, message, transaction_id, 'seller_tracking')
 
 
 def send_seller_release_notification(seller_phone, transaction_id, seller_token, buyer_phone, item_name, amount, payout_type='MPESA'):
-    base_url = "http://127.0.0.1:5500/track.html"
-    tracking_link = f"{base_url}?id={transaction_id}&token={seller_token}"
-    
+    tracking_link = f"{FRONTEND_BASE_URL}?id={transaction_id}&token={seller_token}"
+
     payout_text = "your M-PESA account"
     if payout_type == 'TILL':
         payout_text = "your Till number"
     elif payout_type == 'PAYBILL':
         payout_text = "your Paybill account"
-    
+
     message = f"""SecureEscrow Kenya
 Transaction: {transaction_id}
 Buyer: {buyer_phone}
@@ -350,7 +416,7 @@ Status: Funds Released - Payment Complete
 Track: {tracking_link}
 
 Funds sent to {payout_text}."""
-    
+
     return send_sms(seller_phone, message, transaction_id, 'seller_release_notification')
 
 
@@ -364,44 +430,62 @@ def health_check():
 
 
 @app.route('/api/transactions/create', methods=['POST'])
+@limiter.limit('5 per hour')
 def create_transaction():
-    data = request.json
-    
+    data = request.json or {}
+
     required_fields = ['itemName', 'amount', 'buyerPhone', 'sellerPhone']
     for field in required_fields:
         if not data.get(field):
             return jsonify({'error': f'Missing required field: {field}'}), 400
-    
-    amount = float(data.get('amount', 0))
+
+    try:
+        amount = float(data.get('amount', 0))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Invalid amount'}), 400
+
     if amount < 100:
         return jsonify({'error': 'Amount must be at least KES 100'}), 400
-    
+
+    if amount > MAX_AMOUNT:
+        return jsonify({'error': f'Amount exceeds maximum allowed (KES {MAX_AMOUNT:,.0f})'}), 400
+
     buyer_phone  = data.get('buyerPhone', '')
     seller_phone = data.get('sellerPhone', '')
-    
+
     if not validate_kenyan_phone(buyer_phone):
         return jsonify({'error': 'Invalid buyer phone number'}), 400
-    
+
     if not validate_kenyan_phone(seller_phone):
         return jsonify({'error': 'Invalid seller phone number'}), 400
-    
+
     if normalize_phone(buyer_phone) == normalize_phone(seller_phone):
         return jsonify({'error': 'Buyer and seller phone numbers must be different'}), 400
-    
+
+    payout_type = data.get('payoutType', 'MPESA')
+    if payout_type not in ['MPESA', 'TILL', 'PAYBILL']:
+        return jsonify({'error': 'Invalid payout type'}), 400
+
+    item_name      = sanitize_text(data.get('itemName', ''), MAX_ITEM_NAME_LEN)
+    item_details   = sanitize_text(data.get('itemDetails', ''), MAX_ITEM_DETAILS_LEN)
+    transaction_type = sanitize_text(data.get('transactionType', ''), MAX_TXN_TYPE_LEN)
+    delivery_deadline = sanitize_text(data.get('deliveryDeadline', ''), MAX_DEADLINE_LEN)
+    payout_number  = sanitize_text(data.get('payoutNumber', ''), MAX_PAYOUT_FIELD_LEN)
+    payout_account = sanitize_text(data.get('payoutAccount', ''), MAX_PAYOUT_FIELD_LEN)
+
+    if not item_name:
+        return jsonify({'error': 'Item name is required'}), 400
+
     transaction_id   = generate_transaction_id()
     magic_token      = generate_token()
     seller_token     = generate_token()
     magic_token_hash = hash_value(magic_token)
     seller_token_hash= hash_value(seller_token)
     token_expires_at = (datetime.now() + timedelta(days=TOKEN_EXPIRY_DAYS)).isoformat()
-    
-    payout_type    = data.get('payoutType', 'MPESA')
-    payout_number  = data.get('payoutNumber', '')
-    payout_account = data.get('payoutAccount', '')
-    
+
     conn   = get_db_connection()
     cursor = conn.cursor()
-    
+
     cursor.execute('''
         INSERT INTO transactions (
             id, magic_token_hash, seller_token_hash, token_expires_at,
@@ -411,21 +495,21 @@ def create_transaction():
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         transaction_id, magic_token_hash, seller_token_hash, token_expires_at,
-        data.get('itemName', '').strip(), data.get('itemDetails', ''), amount,
+        item_name, item_details, amount,
         normalize_phone(buyer_phone), normalize_phone(seller_phone),
-        data.get('transactionType', ''), data.get('deliveryDeadline', ''),
+        transaction_type, delivery_deadline,
         payout_type, payout_number, payout_account,
         'FUNDS_SECURED', datetime.now().isoformat()
     ))
-    
+
     conn.commit()
     conn.close()
-    
+
     log_activity(transaction_id, 'CREATED', normalize_phone(buyer_phone), f"Amount: {amount}")
-    
-    send_buyer_magic_link_sms(normalize_phone(buyer_phone), transaction_id, magic_token, data.get('itemName', ''), amount)
-    send_seller_tracking_sms(normalize_phone(seller_phone), transaction_id, seller_token, normalize_phone(buyer_phone), data.get('itemName', ''), amount)
-    
+
+    send_buyer_magic_link_sms(normalize_phone(buyer_phone), transaction_id, magic_token, item_name, amount)
+    send_seller_tracking_sms(normalize_phone(seller_phone), transaction_id, seller_token, normalize_phone(buyer_phone), item_name, amount)
+
     return jsonify({
         'success':       True,
         'transactionId': transaction_id,
@@ -434,63 +518,71 @@ def create_transaction():
 
 
 @app.route('/api/transactions/<transaction_id>', methods=['GET'])
+@limiter.limit('30 per hour')
 def get_transaction(transaction_id):
     conn   = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM transactions WHERE id = ?', (transaction_id,))
     row = cursor.fetchone()
     conn.close()
-    
+
     if not row:
         return jsonify({'error': 'Transaction not found'}), 404
-    
+
     transaction = dict(row)
     transaction['amount'] = float(transaction['amount'])
     transaction.pop('magic_token_hash', None)
     transaction.pop('seller_token_hash', None)
     transaction.pop('token_expires_at', None)
-    
+    transaction.pop('token_used', None)
+
     return jsonify(transaction)
 
 
 @app.route('/api/transactions/<transaction_id>/validate', methods=['POST'])
+@limiter.limit('20 per hour')
 def validate_token(transaction_id):
-    data  = request.json
+    data  = request.json or {}
     token = data.get('token', '')
-    
+
     if not token:
         return jsonify({'error': 'Token is required'}), 400
-    
+
     conn   = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM transactions WHERE id = ?', (transaction_id,))
     row = cursor.fetchone()
-    
+
     if not row:
         conn.close()
         return jsonify({'error': 'Transaction not found'}), 404
-    
+
     transaction = dict(row)
     token_hash  = hash_value(token)
-    
+
     is_buyer  = (token_hash == transaction['magic_token_hash'])
     is_seller = (token_hash == transaction['seller_token_hash'])
-    
+
     if not is_buyer and not is_seller:
         conn.close()
         log_activity(transaction_id, 'TOKEN_VALIDATION_FAILED', None, 'Invalid token')
         return jsonify({'error': 'Invalid token'}), 403
-    
+
     token_expires_at = datetime.fromisoformat(transaction['token_expires_at'])
     if datetime.now() > token_expires_at:
         conn.close()
         return jsonify({'error': 'Token has expired'}), 403
-    
+
+    # The buyer's magic token is single-use for *authorizing release*.
+    # It remains valid for viewing/validation here even after the funds
+    # have been released, so the buyer can still see the final status -
+    # the /release endpoint itself is what enforces single-use.
+
     conn.close()
-    
+
     role = 'buyer' if is_buyer else 'seller'
     log_activity(transaction_id, 'TOKEN_VALIDATED', transaction[role + '_phone'], f'{role.capitalize()} validated')
-    
+
     return jsonify({
         'success':  True,
         'role':     role,
@@ -512,57 +604,65 @@ def validate_token(transaction_id):
 
 
 @app.route('/api/transactions/<transaction_id>/release', methods=['POST'])
+@limiter.limit('10 per hour')
 def release_funds(transaction_id):
-    data  = request.json
+    data  = request.json or {}
     token = data.get('token', '')
-    
+
     if not token:
         return jsonify({'error': 'Authorization token is required'}), 400
-    
+
     conn   = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM transactions WHERE id = ?', (transaction_id,))
     row = cursor.fetchone()
-    
+
     if not row:
         conn.close()
         return jsonify({'error': 'Transaction not found'}), 404
-    
+
     transaction = dict(row)
     token_hash  = hash_value(token)
-    
+
     if token_hash != transaction['magic_token_hash']:
         conn.close()
         log_activity(transaction_id, 'RELEASE_FAILED', None, 'Invalid token')
         return jsonify({'error': 'Invalid authorization token'}), 403
-    
+
+    # Enforce single-use: once this magic token has been used for a
+    # release, it can never authorize another one (replay protection).
+    if transaction['token_used']:
+        conn.close()
+        log_activity(transaction_id, 'RELEASE_FAILED', transaction['buyer_phone'], 'Token already used')
+        return jsonify({'error': 'This authorization link has already been used'}), 403
+
     token_expires_at = datetime.fromisoformat(transaction['token_expires_at'])
     if datetime.now() > token_expires_at:
         conn.close()
         return jsonify({'error': 'Token has expired'}), 403
-    
+
     allowed_statuses = ['FUNDS_SECURED', 'AWAITING_DELIVERY', 'DELIVERED']
     if transaction['status'] not in allowed_statuses:
         conn.close()
         return jsonify({'error': f'Cannot release funds from status: {transaction["status"]}'}), 400
-    
+
     cursor.execute('''
-        UPDATE transactions 
+        UPDATE transactions
         SET status = ?, released_at = ?, token_used = 1
         WHERE id = ?
     ''', ('FUNDS_RELEASED', datetime.now().isoformat(), transaction_id))
-    
+
     conn.commit()
     conn.close()
-    
+
     log_activity(transaction_id, 'FUNDS_RELEASED', transaction['buyer_phone'], f"Amount: {transaction['amount']}")
-    
+
     send_seller_release_notification(
         transaction['seller_phone'], transaction_id, generate_token(),
         transaction['buyer_phone'], transaction['item_name'],
         float(transaction['amount']), transaction['payout_type']
     )
-    
+
     return jsonify({
         'success': True,
         'message': 'Funds released to seller successfully',
@@ -571,60 +671,74 @@ def release_funds(transaction_id):
 
 
 @app.route('/api/transactions/<transaction_id>/payout', methods=['PUT'])
+@limiter.limit('20 per hour')
 def update_payout(transaction_id):
-    data           = request.json
+    data           = request.json or {}
     token          = data.get('token', '')
     payout_type    = data.get('payoutType', 'MPESA')
-    payout_number  = data.get('payoutNumber', '')
-    payout_account = data.get('payoutAccount', '')
-    
+    payout_number  = sanitize_text(data.get('payoutNumber', ''), MAX_PAYOUT_FIELD_LEN)
+    payout_account = sanitize_text(data.get('payoutAccount', ''), MAX_PAYOUT_FIELD_LEN)
+
     if not token:
         return jsonify({'error': 'Authorization token is required'}), 400
-    
+
     if payout_type not in ['MPESA', 'TILL', 'PAYBILL']:
         return jsonify({'error': 'Invalid payout type'}), 400
-    
+
     conn   = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM transactions WHERE id = ?', (transaction_id,))
     row = cursor.fetchone()
-    
+
     if not row:
         conn.close()
         return jsonify({'error': 'Transaction not found'}), 404
-    
+
     transaction = dict(row)
     token_hash  = hash_value(token)
-    
+
     if token_hash != transaction['seller_token_hash']:
         conn.close()
         return jsonify({'error': 'Only seller can update payout method'}), 403
-    
+
     cursor.execute('''
-        UPDATE transactions 
+        UPDATE transactions
         SET payout_type = ?, payout_number = ?, payout_account = ?
         WHERE id = ?
     ''', (payout_type, payout_number, payout_account, transaction_id))
-    
+
     conn.commit()
     conn.close()
-    
+
     log_activity(transaction_id, 'PAYOUT_UPDATED', transaction['seller_phone'], f"Payout: {payout_type}")
-    
+
     return jsonify({'success': True, 'message': 'Payout method updated', 'payoutType': payout_type})
 
 
 @app.route('/api/transactions/<transaction_id>/payout', methods=['GET'])
+@limiter.limit('20 per hour')
 def get_payout(transaction_id):
+    # SECURITY: this endpoint used to be completely unauthenticated and
+    # would return a seller's M-PESA/Till/Paybill details to anyone who
+    # knew (or guessed) a transaction ID. It now requires the seller's
+    # own token, passed as a query parameter: ?token=<sellerToken>
+    token = request.args.get('token', '')
+
+    if not token:
+        return jsonify({'error': 'Authorization token is required'}), 400
+
     conn   = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT payout_type, payout_number, payout_account FROM transactions WHERE id = ?', (transaction_id,))
+    cursor.execute('SELECT seller_token_hash, payout_type, payout_number, payout_account FROM transactions WHERE id = ?', (transaction_id,))
     row = cursor.fetchone()
     conn.close()
-    
+
     if not row:
         return jsonify({'error': 'Transaction not found'}), 404
-    
+
+    if hash_value(token) != row['seller_token_hash']:
+        return jsonify({'error': 'Invalid authorization token'}), 403
+
     return jsonify({
         'payoutType':    row['payout_type']    or 'MPESA',
         'payoutNumber':  row['payout_number']  or '',
@@ -633,79 +747,81 @@ def get_payout(transaction_id):
 
 
 @app.route('/api/transactions/<transaction_id>/resend', methods=['POST'])
+@limiter.limit('5 per hour')
 def resend_magic_link(transaction_id):
-    data  = request.json
+    data  = request.json or {}
     phone = data.get('phone', '')
-    
+
     if not phone:
         return jsonify({'error': 'Phone number is required'}), 400
-    
+
     conn   = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM transactions WHERE id = ?', (transaction_id,))
     row = cursor.fetchone()
-    
+
     if not row:
         conn.close()
         return jsonify({'error': 'Transaction not found'}), 404
-    
+
     transaction = dict(row)
-    
+
     if normalize_phone(phone) != transaction['buyer_phone']:
         conn.close()
         return jsonify({'error': 'Unauthorized'}), 403
-    
+
     if transaction['last_resend_at']:
         last_resend = datetime.fromisoformat(transaction['last_resend_at'])
         if datetime.now() - last_resend < timedelta(hours=1):
             conn.close()
             return jsonify({'error': 'Please wait 1 hour before requesting another link'}), 429
-    
+
     new_token      = generate_token()
     new_token_hash = hash_value(new_token)
     new_expires_at = (datetime.now() + timedelta(days=TOKEN_EXPIRY_DAYS)).isoformat()
-    
+
     cursor.execute('''
-        UPDATE transactions 
-        SET magic_token_hash = ?, token_expires_at = ?, 
+        UPDATE transactions
+        SET magic_token_hash = ?, token_expires_at = ?, token_used = 0,
             token_resend_count = token_resend_count + 1, last_resend_at = ?
         WHERE id = ?
     ''', (new_token_hash, new_expires_at, datetime.now().isoformat(), transaction_id))
-    
+
     conn.commit()
     conn.close()
-    
+
     log_activity(transaction_id, 'TOKEN_RESENT', transaction['buyer_phone'], 'New magic link sent')
     send_buyer_magic_link_sms(transaction['buyer_phone'], transaction_id, new_token, transaction['item_name'], float(transaction['amount']))
-    
+
     return jsonify({'success': True, 'message': 'New magic link sent to your phone'})
 
 
 @app.route('/api/transactions/<transaction_id>/status', methods=['PUT'])
+@limiter.limit('30 per hour')
 def update_status(transaction_id):
-    data       = request.json
+    data       = request.json or {}
     new_status = data.get('status')
     phone      = data.get('phone')
     token      = data.get('token', '')
-    
+
     if not new_status:
         return jsonify({'error': 'Status is required'}), 400
-    
+
     valid_statuses = ['AWAITING_DELIVERY', 'DELIVERED', 'DISPUTED']
     if new_status not in valid_statuses:
         return jsonify({'error': 'Invalid status'}), 400
-    
+
     conn   = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM transactions WHERE id = ?', (transaction_id,))
     row = cursor.fetchone()
-    
+
     if not row:
         conn.close()
         return jsonify({'error': 'Transaction not found'}), 404
-    
+
     transaction = dict(row)
-    
+
     if token:
         token_hash = hash_value(token)
         if token_hash == transaction['magic_token_hash']:
@@ -723,7 +839,7 @@ def update_status(transaction_id):
     else:
         conn.close()
         return jsonify({'error': 'Phone or token required'}), 400
-    
+
     if new_status == 'AWAITING_DELIVERY':
         if verified_phone != transaction['seller_phone']:
             conn.close()
@@ -756,40 +872,57 @@ def update_status(transaction_id):
         cursor.execute('UPDATE transactions SET status = ?, disputed_at = ? WHERE id = ?',
                       (new_status, datetime.now().isoformat(), transaction_id))
         log_activity(transaction_id, 'DISPUTED', verified_phone, 'Dispute raised')
-    
+
     conn.commit()
     conn.close()
-    
+
     return jsonify({'success': True, 'status': new_status})
 
 
 @app.route('/api/transactions/track/<phone>', methods=['GET'])
+@limiter.limit('10 per hour')
 def track_by_phone(phone):
+    # SECURITY: this endpoint previously returned full transaction details
+    # (including the counterparty's phone number, item details, and
+    # payout info) for ANY phone number, with no verification that the
+    # requester actually owns that number. It is rate-limited and now
+    # returns a minimal, masked summary only.
+    if not validate_kenyan_phone(phone):
+        return jsonify({'error': 'Invalid phone number'}), 400
+
     normalized_phone = normalize_phone(phone)
-    
+
     conn   = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT * FROM transactions 
+        SELECT * FROM transactions
         WHERE buyer_phone = ? OR seller_phone = ?
         ORDER BY created_at DESC LIMIT 10
     ''', (normalized_phone, normalized_phone))
-    
+
     rows = cursor.fetchall()
     conn.close()
-    
+
     if not rows:
         return jsonify({'error': 'No transactions found'}), 404
-    
+
     transactions = []
     for row in rows:
         t = dict(row)
-        t['amount'] = float(t['amount'])
-        t.pop('magic_token_hash', None)
-        t.pop('seller_token_hash', None)
-        t.pop('token_expires_at', None)
-        transactions.append(t)
-    
+        is_buyer = (t['buyer_phone'] == normalized_phone)
+
+        transactions.append({
+            'id':          t['id'],
+            'item_name':   t['item_name'],
+            'amount':      float(t['amount']),
+            'status':      t['status'],
+            'created_at':  t['created_at'],
+            'role':        'buyer' if is_buyer else 'seller',
+            # Counterparty phone is masked - full number requires the
+            # magic link sent to that party.
+            'counterparty_phone': mask_phone(t['seller_phone'] if is_buyer else t['buyer_phone']),
+        })
+
     return jsonify({'transactions': transactions})
 
 
@@ -799,12 +932,19 @@ def track_by_phone(phone):
 
 if __name__ == '__main__':
     init_database()
+
+    debug_mode = os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
+    host       = os.getenv('HOST', '127.0.0.1')
+    port       = int(os.getenv('PORT', '5000'))
+
     print("\n" + "=" * 50)
     print("SecureEscrow Kenya Backend Server")
     print("=" * 50)
-    print(f"\nToken expiry : {TOKEN_EXPIRY_DAYS} days")
-    print(f"SMS mode     : {AFRICASTALKING_ENV.upper()}")
-    print(f"SMS URL      : {AFRICASTALKING_SMS_URL}")
-    print("\nServer running at: http://127.0.0.1:5000")
+    print(f"\nToken expiry   : {TOKEN_EXPIRY_DAYS} days")
+    print(f"SMS mode       : {AFRICASTALKING_ENV.upper()}")
+    print(f"Allowed origins: {', '.join(ALLOWED_ORIGINS)}")
+    print(f"Debug mode     : {debug_mode}")
+    print(f"\nServer running at: http://{host}:{port}")
     print("Press Ctrl+C to stop\n")
-    app.run(debug=True, host='127.0.0.1', port=5000)
+
+    app.run(debug=debug_mode, host=host, port=port)

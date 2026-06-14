@@ -1,5 +1,43 @@
 
 
 
+
+# ============================================================================
+# SecureEscrow Kenya - Apache configuration
+# ============================================================================
+
 RewriteEngine On
+
+# Force HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Canonicalize index.html -> /
 RewriteRule ^index\.html$ / [R=301,L]
+
+# ----------------------------------------------------------------------------
+# Security headers
+# ----------------------------------------------------------------------------
+<IfModule mod_headers.c>
+    # Prevent the site from being framed by other origins (clickjacking)
+    Header always set X-Frame-Options "DENY"
+
+    # Prevent MIME-type sniffing
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Limit how much referrer information is sent to other sites
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Restrict access to powerful browser features
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+
+    # Force HTTPS for this domain for 1 year, including subdomains
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+    # Content Security Policy
+    # - default-src 'self': only load resources from this site by default
+    # - script-src/style-src: allow inline (used by existing pages) and Google Fonts
+    # - connect-src: allow API calls to the Render backend (update to your domain)
+    # - img-src: allow data URIs for inline SVGs/icons
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://*.onrender.com; frame-ancestors 'none'"
+</IfModule>
