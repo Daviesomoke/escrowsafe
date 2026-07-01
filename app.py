@@ -7,7 +7,6 @@
 
 
 
-
 """
 SecureEscrow Kenya - Backend Server
 Magic Link Authorization System with Payout Methods
@@ -130,6 +129,80 @@ MAX_PAYOUT_FIELD_LEN  = 40
 MAX_DEADLINE_LEN      = 60
 MAX_TXN_TYPE_LEN      = 40
 MAX_AMOUNT            = 10_000_000  # KES 10,000,000 sanity cap
+
+# ============================================================================
+# PHONE IMPORT SERVICE — CONFIG
+# ============================================================================
+#
+# The import shop always routes the escrow transaction to YOU as the seller.
+# Buyers never see a "seller phone" field or any fee breakdown - they just
+# pick a phone and pay the single listed price. Set these in your .env /
+# Render environment before going live:
+#
+#   IMPORT_SELLER_PHONE=0712345678      <- your business M-PESA number
+#   IMPORT_PAYOUT_TYPE=MPESA            <- MPESA | TILL | PAYBILL
+#   IMPORT_PAYOUT_NUMBER=0712345678     <- Till/Paybill number if not MPESA
+#   IMPORT_PAYOUT_ACCOUNT=              <- Paybill account ref, if used
+#
+# Until IMPORT_SELLER_PHONE is set, the order endpoint returns a friendly
+# "not configured yet" error instead of creating broken transactions.
+
+IMPORT_SELLER_PHONE   = os.getenv('IMPORT_SELLER_PHONE', '')
+IMPORT_PAYOUT_TYPE    = os.getenv('IMPORT_PAYOUT_TYPE', 'MPESA')
+IMPORT_PAYOUT_NUMBER  = os.getenv('IMPORT_PAYOUT_NUMBER', '')
+IMPORT_PAYOUT_ACCOUNT = os.getenv('IMPORT_PAYOUT_ACCOUNT', '')
+
+# ============================================================================
+# PHONE IMPORT SERVICE — CATALOG
+# ============================================================================
+#
+# Hand-curated listings only - nothing here is scraped or pulled live from
+# any marketplace. Edit this list to add/remove/reprice phones.
+#
+# `price` is the ONE all-inclusive number the buyer pays. It must already
+# include: the item cost, shipping, customs/duty, and your margin. Buyers
+# never see a breakdown - only this total - so price it accordingly.
+
+IMPORT_PRODUCTS = [
+    {
+        'id': 'iphone-12-64',
+        'name': 'iPhone 12 - 64GB',
+        'condition': 'Grade A (Excellent)',
+        'specs': ['64GB storage', 'Factory unlocked', 'Battery health 85%+', 'Face ID working'],
+        'price': 42000,
+        'eta': '10-14 days',
+        'image': 'images/import/iphone-12.jpg',
+        'badge': '',
+    },
+    {
+        'id': 'iphone-13-128',
+        'name': 'iPhone 13 - 128GB',
+        'condition': 'Grade A (Excellent)',
+        'specs': ['128GB storage', 'Factory unlocked', 'Battery health 88%+', 'Face ID working'],
+        'price': 58000,
+        'eta': '10-14 days',
+        'image': 'images/import/iphone-13.jpg',
+        'badge': 'Popular',
+    },
+    {
+        'id': 'samsung-s21-128',
+        'name': 'Samsung Galaxy S21 - 128GB',
+        'condition': 'Grade A (Excellent)',
+        'specs': ['128GB storage', 'Factory unlocked', 'Battery 90%+', 'Fingerprint working'],
+        'price': 39000,
+        'eta': '10-14 days',
+        'image': 'images/import/galaxy-s21.jpg',
+        'badge': '',
+    },
+]
+
+
+def get_import_product(product_id):
+    """Look up a curated import product by id. Returns None if not found."""
+    for product in IMPORT_PRODUCTS:
+        if product['id'] == product_id:
+            return product
+    return None
 
 
 def init_database():
@@ -924,6 +997,114 @@ def track_by_phone(phone):
         })
 
     return jsonify({'transactions': transactions})
+
+
+# ============================================================================
+# PHONE IMPORT SERVICE — ENDPOINTS
+# ============================================================================
+
+@app.route('/api/import/products', methods=['GET'])
+def get_import_products():
+    """Public catalog for the import shop page. Only fields the buyer
+    should see are returned - no cost breakdown, just the total price."""
+    public_products = [
+        {
+            'id':        p['id'],
+            'name':      p['name'],
+            'condition': p['condition'],
+            'specs':     p['specs'],
+            'price':     p['price'],
+            'eta':       p['eta'],
+            'image':     p['image'],
+            'badge':     p.get('badge', ''),
+        }
+        for p in IMPORT_PRODUCTS
+    ]
+    return jsonify({'products': public_products})
+
+
+@app.route('/api/import/order', methods=['POST'])
+@limiter.limit('5 per hour')
+def create_import_order():
+    """Places an import order as a normal SecureEscrow transaction, with
+    the seller side (you) filled in server-side so it can't be tampered
+    with from the browser. The price is also read from the server-side
+    catalog, never trusted from the client."""
+    data = request.json or {}
+
+    if not IMPORT_SELLER_PHONE or not validate_kenyan_phone(IMPORT_SELLER_PHONE):
+        return jsonify({'error': 'Import service is not configured yet. Please contact support.'}), 503
+
+    product = get_import_product(data.get('productId', ''))
+    if not product:
+        return jsonify({'error': 'That phone is no longer available'}), 400
+
+    buyer_phone = data.get('buyerPhone', '')
+    if not validate_kenyan_phone(buyer_phone):
+        return jsonify({'error': 'Invalid phone number'}), 400
+
+    normalized_buyer  = normalize_phone(buyer_phone)
+    normalized_seller = normalize_phone(IMPORT_SELLER_PHONE)
+
+    if normalized_buyer == normalized_seller:
+        return jsonify({'error': 'This number cannot be used to place an order'}), 400
+
+    buyer_name       = sanitize_text(data.get('buyerName', ''), 80)
+    delivery_city    = sanitize_text(data.get('deliveryCity', ''), 60)
+    delivery_address = sanitize_text(data.get('deliveryAddress', ''), 200)
+    notes            = sanitize_text(data.get('notes', ''), 300)
+
+    amount    = float(product['price'])
+    item_name = product['name']
+
+    detail_parts = [f"Import order - {product.get('condition', '')}".strip(' -')]
+    if buyer_name:
+        detail_parts.append(f"Buyer: {buyer_name}")
+    if delivery_city:
+        detail_parts.append(f"City: {delivery_city}")
+    if delivery_address:
+        detail_parts.append(f"Address: {delivery_address}")
+    if notes:
+        detail_parts.append(f"Notes: {notes}")
+    item_details = sanitize_text(' | '.join(detail_parts), MAX_ITEM_DETAILS_LEN)
+
+    transaction_id    = generate_transaction_id()
+    magic_token       = generate_token()
+    seller_token      = generate_token()
+    magic_token_hash  = hash_value(magic_token)
+    seller_token_hash = hash_value(seller_token)
+    token_expires_at  = (datetime.now() + timedelta(days=TOKEN_EXPIRY_DAYS)).isoformat()
+
+    conn   = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO transactions (
+            id, magic_token_hash, seller_token_hash, token_expires_at,
+            item_name, item_details, amount, buyer_phone, seller_phone,
+            transaction_type, delivery_deadline, payout_type, payout_number, payout_account,
+            status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        transaction_id, magic_token_hash, seller_token_hash, token_expires_at,
+        item_name, item_details, amount,
+        normalized_buyer, normalized_seller,
+        'PHONE_IMPORT', product.get('eta', ''),
+        IMPORT_PAYOUT_TYPE, IMPORT_PAYOUT_NUMBER, IMPORT_PAYOUT_ACCOUNT,
+        'FUNDS_SECURED', datetime.now().isoformat()
+    ))
+    conn.commit()
+    conn.close()
+
+    log_activity(transaction_id, 'CREATED', normalized_buyer, f"Import order: {item_name} - Amount: {amount}")
+
+    send_buyer_magic_link_sms(normalized_buyer, transaction_id, magic_token, item_name, amount)
+    send_seller_tracking_sms(normalized_seller, transaction_id, seller_token, normalized_buyer, item_name, amount)
+
+    return jsonify({
+        'success':       True,
+        'transactionId': transaction_id,
+        'message':       'Order placed. Check your phone for a secure link to track it.'
+    }), 201
 
 
 # ============================================================================
