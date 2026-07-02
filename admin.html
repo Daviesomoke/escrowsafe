@@ -1,0 +1,122 @@
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catalog Admin | SecureEscrow Kenya</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+
+<body style="background: var(--ink);">
+
+    <div class="admin-wrapper">
+
+        <!-- Gate: asks for the admin key once, then remembers it on this device -->
+        <div class="admin-gate" id="adminGate">
+            <div class="admin-gate-box">
+                <h1 class="admin-gate-title">Catalog Admin</h1>
+                <p class="admin-gate-subtitle">Enter your admin key to manage the phone catalog.</p>
+                <div class="form-field">
+                    <input type="password" id="adminKeyInput" class="form-input" placeholder="Admin key" autocomplete="off">
+                </div>
+                <button type="button" class="btn btn-primary btn-full" id="adminUnlockBtn">Unlock</button>
+                <p class="admin-gate-error" id="adminGateError"></p>
+            </div>
+        </div>
+
+        <!-- Dashboard: hidden until unlocked -->
+        <div class="admin-dashboard" id="adminDashboard" style="display: none;">
+            <div class="admin-header">
+                <h1 class="admin-header-title">Phone Catalog</h1>
+                <button type="button" class="admin-logout-btn" id="adminLogoutBtn">Log out</button>
+            </div>
+
+            <button type="button" class="btn btn-primary btn-full" id="adminAddBtn">+ Add New Phone</button>
+
+            <div class="admin-product-list" id="adminProductList">
+                <div class="import-loading" id="adminLoadingMsg">Loading catalog…</div>
+            </div>
+        </div>
+
+        <!-- Add / Edit form -->
+        <div class="admin-form-overlay" id="adminFormOverlay">
+            <div class="admin-form-panel">
+                <button type="button" class="order-modal-close" id="adminFormClose" aria-label="Close">&times;</button>
+                <h2 class="form-title" id="adminFormTitle">Add New Phone</h2>
+
+                <form id="adminProductForm">
+                    <input type="hidden" id="adminProductId">
+
+                    <div class="form-field">
+                        <label class="form-label">Photo</label>
+                        <div class="admin-photo-picker">
+                            <img id="adminPhotoPreview" class="admin-photo-preview" style="display:none;" alt="Preview">
+                            <label for="adminPhotoInput" class="admin-photo-label">
+                                <span id="adminPhotoLabelText">Tap to take or choose a photo</span>
+                            </label>
+                            <input type="file" id="adminPhotoInput" accept="image/*" capture="environment" style="display:none;">
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="adminName" class="form-label">Phone Name</label>
+                        <input type="text" id="adminName" class="form-input" placeholder="e.g. iPhone 13 - 128GB" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="adminCondition" class="form-label">Condition</label>
+                            <input type="text" id="adminCondition" class="form-input" placeholder="Grade A (Excellent)">
+                        </div>
+                        <div class="form-field">
+                            <label for="adminPrice" class="form-label">Total Price (KES)</label>
+                            <input type="number" id="adminPrice" class="form-input" placeholder="e.g. 58000" required min="1">
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="adminSpecs" class="form-label">Specs (comma separated)</label>
+                        <input type="text" id="adminSpecs" class="form-input"
+                            placeholder="128GB storage, Factory unlocked, Battery health 88%+">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="adminEta" class="form-label">Delivery ETA</label>
+                            <input type="text" id="adminEta" class="form-input" placeholder="10-14 days">
+                        </div>
+                        <div class="form-field">
+                            <label for="adminBadge" class="form-label">Badge (optional)</label>
+                            <input type="text" id="adminBadge" class="form-input" placeholder="Popular">
+                        </div>
+                    </div>
+
+                    <div class="form-field admin-active-row">
+                        <label class="form-label" for="adminActive">Visible to buyers</label>
+                        <input type="checkbox" id="adminActive" checked>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full" id="adminSaveBtn">Save Phone</button>
+                    <p class="admin-form-status" id="adminFormStatus"></p>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+
+</html>

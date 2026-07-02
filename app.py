@@ -38,6 +38,7 @@ import random
 import string
 from datetime import datetime, timedelta
 import os
+import base64
 import re
 import time
 import requests
@@ -153,17 +154,40 @@ IMPORT_PAYOUT_NUMBER  = os.getenv('IMPORT_PAYOUT_NUMBER', '')
 IMPORT_PAYOUT_ACCOUNT = os.getenv('IMPORT_PAYOUT_ACCOUNT', '')
 
 # ============================================================================
-# PHONE IMPORT SERVICE — CATALOG
+# PHONE IMPORT SERVICE — ADMIN CATALOG TOOL
 # ============================================================================
 #
-# Hand-curated listings only - nothing here is scraped or pulled live from
-# any marketplace. Edit this list to add/remove/reprice phones.
+# The catalog now lives in the database, editable from admin.html (a
+# private, password-gated page - not linked anywhere in the site nav).
+# Set these before using it:
 #
-# `price` is the ONE all-inclusive number the buyer pays. It must already
-# include: the item cost, shipping, customs/duty, and your margin. Buyers
-# never see a breakdown - only this total - so price it accordingly.
+#   IMPORT_ADMIN_KEY=choose-a-long-random-password
+#   IMGBB_API_KEY=get-a-free-key-from-api.imgbb.com
+#
+# admin.html asks for IMPORT_ADMIN_KEY once and remembers it on that
+# device. Photos taken in admin.html are uploaded to imgbb (free image
+# hosting) automatically - nothing is ever stored on Render's disk,
+# which is wiped on every redeploy anyway.
 
-IMPORT_PRODUCTS = [
+IMPORT_ADMIN_KEY = os.getenv('IMPORT_ADMIN_KEY', '')
+IMGBB_API_KEY    = os.getenv('IMGBB_API_KEY', '')
+
+MAX_SPEC_LEN     = 60
+MAX_SPECS_COUNT  = 6
+
+
+def require_admin_key():
+    """Returns True if the request carries a valid admin key header."""
+    if not IMPORT_ADMIN_KEY:
+        return False
+    supplied = request.headers.get('X-Admin-Key', '')
+    return secrets.compare_digest(supplied, IMPORT_ADMIN_KEY)
+
+
+# Seed products used ONLY the very first time the app runs (when the
+# import_products table is empty). Edit/add/remove everything afterwards
+# from admin.html instead of here.
+_SEED_IMPORT_PRODUCTS = [
     {
         'id': 'iphone-12-64',
         'name': 'iPhone 12 - 64GB',
@@ -171,7 +195,7 @@ IMPORT_PRODUCTS = [
         'specs': ['64GB storage', 'Factory unlocked', 'Battery health 85%+', 'Face ID working'],
         'price': 42000,
         'eta': '10-14 days',
-        'image': 'images/import/iphone-12.jpg',
+        'image': '',
         'badge': '',
     },
     {
@@ -181,7 +205,7 @@ IMPORT_PRODUCTS = [
         'specs': ['128GB storage', 'Factory unlocked', 'Battery health 88%+', 'Face ID working'],
         'price': 58000,
         'eta': '10-14 days',
-        'image': 'images/import/iphone-13.jpg',
+        'image': '',
         'badge': 'Popular',
     },
     {
@@ -191,18 +215,33 @@ IMPORT_PRODUCTS = [
         'specs': ['128GB storage', 'Factory unlocked', 'Battery 90%+', 'Fingerprint working'],
         'price': 39000,
         'eta': '10-14 days',
-        'image': 'images/import/galaxy-s21.jpg',
+        'image': '',
         'badge': '',
     },
 ]
 
 
 def get_import_product(product_id):
-    """Look up a curated import product by id. Returns None if not found."""
-    for product in IMPORT_PRODUCTS:
-        if product['id'] == product_id:
-            return product
-    return None
+    """Look up an active catalog product by id. Returns None if not found."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM import_products WHERE id = ? AND active = 1', (product_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        return None
+    return _row_to_product(row)
+
+
+def _row_to_product(row):
+    import json
+    d = dict(row)
+    d['condition'] = d.pop('condition_label', '')
+    try:
+        d['specs'] = json.loads(d['specs']) if d['specs'] else []
+    except (ValueError, TypeError):
+        d['specs'] = []
+    return d
 
 
 def init_database():
@@ -261,7 +300,40 @@ def init_database():
         )
     ''')
 
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS import_products (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            condition_label TEXT,
+            specs TEXT,
+            price REAL NOT NULL,
+            eta TEXT,
+            image TEXT,
+            badge TEXT,
+            active INTEGER DEFAULT 1,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+    ''')
+
     conn.commit()
+
+    # Seed the catalog once, only if it's completely empty (first run).
+    import json
+    cursor.execute('SELECT COUNT(*) FROM import_products')
+    if cursor.fetchone()[0] == 0:
+        now = datetime.now().isoformat()
+        for p in _SEED_IMPORT_PRODUCTS:
+            cursor.execute('''
+                INSERT INTO import_products
+                    (id, name, condition_label, specs, price, eta, image, badge, active, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+            ''', (
+                p['id'], p['name'], p['condition'], json.dumps(p['specs']),
+                p['price'], p['eta'], p['image'], p['badge'], now, now
+            ))
+        conn.commit()
+
     conn.close()
     print("Database initialized.")
 
@@ -1007,6 +1079,12 @@ def track_by_phone(phone):
 def get_import_products():
     """Public catalog for the import shop page. Only fields the buyer
     should see are returned - no cost breakdown, just the total price."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM import_products WHERE active = 1 ORDER BY created_at DESC')
+    rows = cursor.fetchall()
+    conn.close()
+
     public_products = [
         {
             'id':        p['id'],
@@ -1018,7 +1096,7 @@ def get_import_products():
             'image':     p['image'],
             'badge':     p.get('badge', ''),
         }
-        for p in IMPORT_PRODUCTS
+        for p in (_row_to_product(r) for r in rows)
     ]
     return jsonify({'products': public_products})
 
@@ -1105,6 +1183,155 @@ def create_import_order():
         'transactionId': transaction_id,
         'message':       'Order placed. Check your phone for a secure link to track it.'
     }), 201
+
+
+# ============================================================================
+# PHONE IMPORT SERVICE — ADMIN ENDPOINTS
+# ============================================================================
+# All of these require a valid X-Admin-Key header matching IMPORT_ADMIN_KEY.
+# admin.html is the only page that calls these - it's not linked from the
+# public site nav, so keep its URL private.
+
+@app.route('/api/admin/import-products', methods=['GET'])
+@limiter.limit('60 per hour')
+def admin_list_import_products():
+    if not require_admin_key():
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM import_products ORDER BY created_at DESC')
+    rows = cursor.fetchall()
+    conn.close()
+
+    return jsonify({'products': [_row_to_product(r) for r in rows]})
+
+
+@app.route('/api/admin/import-products/save', methods=['POST'])
+@limiter.limit('60 per hour')
+def admin_save_import_product():
+    """Creates a new product, or updates an existing one if `id` matches
+    a product already in the catalog."""
+    if not require_admin_key():
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    import json
+
+    data = request.json or {}
+
+    name = sanitize_text(data.get('name', ''), MAX_ITEM_NAME_LEN)
+    if not name:
+        return jsonify({'error': 'Phone name is required'}), 400
+
+    try:
+        price = float(data.get('price', 0))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Invalid price'}), 400
+    if price <= 0 or price > MAX_AMOUNT:
+        return jsonify({'error': 'Enter a valid price'}), 400
+
+    condition = sanitize_text(data.get('condition', 'Grade A (Excellent)'), 60)
+    eta       = sanitize_text(data.get('eta', '10-14 days'), MAX_DEADLINE_LEN)
+    image     = sanitize_text(data.get('image', ''), 500)
+    badge     = sanitize_text(data.get('badge', ''), 30)
+    active    = 1 if data.get('active', True) else 0
+
+    raw_specs = data.get('specs', [])
+    if isinstance(raw_specs, str):
+        raw_specs = [s.strip() for s in raw_specs.split(',') if s.strip()]
+    specs = [sanitize_text(s, MAX_SPEC_LEN) for s in raw_specs][:MAX_SPECS_COUNT]
+
+    product_id = sanitize_text(data.get('id', ''), 80)
+    now = datetime.now().isoformat()
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    if product_id:
+        cursor.execute('SELECT id FROM import_products WHERE id = ?', (product_id,))
+        existing = cursor.fetchone()
+    else:
+        existing = None
+
+    if existing:
+        cursor.execute('''
+            UPDATE import_products
+            SET name = ?, condition_label = ?, specs = ?, price = ?, eta = ?,
+                image = ?, badge = ?, active = ?, updated_at = ?
+            WHERE id = ?
+        ''', (name, condition, json.dumps(specs), price, eta, image, badge, active, now, product_id))
+    else:
+        slug_base = re.sub(r'[^a-z0-9]+', '-', name.lower()).strip('-') or 'phone'
+        product_id = f"{slug_base}-{secrets.token_hex(3)}"
+        cursor.execute('''
+            INSERT INTO import_products
+                (id, name, condition_label, specs, price, eta, image, badge, active, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (product_id, name, condition, json.dumps(specs), price, eta, image, badge, active, now, now))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({'success': True, 'id': product_id})
+
+
+@app.route('/api/admin/import-products/delete', methods=['POST'])
+@limiter.limit('60 per hour')
+def admin_delete_import_product():
+    if not require_admin_key():
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    data = request.json or {}
+    product_id = data.get('id', '')
+    if not product_id:
+        return jsonify({'error': 'Missing product id'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM import_products WHERE id = ?', (product_id,))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'success': True})
+
+
+@app.route('/api/admin/upload-image', methods=['POST'])
+@limiter.limit('30 per hour')
+def admin_upload_image():
+    """Receives a photo from admin.html and forwards it to imgbb's free
+    hosting API, returning a permanent URL. Render's own filesystem isn't
+    used, since it's wiped on every redeploy."""
+    if not require_admin_key():
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    if not IMGBB_API_KEY:
+        return jsonify({'error': 'Image hosting is not configured yet (missing IMGBB_API_KEY).'}), 503
+
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image file received'}), 400
+
+    image_file = request.files['image']
+    if not image_file.filename:
+        return jsonify({'error': 'No image file received'}), 400
+
+    image_bytes = image_file.read()
+    if len(image_bytes) > 10 * 1024 * 1024:
+        return jsonify({'error': 'Image too large (max 10MB)'}), 400
+
+    try:
+        encoded = base64.b64encode(image_bytes).decode('utf-8')
+        response = requests.post(
+            'https://api.imgbb.com/1/upload',
+            data={'key': IMGBB_API_KEY, 'image': encoded},
+            timeout=20
+        )
+        result = response.json()
+        if not response.ok or not result.get('success'):
+            return jsonify({'error': 'Image upload failed. Please try again.'}), 502
+
+        return jsonify({'success': True, 'url': result['data']['url']})
+    except requests.RequestException:
+        return jsonify({'error': 'Image upload failed. Please check your connection.'}), 502
 
 
 # ============================================================================
