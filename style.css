@@ -83,7 +83,10 @@ body {
 /* ===== PAGE LOADER ===== */
 .page-loader {
     position: fixed;
-    inset: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     background: var(--ink);
     z-index: 9999;
     display: flex;
@@ -98,7 +101,10 @@ body {
 .page-loader::before {
     content: '';
     position: absolute;
-    inset: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     background-image:
         linear-gradient(rgba(34,197,94,0.025) 1px, transparent 1px),
         linear-gradient(90deg, rgba(34,197,94,0.025) 1px, transparent 1px);
@@ -293,7 +299,7 @@ body {
 
 /* Loader — mobile fixes (simpler, contained, no overflow/misalignment) */
 @media (max-width: 480px) {
-    .page-loader { height: 100dvh; }
+    .page-loader { height: 100vh; height: 100dvh; }
 
     .page-loader::after { width: 300px; height: 300px; }
 
@@ -443,7 +449,7 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) { transform: rota
 
 /* Sidebar overlay */
 .sidebar-overlay {
-    position: fixed; inset: 0;
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
     background: rgba(0,0,0,0.55);
     backdrop-filter: blur(3px);
     z-index: 998;
@@ -578,7 +584,10 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) { transform: rota
 .hero-section::before {
     content: '';
     position: absolute;
-    inset: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     background-image:
         linear-gradient(rgba(34,197,94,0.035) 1px, transparent 1px),
         linear-gradient(90deg, rgba(34,197,94,0.035) 1px, transparent 1px);
@@ -1219,7 +1228,10 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) { transform: rota
 .stat-card::before {
     content: '';
     position: absolute;
-    inset: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     background: radial-gradient(circle at 50% 0%, rgba(34,197,94,0.08), transparent 65%);
     pointer-events: none;
 }
@@ -1542,7 +1554,7 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) { transform: rota
 
 /* ===== MODAL ===== */
 .modal-overlay {
-    position: fixed; inset: 0;
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
     background: rgba(0,0,0,0.6);
     backdrop-filter: blur(4px);
     display: flex;
@@ -1584,7 +1596,7 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) { transform: rota
 
 /* ===== PAYMENT POPUP ===== */
 .payment-popup-overlay {
-    position: fixed; inset: 0;
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
     background: rgba(0,0,0,0.5);
     backdrop-filter: blur(4px);
     z-index: 10000;
@@ -1896,7 +1908,7 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) { transform: rota
 
 /* OTP POPUP */
 .otp-popup-overlay, .auth-popup-overlay, .sms-preview-overlay {
-    position: fixed; inset: 0;
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
     background: rgba(0,0,0,0.6);
     backdrop-filter: blur(4px);
     z-index: 10002;
@@ -2349,7 +2361,10 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) { transform: rota
 /* ===== ORDER MODAL ===== */
 .order-modal-overlay {
     position: fixed;
-    inset: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     background: rgba(0,0,0,0.6);
     display: flex;
     align-items: center;
@@ -2530,7 +2545,10 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) { transform: rota
 
 .admin-form-overlay {
     position: fixed;
-    inset: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     background: rgba(0,0,0,0.6);
     display: flex;
     align-items: flex-end;
