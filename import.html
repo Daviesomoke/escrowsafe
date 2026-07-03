@@ -38,7 +38,7 @@
         content="Order genuine imported phones with the price fully protected by SecureEscrow.">
     <meta name="twitter:image" content="https://securescrowkenya.com/images/og-image.jpg">
 
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=5">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 
@@ -58,10 +58,10 @@
             </div>
             <div class="loader-text">
                 <span class="loader-brand">Secure<span>Escrow</span> Kenya</span>
-                <span class="loader-tagline">Securing Your Transaction</span>
+                <span class="loader-tagline" data-i18n="common.loader.tagline">Securing Your Transaction</span>
             </div>
             <div class="loader-progress"><div class="loader-progress-fill"></div></div>
-            <span class="loader-status" id="loaderStatus">Initializing secure environment…</span>
+            <span class="loader-status" id="loaderStatus" data-i18n="common.loader.initializing">Initializing secure environment…</span>
         </div>
     </div>
 
@@ -81,24 +81,22 @@
                 <div class="sidebar-overlay" id="sidebarOverlay"></div>
                 <nav class="mobile-sidebar" id="mobileSidebar">
                     <ul class="sidebar-nav">
-                        <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
-                        <li class="nav-item"><a href="import.html" class="nav-link">Import Phones</a></li>
-                        <li class="nav-item"><a href="how.html" class="nav-link">How It Works</a></li>
-                        <li class="nav-item"><a href="about.html" class="nav-link">About Us</a></li>
-                        <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
-                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start
-                                Transaction</a></li>
+                        <li class="nav-item"><a href="index.html" class="nav-link" data-i18n="common.nav.home">Home</a></li>
+                        <li class="nav-item"><a href="import.html" class="nav-link" data-i18n="common.nav.import">Import Phones</a></li>
+                        <li class="nav-item"><a href="how.html" class="nav-link" data-i18n="common.nav.how">How It Works</a></li>
+                        <li class="nav-item"><a href="about.html" class="nav-link" data-i18n="common.nav.about">About Us</a></li>
+                        <li class="nav-item"><a href="contact.html" class="nav-link" data-i18n="common.nav.contact">Contact</a></li>
+                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button" data-i18n="common.nav.startTransaction">Start Transaction</a></li>
                     </ul>
                 </nav>
                 <nav class="primary-nav">
                     <ul class="nav-list">
-                        <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
-                        <li class="nav-item"><a href="import.html" class="nav-link">Import Phones</a></li>
-                        <li class="nav-item"><a href="how.html" class="nav-link">How It Works</a></li>
-                        <li class="nav-item"><a href="about.html" class="nav-link">About Us</a></li>
-                        <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
-                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button">Start
-                                Transaction</a></li>
+                        <li class="nav-item"><a href="index.html" class="nav-link" data-i18n="common.nav.home">Home</a></li>
+                        <li class="nav-item"><a href="import.html" class="nav-link" data-i18n="common.nav.import">Import Phones</a></li>
+                        <li class="nav-item"><a href="how.html" class="nav-link" data-i18n="common.nav.how">How It Works</a></li>
+                        <li class="nav-item"><a href="about.html" class="nav-link" data-i18n="common.nav.about">About Us</a></li>
+                        <li class="nav-item"><a href="contact.html" class="nav-link" data-i18n="common.nav.contact">Contact</a></li>
+                        <li class="nav-item nav-item-cta"><a href="index.html#start-escrow" class="nav-button" data-i18n="common.nav.startTransaction">Start Transaction</a></li>
                     </ul>
                 </nav>
             </div>
@@ -116,8 +114,8 @@
                             </svg>
                         </div>
                         <div class="metric-text">
-                            <span class="metric-main">Imported & Delivered by SecureEscrow — Not a Third Party</span>
-                            <span class="metric-sub">One Price. Full Responsibility, US to Kenya.</span>
+                            <span class="metric-main" data-i18n="import.trust.main">Imported & Delivered by SecureEscrow — Not a Third Party</span>
+                            <span class="metric-sub" data-i18n="import.trust.sub">One Price. Full Responsibility, US to Kenya.</span>
                         </div>
                     </div>
                 </div>
@@ -128,8 +126,8 @@
             <section class="page-section">
                 <div class="container">
                     <div class="section-header">
-                        <h1 class="page-title">Import Phones</h1>
-                        <p class="page-subtitle">SecureEscrow sources, imports and delivers these phones directly
+                        <h1 class="page-title" data-i18n="import.hero.title">Import Phones</h1>
+                        <p class="page-subtitle" data-i18n="import.hero.subtitle">SecureEscrow sources, imports and delivers these phones directly
                             to you — we're responsible for your device from purchase in the United States through
                             to your door in Kenya. The price you see is the price you pay, held safely in escrow
                             until you confirm delivery.</p>
@@ -137,7 +135,7 @@
 
                     <div class="import-grid" id="importGrid">
                         <!-- Product cards are rendered here by import.js -->
-                        <div class="import-loading" id="importLoading">Loading available phones…</div>
+                        <div class="import-loading" id="importLoading" data-i18n="import.loading">Loading available phones…</div>
                     </div>
                 </div>
             </section>
@@ -146,24 +144,24 @@
             <section class="page-section import-how">
                 <div class="container">
                     <div class="section-header">
-                        <h2 class="section-title">How An Import Order Works</h2>
-                        <p class="section-subtitle">SecureEscrow is the one importing, shipping and handling your
+                        <h2 class="section-title" data-i18n="import.how.title">How An Import Order Works</h2>
+                        <p class="section-subtitle" data-i18n="import.how.subtitle">SecureEscrow is the one importing, shipping and handling your
                             device — end to end</p>
                     </div>
                     <div class="process-flow">
                         <div class="process-step">
                             <div class="step-marker">01</div>
                             <div class="step-content">
-                                <h3 class="step-title">You Order &amp; Pay Into Escrow</h3>
-                                <p class="step-description">Pick a phone and pay the listed price. Your money goes
+                                <h3 class="step-title" data-i18n="import.how.step1Title">You Order &amp; Pay Into Escrow</h3>
+                                <p class="step-description" data-i18n="import.how.step1Desc">Pick a phone and pay the listed price. Your money goes
                                     into SecureEscrow's protected trust account — not to any third party.</p>
                             </div>
                         </div>
                         <div class="process-step">
                             <div class="step-marker">02</div>
                             <div class="step-content">
-                                <h3 class="step-title">SecureEscrow Sources &amp; Imports It</h3>
-                                <p class="step-description">We purchase, ship and clear customs on your device
+                                <h3 class="step-title" data-i18n="import.how.step2Title">SecureEscrow Sources &amp; Imports It</h3>
+                                <p class="step-description" data-i18n="import.how.step2Desc">We purchase, ship and clear customs on your device
                                     ourselves. SecureEscrow is responsible for it from the United States all the
                                     way to Kenya — you'll get SMS updates as it progresses.</p>
                             </div>
@@ -171,16 +169,16 @@
                         <div class="process-step">
                             <div class="step-marker">03</div>
                             <div class="step-content">
-                                <h3 class="step-title">Delivered To You</h3>
-                                <p class="step-description">Your phone is delivered to the address you provided.
+                                <h3 class="step-title" data-i18n="import.how.step3Title">Delivered To You</h3>
+                                <p class="step-description" data-i18n="import.how.step3Desc">Your phone is delivered to the address you provided.
                                     Inspect it before confirming.</p>
                             </div>
                         </div>
                         <div class="process-step">
                             <div class="step-marker">04</div>
                             <div class="step-content">
-                                <h3 class="step-title">You Confirm, Funds Release</h3>
-                                <p class="step-description">Happy with it? Confirm via the secure link sent to your
+                                <h3 class="step-title" data-i18n="import.how.step4Title">You Confirm, Funds Release</h3>
+                                <p class="step-description" data-i18n="import.how.step4Desc">Happy with it? Confirm via the secure link sent to your
                                     phone and funds are released. Not happy? Raise a dispute instead — SecureEscrow
                                     stands behind the device it imported for you.</p>
                             </div>
@@ -194,42 +192,41 @@
             <div class="footer-container">
                 <div class="footer-grid">
                     <div class="footer-column">
-                        <h4 class="footer-heading">SecureEscrow Kenya</h4>
-                        <p class="footer-text">Protecting Kenyan online transactions through trusted third‑party
-                            mediation since 2026.</p>
-                        <p class="footer-badge">Licensed and Regulated</p>
+                        <h4 class="footer-heading" data-i18n="common.footer.brandHeading">SecureEscrow Kenya</h4>
+                        <p class="footer-text" data-i18n="common.footer.tagline">Protecting Kenyan online transactions through trusted third-party mediation since 2026.</p>
+                        <p class="footer-badge" data-i18n="common.footer.badge">Licensed and Regulated</p>
                     </div>
                     <div class="footer-column">
-                        <h4 class="footer-heading">Quick Access</h4>
+                        <h4 class="footer-heading" data-i18n="common.footer.quickAccess">Quick Access</h4>
                         <ul class="footer-links">
-                            <li><a href="index.html">Home</a></li>
-                            <li><a href="import.html">Import Phones</a></li>
-                            <li><a href="how.html">How It Works</a></li>
-                            <li><a href="about.html">About Us</a></li>
-                            <li><a href="contact.html">Contact</a></li>
+                            <li><a href="index.html" data-i18n="common.nav.home">Home</a></li>
+                            <li><a href="import.html" data-i18n="common.nav.import">Import Phones</a></li>
+                            <li><a href="how.html" data-i18n="common.nav.how">How It Works</a></li>
+                            <li><a href="about.html" data-i18n="common.nav.about">About Us</a></li>
+                            <li><a href="contact.html" data-i18n="common.nav.contact">Contact</a></li>
                         </ul>
                     </div>
                     <div class="footer-column">
-                        <h4 class="footer-heading">Resources</h4>
+                        <h4 class="footer-heading" data-i18n="common.footer.resources">Resources</h4>
                         <ul class="footer-links">
-                            <li><a href="#">Help Center</a></li>
-                            <li><a href="#">Dispute Resolution</a></li>
-                            <li><a href="#">Fee Structure</a></li>
-                            <li><a href="#">Transaction Safety</a></li>
+                            <li><a href="#" data-i18n="common.footer.helpCenter">Help Center</a></li>
+                            <li><a href="#" data-i18n="common.footer.dispute">Dispute Resolution</a></li>
+                            <li><a href="#" data-i18n="common.footer.feeStructure">Fee Structure</a></li>
+                            <li><a href="#" data-i18n="common.footer.transactionSafety">Transaction Safety</a></li>
                         </ul>
                     </div>
                     <div class="footer-column">
-                        <h4 class="footer-heading">Legal</h4>
+                        <h4 class="footer-heading" data-i18n="common.footer.legal">Legal</h4>
                         <ul class="footer-links">
-                            <li><a href="terms-of-service.html">Terms of Service</a></li>
-                            <li><a href="privacy-policy.html">Privacy Policy</a></li>
-                            <li><a href="escrow-agreement.html">Escrow Agreement</a></li>
-                            <li><a href="compliance.html">Compliance</a></li>
+                            <li><a href="terms-of-service.html" data-i18n="common.footer.tos">Terms of Service</a></li>
+                            <li><a href="privacy-policy.html" data-i18n="common.footer.privacy">Privacy Policy</a></li>
+                            <li><a href="escrow-agreement.html" data-i18n="common.footer.escrowAgreement">Escrow Agreement</a></li>
+                            <li><a href="compliance.html" data-i18n="common.footer.compliance">Compliance</a></li>
                         </ul>
                     </div>
                 </div>
                 <div class="footer-bottom">
-                    <p>&copy; 2026 SecureEscrow Kenya Limited. All rights reserved.</p>
+                    <p data-i18n="common.footer.copyright">&copy; 2026 SecureEscrow Kenya Limited. All rights reserved.</p>
                 </div>
             </div>
         </footer>
@@ -241,53 +238,53 @@
             <button type="button" class="order-modal-close" id="orderModalClose" aria-label="Close">&times;</button>
 
             <div id="orderStepForm">
-                <h2 class="form-title" id="orderModalTitle">Order This Phone</h2>
+                <h2 class="form-title" id="orderModalTitle" data-i18n="import.modal.title">Order This Phone</h2>
                 <p class="order-modal-product" id="orderProductName"></p>
 
                 <form id="orderForm">
                     <div class="form-field">
-                        <label for="orderBuyerName" class="form-label">Your Name</label>
+                        <label for="orderBuyerName" class="form-label" data-i18n="import.modal.nameLabel">Your Name</label>
                         <input type="text" id="orderBuyerName" name="orderBuyerName" class="form-input"
-                            placeholder="Full name" required>
+                            data-i18n-placeholder="import.modal.namePlaceholder" placeholder="Full name" required>
                     </div>
 
                     <div class="form-field">
-                        <label for="orderBuyerPhone" class="form-label">Your M-PESA Number</label>
+                        <label for="orderBuyerPhone" class="form-label" data-i18n="import.modal.phoneLabel">Your M-PESA Number</label>
                         <input type="tel" id="orderBuyerPhone" name="orderBuyerPhone" class="form-input"
                             placeholder="e.g. 0712345678" required>
                     </div>
 
                     <div class="form-row">
                         <div class="form-field">
-                            <label for="orderCity" class="form-label">City / Town</label>
+                            <label for="orderCity" class="form-label" data-i18n="import.modal.cityLabel">City / Town</label>
                             <input type="text" id="orderCity" name="orderCity" class="form-input"
-                                placeholder="e.g. Kisumu">
+                                data-i18n-placeholder="import.modal.cityPlaceholder" placeholder="e.g. Kisumu">
                         </div>
                         <div class="form-field">
-                            <label for="orderAddress" class="form-label">Delivery Address</label>
+                            <label for="orderAddress" class="form-label" data-i18n="import.modal.addressLabel">Delivery Address</label>
                             <input type="text" id="orderAddress" name="orderAddress" class="form-input"
-                                placeholder="Estate, landmark, courier pickup point">
+                                data-i18n-placeholder="import.modal.addressPlaceholder" placeholder="Estate, landmark, courier pickup point">
                         </div>
                     </div>
 
                     <div class="form-field">
-                        <label for="orderNotes" class="form-label">Notes (optional)</label>
+                        <label for="orderNotes" class="form-label" data-i18n="import.modal.notesLabel">Notes (optional)</label>
                         <textarea id="orderNotes" name="orderNotes" class="form-textarea" rows="2"
-                            placeholder="Anything we should know about your order"></textarea>
+                            data-i18n-placeholder="import.modal.notesPlaceholder" placeholder="Anything we should know about your order"></textarea>
                     </div>
 
                     <div class="fee-display">
                         <div class="fee-row fee-total">
-                            <span>Total Payment</span>
+                            <span data-i18n="import.modal.totalPayment">Total Payment</span>
                             <span id="orderTotalAmount">KES 0</span>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary btn-full" id="orderSubmitBtn">
+                    <button type="submit" class="btn btn-primary btn-full" id="orderSubmitBtn" data-i18n="import.modal.confirmBtn">
                         Confirm &amp; Pay Into Escrow
                     </button>
 
-                    <p class="form-disclaimer">
+                    <p class="form-disclaimer" data-i18n="import.modal.disclaimer">
                         Your payment is held securely and only released to us once you confirm delivery.
                     </p>
                 </form>
@@ -295,14 +292,18 @@
 
             <div id="orderStepSuccess" style="display: none;">
                 <div class="order-success-icon">✓</div>
-                <h2 class="form-title">Order Placed</h2>
+                <h2 class="form-title" data-i18n="import.modal.successTitle">Order Placed</h2>
                 <p class="order-success-text" id="orderSuccessText"></p>
-                <p class="order-success-text">Check your phone for an SMS with a secure link to track this order at
+                <p class="order-success-text" data-i18n="import.modal.successText">Check your phone for an SMS with a secure link to track this order at
                     any time.</p>
-                <a href="track.html" class="btn btn-primary btn-full">Track My Order</a>
+                <a href="track.html" class="btn btn-primary btn-full" data-i18n="import.modal.trackBtn">Track My Order</a>
             </div>
         </div>
     </div>
+
+    <script src="translations.js?v=1"></script>
+
+    <script src="i18n.js?v=1"></script>
 
     <script src="script.js"></script>
     <script src="import.js"></script>

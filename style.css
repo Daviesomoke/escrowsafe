@@ -58,7 +58,11 @@
 }
 
 /* ===== BASE ===== */
-html { scroll-behavior: smooth; }
+html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+    max-width: 100%;
+}
 
 body {
     font-family: var(--font-sans);
@@ -66,18 +70,47 @@ body {
     background: var(--surface);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    max-width: 100%;
+    position: relative;
 }
 
 .app-wrapper {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    max-width: 100vw;
+    overflow-x: hidden;
+}
+
+/* Direct flex children of .app-wrapper default to min-width:auto, which
+   lets deeply-nested unwrappable content (like the ticker) silently push
+   the whole page wider than the screen. Resetting to 0 lets each section's
+   own overflow:hidden actually contain its content. */
+.app-wrapper > .site-header,
+.app-wrapper > .page-content,
+.app-wrapper > .site-footer {
+    min-width: 0;
 }
 
 .container {
     max-width: 1180px;
     margin: 0 auto;
     padding: 0 24px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Belt-and-suspenders: flex/grid children default to min-width:auto, which
+   can silently force their ancestors (and the whole page) wider than the
+   screen even when overflow:hidden is set on a descendant like
+   .ticker-wrapper. This is what was pushing the page-loader and other
+   fixed-position elements off-center on some Android browsers. */
+.ticker-wrapper,
+.live-activity,
+.footer-container {
+    min-width: 0;
+    max-width: 100%;
 }
 
 /* ===== PAGE LOADER ===== */
@@ -2597,6 +2630,50 @@ body.sidebar-open .mobile-menu-toggle .toggle-bar:nth-child(3) { transform: rota
 .admin-active-row input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--green); }
 
 .admin-form-status { font-size: 12.5px; color: #ef4444; text-align: center; margin-top: 10px; min-height: 16px; }
+
+.legal-notice {
+    display: none;
+    background: rgba(245,158,11,0.1);
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 0 0 20px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: #f59e0b;
+}
+
+/* ===== LANGUAGE TOGGLE ===== */
+.lang-toggle {
+    display: flex;
+    align-items: center;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 3px;
+    gap: 2px;
+    flex-shrink: 0;
+    order: 1;
+}
+.lang-toggle button {
+    border: none;
+    background: none;
+    color: rgba(255,255,255,0.5);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    padding: 5px 10px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+.lang-toggle button.active {
+    background: var(--green);
+    color: var(--ink);
+}
+@media (min-width: 993px) {
+    .lang-toggle { order: 0; margin-right: 12px; }
+}
 
 /* ===== RESPONSIVE ===== */
 

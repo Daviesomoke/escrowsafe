@@ -29,6 +29,22 @@
         return 'KES ' + Number(amount).toLocaleString('en-KE');
     }
 
+    function currentLang() {
+        return localStorage.getItem('secureescrow_lang') || 'en';
+    }
+
+    function t(key, fallback) {
+        try {
+            const dict = TRANSLATIONS[currentLang()];
+            const value = key.split('.').reduce(function (acc, part) {
+                return acc && acc[part] !== undefined ? acc[part] : undefined;
+            }, dict);
+            return value !== undefined ? value : fallback;
+        } catch (e) {
+            return fallback;
+        }
+    }
+
     function escapeHtml(value) {
         const div = document.createElement('div');
         div.textContent = value == null ? '' : String(value);
@@ -82,7 +98,7 @@
         if (!grid) return;
 
         if (!products || products.length === 0) {
-            grid.innerHTML = '<div class="import-empty">No phones available right now — check back soon.</div>';
+            grid.innerHTML = '<div class="import-empty">' + t('import.js.noPhones', 'No phones available right now — check back soon.') + '</div>';
             return;
         }
 
@@ -107,10 +123,10 @@
                         '<ul class="import-card-specs">' + specs + '</ul>' +
                         '<div class="import-card-footer">' +
                             '<div class="import-card-price">' + formatKES(product.price) + '</div>' +
-                            '<div class="import-card-eta">Delivered in ' + escapeHtml(product.eta || 'a few days') + '</div>' +
+                            '<div class="import-card-eta">' + t('import.card.deliveredIn', 'Delivered in') + ' ' + escapeHtml(product.eta || t('import.card.aFewDays', 'a few days')) + '</div>' +
                         '</div>' +
                         '<button type="button" class="btn btn-primary btn-full import-order-btn" data-product-id="' + escapeHtml(product.id) + '">' +
-                            'Order This Phone' +
+                            t('import.card.orderBtn', 'Order This Phone') +
                         '</button>' +
                     '</div>' +
                 '</div>'
@@ -134,7 +150,7 @@
         } catch (err) {
             const grid = document.getElementById('importGrid');
             if (grid) {
-                grid.innerHTML = '<div class="import-empty">Couldn\'t load phones right now. Please refresh the page.</div>';
+                grid.innerHTML = '<div class="import-empty">' + t('import.js.loadError', "Couldn't load phones right now. Please refresh the page.") + '</div>';
             }
         } finally {
             if (loadingEl && loadingEl.parentElement) loadingEl.remove();
@@ -177,17 +193,17 @@
         const notes = document.getElementById('orderNotes').value.trim();
 
         if (!buyerName) {
-            Toast.show('Please enter your name.', 'error');
+            Toast.show(t('import.js.enterName', 'Please enter your name.'), 'error');
             return;
         }
         if (!validateKenyanPhone(buyerPhone)) {
-            Toast.show('Please enter a valid Kenyan phone number.', 'error');
+            Toast.show(t('import.js.invalidPhone', 'Please enter a valid Kenyan phone number.'), 'error');
             return;
         }
 
         const submitBtn = document.getElementById('orderSubmitBtn');
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Placing Order…';
+        submitBtn.textContent = t('import.js.placingOrder', 'Placing Order…');
 
         try {
             const response = await fetch(API_BASE_URL + '/import/order', {
@@ -207,19 +223,19 @@
             if (!response.ok || !result.success) {
                 Toast.show(result.error || 'Something went wrong placing your order.', 'error');
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Confirm & Pay Into Escrow';
+                submitBtn.textContent = t('import.modal.confirmBtn', 'Confirm & Pay Into Escrow');
                 return;
             }
 
             document.getElementById('orderSuccessText').textContent =
-                'Order ' + result.transactionId + ' for ' + selectedProduct.name + ' — ' + formatKES(selectedProduct.price) + '.';
+                t('import.js.orderPrefix', 'Order') + ' ' + result.transactionId + ' ' + t('import.js.orderFor', 'for') + ' ' + selectedProduct.name + ' — ' + formatKES(selectedProduct.price) + '.';
             document.getElementById('orderStepForm').style.display = 'none';
             document.getElementById('orderStepSuccess').style.display = 'block';
         } catch (err) {
-            Toast.show('Network error. Please check your connection and try again.', 'error');
+            Toast.show(t('import.js.networkError', 'Network error. Please check your connection and try again.'), 'error');
         } finally {
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Confirm & Pay Into Escrow';
+            submitBtn.textContent = t('import.modal.confirmBtn', 'Confirm & Pay Into Escrow');
         }
     }
 
