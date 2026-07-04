@@ -7,7 +7,6 @@
 
 
 
-
 /**
  * SecureEscrow Kenya - Frontend Client
  * Magic Link Authorization System with Payout Methods
@@ -72,8 +71,11 @@
             return response.json();
         },
         
-        async getTransaction(transactionId) {
-            const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}`);
+        async getTransaction(transactionId, token) {
+            const url = token
+                ? `${API_BASE_URL}/transactions/${transactionId}?token=${encodeURIComponent(token)}`
+                : `${API_BASE_URL}/transactions/${transactionId}`;
+            const response = await fetch(url);
             return response.json();
         },
         
@@ -854,7 +856,7 @@
         }
         
         try {
-            const transaction = await ApiClient.getTransaction(currentTransactionId);
+            const transaction = await ApiClient.getTransaction(currentTransactionId, currentMagicToken);
             
             if (!transaction.error) {
                 renderTransactionDetails(
@@ -938,9 +940,11 @@
         const isSellerToken = (userRole === 'seller');
 
         const statusConfig = {};
+        statusConfig['AWAITING_PAYMENT'] = { class: 'status-pending', text: 'Awaiting payment' };
         statusConfig[TRANSACTION_STATUS.FUNDS_SECURED] = { class: 'status-secured', text: 'Funds secured' };
         statusConfig[TRANSACTION_STATUS.AWAITING_DELIVERY] = { class: 'status-awaiting', text: 'Shipped' };
         statusConfig[TRANSACTION_STATUS.DELIVERED] = { class: 'status-delivered', text: 'Delivered' };
+        statusConfig['RELEASE_PROCESSING'] = { class: 'status-awaiting', text: 'Payout processing' };
         statusConfig[TRANSACTION_STATUS.FUNDS_RELEASED] = { class: 'status-released', text: 'Complete' };
         statusConfig[TRANSACTION_STATUS.DISPUTED] = { class: 'status-disputed', text: 'Disputed' };
         
