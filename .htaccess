@@ -13,6 +13,17 @@
 
 RewriteEngine On
 
+# ----------------------------------------------------------------------------
+# Block backend/database/config files from ever being served
+# ----------------------------------------------------------------------------
+# This folder should only ever contain frontend files (html, css, js,
+# images). app.py, requirements.txt, and escrow.db are backend-only
+# files that belong on Render, never here - this rule is a safety net
+# in case one ever ends up here again by accident.
+<FilesMatch "\.(db|sqlite|sqlite3|py|env|log|ini|bak|db-journal)$">
+    Require all denied
+</FilesMatch>
+
 # Force HTTPS
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]

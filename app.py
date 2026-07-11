@@ -154,6 +154,29 @@ MAX_TXN_TYPE_LEN      = 40
 MAX_AMOUNT            = 10_000_000  # KES 10,000,000 sanity cap
 
 # ============================================================================
+# ESCROW FEE - SERVER-SIDE SOURCE OF TRUTH
+# ============================================================================
+#
+# The frontend shows a fee preview to the buyer before they pay, but the
+# actual amount charged is always computed here, never trusted from the
+# client. This must match CONFIG.ESCROW_FEE_PERCENTAGE in script.js so the
+# number the buyer sees in the popup matches what they are actually charged.
+#
+#   item_amount   -> what the buyer entered / the seller receives (unchanged)
+#   fee_amount    -> item_amount * ESCROW_FEE_PERCENTAGE, platform commission
+#   total_amount  -> item_amount + fee_amount, what the buyer is actually charged
+#
+ESCROW_FEE_PERCENTAGE = 0.11
+
+
+def calculate_fee(item_amount):
+    """Returns (fee_amount, total_amount) for a given item price, rounded
+    to the nearest whole shilling since M-PESA does not do cents."""
+    fee_amount = round(item_amount * ESCROW_FEE_PERCENTAGE)
+    total_amount = item_amount + fee_amount
+    return fee_amount, total_amount
+
+# ============================================================================
 # PHONE IMPORT SERVICE — CONFIG
 # ============================================================================
 #
@@ -372,12 +395,26 @@ def init_database():
         ('payout_status', "TEXT DEFAULT 'NOT_STARTED'"),
         ('payout_conversation_id', 'TEXT'),
         ('payout_receipt_number', 'TEXT'),
+        # fee_amount / total_amount: added when the fee-collection bug was
+        # fixed. `amount` stays the item price (what the seller receives);
+        # `total_amount` is what the buyer is actually charged via STK Push.
+        # Existing rows get fee_amount=0, total_amount=amount so historical
+        # transactions aren't misrepresented as having collected a fee they
+        # never actually charged.
+        ('fee_amount', 'REAL DEFAULT 0'),
+        ('total_amount', 'REAL'),
     ]
     for column_name, column_def in _mpesa_columns:
         try:
             cursor.execute(f'ALTER TABLE transactions ADD COLUMN {column_name} {column_def}')
         except sqlite3.OperationalError:
             pass  # column already exists
+
+    # Backfill total_amount on rows created before this column existed, so
+    # nothing is left NULL. These transactions genuinely never collected a
+    # fee (that was the bug), so total_amount = amount and fee_amount = 0
+    # for them, which is the accurate historical record.
+    cursor.execute('UPDATE transactions SET total_amount = amount WHERE total_amount IS NULL')
 
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS mpesa_callback_logs (
@@ -865,6 +902,8 @@ def create_transaction():
     if not item_name:
         return jsonify({'error': 'Item name is required'}), 400
 
+    fee_amount, total_amount = calculate_fee(amount)
+
     transaction_id   = generate_transaction_id()
     magic_token      = generate_token()
     seller_token     = generate_token()
@@ -884,13 +923,14 @@ def create_transaction():
     cursor.execute('''
         INSERT INTO transactions (
             id, magic_token_hash, seller_token_hash, token_expires_at,
-            item_name, item_details, amount, buyer_phone, seller_phone,
+            item_name, item_details, amount, fee_amount, total_amount,
+            buyer_phone, seller_phone,
             transaction_type, delivery_deadline, payout_type, payout_number, payout_account,
             status, created_at, payment_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         transaction_id, magic_token_hash, seller_token_hash, token_expires_at,
-        item_name, item_details, amount,
+        item_name, item_details, amount, fee_amount, total_amount,
         normalize_phone(buyer_phone), normalize_phone(seller_phone),
         transaction_type, delivery_deadline,
         payout_type, payout_number, payout_account,
@@ -910,7 +950,7 @@ def create_transaction():
         # itself shows "Awaiting Payment" until the callback fires.
         try:
             stk_result = daraja_stk_push(
-                normalize_phone(buyer_phone), amount, transaction_id, item_name, transaction_id
+                normalize_phone(buyer_phone), total_amount, transaction_id, item_name, transaction_id
             )
             conn = get_db_connection()
             cursor = conn.cursor()
@@ -935,7 +975,8 @@ def create_transaction():
         if stk_sent:
             buyer_message = (
                 f"SecureEscrow Kenya\nEnter your M-PESA PIN on the prompt sent to your "
-                f"phone to pay KES {amount:,.0f} for {item_name}.\n\nTrack: {tracking_link}"
+                f"phone to pay KES {total_amount:,.0f} (item KES {amount:,.0f} + escrow fee "
+                f"KES {fee_amount:,.0f}) for {item_name}.\n\nTrack: {tracking_link}"
             )
         else:
             buyer_message = (
@@ -963,7 +1004,7 @@ def create_transaction():
         }), 201
 
     # Legacy manual-payment path (Daraja not configured)
-    send_buyer_magic_link_sms(normalize_phone(buyer_phone), transaction_id, magic_token, item_name, amount)
+    send_buyer_magic_link_sms(normalize_phone(buyer_phone), transaction_id, magic_token, item_name, total_amount)
     send_seller_tracking_sms(normalize_phone(seller_phone), transaction_id, seller_token, normalize_phone(buyer_phone), item_name, amount)
 
     return jsonify({
@@ -997,8 +1038,13 @@ def retry_payment(transaction_id):
         return jsonify({'error': f"Cannot retry payment from status: {transaction['status']}"}), 400
 
     try:
+        # total_amount may be NULL on rows created before this column
+        # existed - fall back to amount (no fee) for those old transactions
+        # only, so a retry never charges more than the buyer was originally
+        # promised.
+        retry_amount = float(transaction['total_amount'] or transaction['amount'])
         stk_result = daraja_stk_push(
-            transaction['buyer_phone'], float(transaction['amount']),
+            transaction['buyer_phone'], retry_amount,
             transaction_id, transaction['item_name'], transaction_id
         )
         cursor.execute('''
@@ -1086,7 +1132,10 @@ def stk_callback():
 
     # SECURITY: never trust the callback amount blindly - cross-check it
     # against what this transaction actually expects before confirming.
-    expected_amount = float(transaction['amount'])
+    # expected_amount is the fee-inclusive total the buyer was charged via
+    # STK Push, NOT the bare item amount (that's what the seller receives).
+    expected_amount = float(transaction['total_amount'] or transaction['amount'])
+    item_amount = float(transaction['amount'])
     if paid_amount is None or abs(float(paid_amount) - expected_amount) > 1:
         cursor.execute('''
             UPDATE transactions SET payment_status = 'MISMATCH' WHERE id = ?
@@ -1113,14 +1162,14 @@ def stk_callback():
     # status update, not a new link.
     send_sms(
         transaction['buyer_phone'],
-        f"SecureEscrow Kenya\nPayment confirmed! KES {expected_amount:,.0f} for "
+        f"SecureEscrow Kenya\nPayment confirmed! KES {expected_amount:,.0f} paid for "
         f"{transaction['item_name']} is now secured in escrow. Receipt: {receipt_number}",
         transaction_id, 'payment_confirmed_buyer'
     )
     send_sms(
         transaction['seller_phone'],
-        f"SecureEscrow Kenya\nBuyer's payment of KES {expected_amount:,.0f} for "
-        f"{transaction['item_name']} has been confirmed and is secured in escrow. "
+        f"SecureEscrow Kenya\nBuyer's payment for {transaction['item_name']} has been "
+        f"confirmed and KES {item_amount:,.0f} is secured in escrow for you. "
         f"You may proceed with fulfillment.",
         transaction_id, 'payment_confirmed_seller'
     )
@@ -1151,6 +1200,8 @@ def get_transaction(transaction_id):
 
     transaction = dict(row)
     transaction['amount'] = float(transaction['amount'])
+    transaction['fee_amount'] = float(transaction['fee_amount'] or 0)
+    transaction['total_amount'] = float(transaction['total_amount'] or transaction['amount'])
     transaction.pop('magic_token_hash', None)
     transaction.pop('seller_token_hash', None)
     transaction.pop('token_expires_at', None)
