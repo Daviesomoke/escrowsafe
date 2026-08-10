@@ -277,8 +277,13 @@
     
     const ToastManager = {
         container: null,
-        icons: { success: 'OK', error: 'X', warning: '!', info: 'i' },
-        titles: { success: 'Success', error: 'Error', warning: 'Warning', info: 'Information' },
+        icons: {
+            success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>',
+            error:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+            warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/></svg>',
+            info:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16v-4M12 8h.01"/></svg>'
+        },
+        titles: { success: 'Done', error: 'Error', warning: 'Heads up', info: 'Note' },
         
         ensureContainerExists: function() {
             if (!this.container) {
@@ -295,7 +300,7 @@
             toast.className = 'toast ' + type;
             
             const displayTitle = title || this.titles[type] || 'Notice';
-            const displayIcon = this.icons[type] || '•';
+            const displayIcon = this.icons[type] || this.icons.info;
             
             toast.innerHTML = `
                 <span class="toast-icon">${displayIcon}</span>
@@ -336,6 +341,100 @@
         
         info: function(message, title) {
             this.display(message, 'info', title, CONFIG.TOAST_DEFAULT_DURATION);
+        },
+
+        // Every network catch block was independently writing the same
+        // "Could not connect to server." toast - one wrong word in one
+        // of the eight copies would've been an easy typo to miss. Now
+        // there's exactly one string to get right.
+        connectionError: function() {
+            this.display(
+                "Can't reach the server right now. Check your connection and try again.",
+                'error', 'Connection issue', CONFIG.TOAST_DEFAULT_DURATION
+            );
+        }
+    };
+
+    // ============================================================================
+    // CONFIRM DIALOG
+    // ============================================================================
+    // Replaces window.confirm() for release/ship/dispute actions. A native
+    // browser confirm() is unstyled, blocks the whole tab, and looks the
+    // same on every website on earth - not something you want gating a
+    // "send real money" action on a payments app. This is a small
+    // Promise-based modal built on the same .modal-overlay/.modal pattern
+    // already used elsewhere on the site, so it doesn't introduce a new
+    // visual language.
+    const ConfirmDialog = {
+        overlay: null,
+
+        icons: {
+            default: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>',
+            danger:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>',
+            warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>'
+        },
+
+        ensure: function() {
+            if (this.overlay) return;
+            this.overlay = document.createElement('div');
+            this.overlay.className = 'modal-overlay';
+            this.overlay.innerHTML =
+                '<div class="modal confirm-dialog">' +
+                    '<div class="confirm-dialog-icon"></div>' +
+                    '<div class="confirm-dialog-title"></div>' +
+                    '<div class="confirm-dialog-message"></div>' +
+                    '<div class="modal-footer">' +
+                        '<button type="button" class="btn-outline confirm-dialog-cancel">Cancel</button>' +
+                        '<button type="button" class="btn-danger confirm-dialog-confirm"></button>' +
+                    '</div>' +
+                '</div>';
+            document.body.appendChild(this.overlay);
+        },
+
+        // options: { title, message, confirmText, tone: 'default'|'danger'|'warning' }
+        // Returns a Promise<boolean> - true if confirmed, false if cancelled.
+        show: function(options) {
+            this.ensure();
+            const tone = options.tone || 'default';
+            const dialog = this.overlay.querySelector('.confirm-dialog');
+            const iconEl = this.overlay.querySelector('.confirm-dialog-icon');
+            const titleEl = this.overlay.querySelector('.confirm-dialog-title');
+            const messageEl = this.overlay.querySelector('.confirm-dialog-message');
+            const confirmBtn = this.overlay.querySelector('.confirm-dialog-confirm');
+            const cancelBtn = this.overlay.querySelector('.confirm-dialog-cancel');
+
+            dialog.className = 'modal confirm-dialog tone-' + tone;
+            iconEl.innerHTML = this.icons[tone] || this.icons.default;
+            titleEl.textContent = options.title || 'Are you sure?';
+            messageEl.textContent = options.message || '';
+            confirmBtn.textContent = options.confirmText || 'Confirm';
+            confirmBtn.className = (tone === 'default' ? 'btn btn-primary' : 'btn btn-danger') + ' confirm-dialog-confirm';
+
+            const overlay = this.overlay;
+
+            return new Promise(function(resolve) {
+                function close(result) {
+                    overlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                    confirmBtn.removeEventListener('click', onConfirm);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    overlay.removeEventListener('click', onOverlayClick);
+                    document.removeEventListener('keydown', onKeydown);
+                    resolve(result);
+                }
+                function onConfirm() { close(true); }
+                function onCancel() { close(false); }
+                function onOverlayClick(e) { if (e.target === overlay) close(false); }
+                function onKeydown(e) { if (e.key === 'Escape') close(false); }
+
+                confirmBtn.addEventListener('click', onConfirm);
+                cancelBtn.addEventListener('click', onCancel);
+                overlay.addEventListener('click', onOverlayClick);
+                document.addEventListener('keydown', onKeydown);
+
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
         }
     };
 
@@ -507,26 +606,32 @@
             
             let isValid = true;
             let errorMessage = '';
+            let errorTitle = '';
             
             if (!itemNameInput || !itemNameInput.value.trim()) {
                 isValid = false;
-                errorMessage = 'Please enter the item description';
+                errorTitle = 'Description needed';
+                errorMessage = "What's being sold? Add a short item description.";
             } else if (!amountInput || !amountInput.value || parseFloat(amountInput.value) < 100) {
                 isValid = false;
-                errorMessage = 'Amount must be at least KES 100';
+                errorTitle = 'Amount too low';
+                errorMessage = 'Minimum transaction amount is KES 100.';
             } else if (!buyerPhoneInput || !validateKenyanPhone(buyerPhoneInput.value)) {
                 isValid = false;
-                errorMessage = 'Please enter a valid buyer phone number';
+                errorTitle = "Check the buyer's number";
+                errorMessage = "That doesn't look like a valid Kenyan number - try 07XX XXX XXX.";
             } else if (!sellerPhoneInput || !validateKenyanPhone(sellerPhoneInput.value)) {
                 isValid = false;
-                errorMessage = 'Please enter a valid seller phone number';
+                errorTitle = "Check the seller's number";
+                errorMessage = "That doesn't look like a valid Kenyan number - try 07XX XXX XXX.";
             } else if (buyerPhoneInput.value === sellerPhoneInput.value) {
                 isValid = false;
-                errorMessage = 'Buyer and seller phone numbers must be different';
+                errorTitle = 'Same number twice';
+                errorMessage = "Buyer and seller can't be the same phone number.";
             }
             
             if (!isValid) {
-                ToastManager.error(errorMessage, 'Validation Error');
+                ToastManager.error(errorMessage, errorTitle);
                 return;
             }
             
@@ -603,25 +708,28 @@
             
             document.getElementById('confirmPaymentButton').addEventListener('click', async function() {
                 dismissPopup();
-                ToastManager.info('Creating transaction...', 'Please wait');
+                ToastManager.info('Setting up your transaction…', 'One moment');
                 
                 try {
                     const result = await ApiClient.createTransaction(transactionData);
                     
                     if (result.success) {
-                        ToastManager.success('Transaction created! Seller has been notified.', 'Success');
+                        ToastManager.success("Transaction created - the seller's been notified.", 'Done');
                         form.reset();
                         if (displayAmount) displayAmount.textContent = 'KES 0';
                         if (totalAmountDisplay) totalAmountDisplay.textContent = 'KES 0';
                         setTimeout(function() {
-                            ToastManager.info('Reference: ' + result.transactionId, 'Transaction ID');
+                            ToastManager.info('Reference: ' + result.transactionId, 'Save this for tracking');
                         }, 500);
                     } else {
-                        ToastManager.error(result.error || 'Failed to create transaction', 'Error');
+                        ToastManager.error(
+                            result.error || "Couldn't create that transaction - try again in a moment.",
+                            'Transaction failed'
+                        );
                     }
                 } catch (error) {
                     console.error('API Error:', error);
-                    ToastManager.error('Could not connect to server.', 'Connection Error');
+                    ToastManager.connectionError();
                 }
             });
             
@@ -671,20 +779,20 @@
             
             if (!nameInput || !nameInput.value.trim()) {
                 isValid = false;
-                errorMessage = 'Please enter your name';
+                errorMessage = "Don't forget your name.";
             } else if (!emailInput || !validateEmail(emailInput.value)) {
                 isValid = false;
-                errorMessage = 'Please enter a valid email address';
+                errorMessage = "That email address doesn't look right.";
             } else if (!messageInput || !messageInput.value.trim()) {
                 isValid = false;
-                errorMessage = 'Please enter your message';
+                errorMessage = "Add a message before sending.";
             }
             
             if (isValid) {
-                ToastManager.success('Thank you for contacting us.', 'Message Received');
+                ToastManager.success("Thanks - we'll get back to you shortly.", 'Message sent');
                 form.reset();
             } else {
-                ToastManager.error(errorMessage, 'Form Incomplete');
+                ToastManager.error(errorMessage, 'One thing missing');
             }
         });
     }
@@ -745,13 +853,13 @@
                 event.preventDefault();
                 const phoneNumber = document.getElementById('trackPhone').value.trim();
                 
-                ToastManager.info('Searching for transactions...', 'Please wait');
+                ToastManager.info('Looking that up…', 'One moment');
                 
                 try {
                     const result = await ApiClient.trackByPhone(phoneNumber);
                     
                     if (result.error) {
-                        ToastManager.error('No transactions found for this phone number.', 'Not Found');
+                        ToastManager.error("Nothing found for that number.", 'No results');
                     } else if (result.transactions && result.transactions.length > 0) {
                         currentVerifiedPhone = phoneNumber;
                         currentUserRole = null;
@@ -760,7 +868,7 @@
                         renderTransactionDetails(result.transactions[0], phoneNumber, null, null);
                     }
                 } catch (error) {
-                    ToastManager.error('Could not connect to server.', 'Connection Error');
+                    ToastManager.connectionError();
                 }
             });
         }
@@ -772,7 +880,7 @@
                 const phone = document.getElementById('verifyPhone').value.trim();
                 
                 if (!validateKenyanPhone(phone)) {
-                    ToastManager.error('Please enter a valid phone number', 'Invalid Phone');
+                    ToastManager.error("That doesn't look like a valid Kenyan number.", 'Check the number');
                     return;
                 }
                 
@@ -788,7 +896,7 @@
     }
 
     async function validateAndDisplayWithToken(transactionId, token) {
-        ToastManager.info('Verifying your access...', 'Please wait');
+        ToastManager.info('Checking your link…', 'One moment');
         
         try {
             const result = await ApiClient.validateToken(transactionId, token);
@@ -802,11 +910,14 @@
                 currentTransactionId = transactionId;
                 renderTransactionDetails(result.transaction, currentVerifiedPhone, token, result.role);
             } else {
-                ToastManager.error(result.error || 'Invalid or expired link', 'Access Denied');
+                ToastManager.error(
+                    result.error || "This link has expired or isn't valid anymore.",
+                    'Link no longer works'
+                );
                 loadTransactionById(transactionId);
             }
         } catch (error) {
-            ToastManager.error('Could not connect to server.', 'Connection Error');
+            ToastManager.connectionError();
         } finally {
             // SECURITY: always remove the token from the visible URL once
             // it has been used, regardless of outcome.
@@ -815,13 +926,13 @@
     }
 
     async function loadTransactionById(transactionId) {
-        ToastManager.info('Searching for transaction...', 'Please wait');
+        ToastManager.info('Looking up that transaction…', 'One moment');
         
         try {
             const transaction = await ApiClient.getTransaction(transactionId);
             
             if (transaction.error) {
-                ToastManager.error('No transaction found with this reference.', 'Not Found');
+                ToastManager.error("No transaction matches that reference.", 'Not found');
             } else {
                 currentMagicToken = null;
                 currentUserRole = null;
@@ -829,7 +940,7 @@
                 renderTransactionDetails(transaction, null, null, null);
             }
         } catch (error) {
-            ToastManager.error('Could not connect to server.', 'Connection Error');
+            ToastManager.connectionError();
         }
     }
 
@@ -838,7 +949,7 @@
             const transaction = await ApiClient.getTransaction(transactionId);
             
             if (transaction.error) {
-                ToastManager.error('Transaction not found.', 'Not Found');
+                ToastManager.error("That transaction couldn't be found.", 'Not found');
             } else {
                 currentMagicToken = null;
                 currentUserRole = null;
@@ -846,7 +957,7 @@
                 renderTransactionDetails(transaction, phone, null, null);
             }
         } catch (error) {
-            ToastManager.error('Could not connect to server.', 'Connection Error');
+            ToastManager.connectionError();
         }
     }
 
@@ -1062,23 +1173,32 @@
                     const txnId = this.dataset.transactionId;
                     const releaseAmount = parseFloat(this.dataset.amount);
                     
-                    if (!confirm('Release ' + formatKES(releaseAmount) + ' to seller? This cannot be undone.')) {
+                    const confirmed = await ConfirmDialog.show({
+                        title: 'Release funds to seller?',
+                        message: 'You\'re about to send ' + formatKES(releaseAmount) + ' to the seller. This can\'t be undone.',
+                        confirmText: 'Release ' + formatKES(releaseAmount),
+                        tone: 'danger'
+                    });
+                    if (!confirmed) {
                         return;
                     }
                     
-                    ToastManager.info('Processing release...', 'Please wait');
+                    ToastManager.info('Sending the release...', 'One moment');
                     
                     try {
                         const result = await ApiClient.releaseFunds(txnId, currentMagicToken);
                         
                         if (result.success) {
-                            ToastManager.success('Payment sent to seller.', 'Transaction Complete');
+                            ToastManager.success("Payment's on its way to the seller.", 'Released');
                             await refreshTransactionDisplay();
                         } else {
-                            ToastManager.error(result.error || 'Failed to release funds.', 'Error');
+                            ToastManager.error(
+                                result.error || "Couldn't release funds right now - try again shortly.",
+                                'Release failed'
+                            );
                         }
                     } catch (error) {
-                        ToastManager.error('Could not connect to server.', 'Connection Error');
+                        ToastManager.connectionError();
                     }
                 });
             }
@@ -1089,18 +1209,21 @@
                 resendButton.addEventListener('click', async function() {
                     const txnId = this.dataset.transactionId;
                     
-                    ToastManager.info('Sending new magic link...', 'Please wait');
+                    ToastManager.info('Sending a new link…', 'One moment');
                     
                     try {
                         const result = await ApiClient.resendMagicLink(txnId, verifiedPhone);
                         
                         if (result.success) {
-                            ToastManager.success('New magic link sent to your phone.', 'Link Sent');
+                            ToastManager.success('New link sent to your phone.', 'Sent');
                         } else {
-                            ToastManager.error(result.error || 'Failed to send link.', 'Error');
+                            ToastManager.error(
+                                result.error || "Couldn't send that link - try again shortly.",
+                                'Send failed'
+                            );
                         }
                     } catch (error) {
-                        ToastManager.error('Could not connect to server.', 'Connection Error');
+                        ToastManager.connectionError();
                     }
                 });
             }
@@ -1111,11 +1234,17 @@
                 shipButton.addEventListener('click', async function() {
                     const txnId = this.dataset.transactionId;
                     
-                    if (!confirm('Confirm that the item has been shipped?')) {
+                    const confirmed = await ConfirmDialog.show({
+                        title: 'Mark as shipped?',
+                        message: 'This lets the buyer know their item is on the way.',
+                        confirmText: 'Mark Shipped',
+                        tone: 'default'
+                    });
+                    if (!confirmed) {
                         return;
                     }
                     
-                    ToastManager.info('Updating status...', 'Please wait');
+                    ToastManager.info('Updating…', 'One moment');
                     
                     try {
                         const result = await ApiClient.updateStatus(
@@ -1126,13 +1255,16 @@
                         );
                         
                         if (result.success) {
-                            ToastManager.success('Marked as shipped.', 'Status Updated');
+                            ToastManager.success('Marked as shipped.', 'Updated');
                             await refreshTransactionDisplay();
                         } else {
-                            ToastManager.error(result.error || 'Failed to update status.', 'Error');
+                            ToastManager.error(
+                                result.error || "Couldn't update the status - try again.",
+                                'Update failed'
+                            );
                         }
                     } catch (error) {
-                        ToastManager.error('Could not connect to server.', 'Connection Error');
+                        ToastManager.connectionError();
                     }
                 });
             }
@@ -1147,11 +1279,17 @@
                         return;
                     }
                     
-                    if (!confirm('Raise a dispute for this transaction?')) {
+                    const confirmed = await ConfirmDialog.show({
+                        title: 'Raise a dispute?',
+                        message: 'Funds stay locked in escrow while we look into it. Only do this if something\'s actually gone wrong.',
+                        confirmText: 'Raise Dispute',
+                        tone: 'warning'
+                    });
+                    if (!confirmed) {
                         return;
                     }
                     
-                    ToastManager.info('Filing dispute...', 'Please wait');
+                    ToastManager.info('Filing your dispute…', 'One moment');
                     
                     try {
                         const result = await ApiClient.updateStatus(
@@ -1162,13 +1300,16 @@
                         );
                         
                         if (result.success) {
-                            ToastManager.warning('Dispute filed. We will contact you.', 'Dispute Filed');
+                            ToastManager.warning("Dispute filed - we'll be in touch.", 'Filed');
                             await refreshTransactionDisplay();
                         } else {
-                            ToastManager.error(result.error || 'Failed to raise dispute.', 'Error');
+                            ToastManager.error(
+                                result.error || "Couldn't file that dispute - try again shortly.",
+                                'Dispute not filed'
+                            );
                         }
                     } catch (error) {
-                        ToastManager.error('Could not connect to server.', 'Connection Error');
+                        ToastManager.connectionError();
                     }
                 });
             }
@@ -1227,16 +1368,19 @@
             const payoutAccount = document.getElementById('payoutAccountInput')?.value || '';
             
             if (payoutType !== 'MPESA' && !payoutNumber) {
-                ToastManager.error('Please enter the Till or Paybill number.', 'Required Field');
+                ToastManager.error(
+                    `Add your ${payoutType === 'TILL' ? 'Till' : 'Paybill'} number to continue.`,
+                    'Number needed'
+                );
                 return;
             }
             
             if (payoutType === 'PAYBILL' && !payoutAccount) {
-                ToastManager.error('Please enter the account number.', 'Required Field');
+                ToastManager.error('Add the account number for that Paybill.', 'Account needed');
                 return;
             }
             
-            ToastManager.info('Updating payout method...', 'Please wait');
+            ToastManager.info('Saving your payout details…', 'One moment');
             
             try {
                 const result = await ApiClient.updatePayout(
@@ -1246,13 +1390,16 @@
                 );
                 
                 if (result.success) {
-                    ToastManager.success('Payout method updated.', 'Success');
+                    ToastManager.success("Payout method's set.", 'Saved');
                     document.getElementById('payoutSettingsSection').style.display = 'none';
                 } else {
-                    ToastManager.error(result.error || 'Failed to update', 'Error');
+                    ToastManager.error(
+                        result.error || "Couldn't save that - try again in a moment.",
+                        'Save failed'
+                    );
                 }
             } catch (error) {
-                ToastManager.error('Could not connect to server.', 'Connection Error');
+                ToastManager.connectionError();
             }
         });
     }

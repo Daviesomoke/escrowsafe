@@ -7,6 +7,7 @@
 
 
 
+
 /**
  * SecureEscrow Kenya - Phone Import Shop
  * Fetches the curated product catalog and handles placing an order
@@ -62,6 +63,12 @@
 
     const Toast = {
         container: null,
+        icons: {
+            success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>',
+            error:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+            info:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16v-4M12 8h.01"/></svg>'
+        },
+        titles: { success: 'Done', error: 'Error', info: 'Note' },
         ensure: function () {
             if (!this.container) {
                 this.container = document.createElement('div');
@@ -69,13 +76,14 @@
                 document.body.appendChild(this.container);
             }
         },
-        show: function (message, type) {
+        show: function (message, type, title) {
             this.ensure();
             const toast = document.createElement('div');
             toast.className = 'toast ' + (type || 'info');
             toast.innerHTML =
+                '<span class="toast-icon">' + (this.icons[type] || this.icons.info) + '</span>' +
                 '<div class="toast-content">' +
-                '<div class="toast-title">' + (type === 'error' ? 'Error' : 'Notice') + '</div>' +
+                '<div class="toast-title">' + escapeHtml(title || this.titles[type] || 'Note') + '</div>' +
                 '<div class="toast-message">' + escapeHtml(message) + '</div>' +
                 '</div>' +
                 '<button type="button" class="toast-close" aria-label="Dismiss">&times;</button>';
@@ -221,7 +229,7 @@
             const result = await response.json();
 
             if (!response.ok || !result.success) {
-                Toast.show(result.error || 'Something went wrong placing your order.', 'error');
+                Toast.show(result.error || "Couldn't place that order - try again shortly.", 'error');
                 submitBtn.disabled = false;
                 submitBtn.textContent = t('import.modal.confirmBtn', 'Confirm & Pay Into Escrow');
                 return;
@@ -232,7 +240,7 @@
             document.getElementById('orderStepForm').style.display = 'none';
             document.getElementById('orderStepSuccess').style.display = 'block';
         } catch (err) {
-            Toast.show(t('import.js.networkError', 'Network error. Please check your connection and try again.'), 'error');
+            Toast.show(t('import.js.networkError', "Can't reach the server right now. Check your connection and try again."), 'error');
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = t('import.modal.confirmBtn', 'Confirm & Pay Into Escrow');

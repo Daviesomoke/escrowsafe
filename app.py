@@ -94,6 +94,11 @@ def set_security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    # AUDIT FIX (LOW): HSTS was missing. This only has effect once a
+    # browser has seen it over a genuine HTTPS response, so it doesn't
+    # protect the very first request - but Render always terminates TLS
+    # in front of this app, so it's safe to set unconditionally.
+    response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains'
     # This API only ever returns JSON - never let a browser cache a
     # response containing transaction/payout details.
     if request.path.startswith('/api/'):
@@ -157,14 +162,13 @@ MAX_AMOUNT            = 10_000_000  # KES 10,000,000 sanity cap
 # ESCROW FEE - SERVER-SIDE SOURCE OF TRUTH
 # ============================================================================
 #
-# The frontend shows a fee preview to the buyer before they pay, but the
-# actual amount charged is always computed here, never trusted from the
-# client. This must match CONFIG.ESCROW_FEE_PERCENTAGE in script.js so the
-# number the buyer sees in the popup matches what they are actually charged.
-#
-#   item_amount   -> what the buyer entered / the seller receives (unchanged)
-#   fee_amount    -> item_amount * ESCROW_FEE_PERCENTAGE, platform commission
-#   total_amount  -> item_amount + fee_amount, what the buyer is actually charged
+# SECURITY AUDIT FIX (CRITICAL): previously the buyer's STK Push and the
+# seller's B2C payout were both charged/paid the same bare item amount, so
+# the platform never actually collected a commission regardless of what
+# the frontend displayed. The fee is now computed here, server-side, and
+# is what the buyer is actually charged; the seller still receives the
+# bare item amount. This value must match CONFIG.ESCROW_FEE_PERCENTAGE in
+# script.js so the number shown in the pre-payment popup is accurate.
 #
 ESCROW_FEE_PERCENTAGE = 0.11
 
@@ -175,6 +179,37 @@ def calculate_fee(item_amount):
     fee_amount = round(item_amount * ESCROW_FEE_PERCENTAGE)
     total_amount = item_amount + fee_amount
     return fee_amount, total_amount
+
+# ============================================================================
+# M-PESA CALLBACK SHARED SECRET
+# ============================================================================
+#
+# SECURITY AUDIT FIX (CRITICAL): Daraja does not cryptographically sign its
+# callbacks, and /api/mpesa/stk-callback, /b2c-result and /b2c-timeout must
+# stay publicly reachable with no session/token auth (Safaricom's servers
+# call them directly). The only thing standing between "any request that
+# guesses/obtains a CheckoutRequestID" and a forged fake-payment
+# confirmation was that lookup key - which was previously leaked back to
+# clients (see the GET /transactions/<id> fix below). As defense-in-depth
+# even after closing that leak, every callback URL registered with Daraja
+# now carries a long random secret in the query string that this server
+# generated itself and Safaricom simply echoes back on every call, since
+# webhooks always hit the exact URL you registered. Requests missing or
+# presenting the wrong secret are rejected before any transaction lookup.
+#
+# Set this in your .env / Render environment:
+#   MPESA_CALLBACK_SECRET=<a long random string, e.g. `python -c "import secrets; print(secrets.token_urlsafe(32))"`>
+#
+# If unset, a secret is generated at process startup so the app still
+# works in development - but every restart invalidates in-flight
+# callbacks, so ALWAYS set this explicitly in production.
+MPESA_CALLBACK_SECRET = os.getenv('MPESA_CALLBACK_SECRET') or secrets.token_urlsafe(32)
+
+
+def _callback_secret_valid():
+    return secrets.compare_digest(
+        request.args.get('key', ''), MPESA_CALLBACK_SECRET
+    )
 
 # ============================================================================
 # PHONE IMPORT SERVICE — CONFIG
@@ -396,11 +431,11 @@ def init_database():
         ('payout_conversation_id', 'TEXT'),
         ('payout_receipt_number', 'TEXT'),
         # fee_amount / total_amount: added when the fee-collection bug was
-        # fixed. `amount` stays the item price (what the seller receives);
-        # `total_amount` is what the buyer is actually charged via STK Push.
-        # Existing rows get fee_amount=0, total_amount=amount so historical
-        # transactions aren't misrepresented as having collected a fee they
-        # never actually charged.
+        # fixed (see calculate_fee above). `amount` stays the item price
+        # (what the seller receives); `total_amount` is what the buyer is
+        # actually charged via STK Push. Existing rows get fee_amount=0,
+        # total_amount=amount so historical transactions - which genuinely
+        # never collected a fee - aren't misrepresented.
         ('fee_amount', 'REAL DEFAULT 0'),
         ('total_amount', 'REAL'),
     ]
@@ -410,10 +445,6 @@ def init_database():
         except sqlite3.OperationalError:
             pass  # column already exists
 
-    # Backfill total_amount on rows created before this column existed, so
-    # nothing is left NULL. These transactions genuinely never collected a
-    # fee (that was the bug), so total_amount = amount and fee_amount = 0
-    # for them, which is the accurate historical record.
     cursor.execute('UPDATE transactions SET total_amount = amount WHERE total_amount IS NULL')
 
     cursor.execute('''
@@ -689,9 +720,7 @@ Prepare item for delivery."""
     return send_sms(seller_phone, message, transaction_id, 'seller_tracking')
 
 
-def send_seller_release_notification(seller_phone, transaction_id, seller_token, buyer_phone, item_name, amount, payout_type='MPESA'):
-    tracking_link = f"{FRONTEND_BASE_URL}?id={transaction_id}&token={seller_token}"
-
+def send_seller_release_notification(seller_phone, transaction_id, buyer_phone, item_name, amount, payout_type='MPESA'):
     payout_text = "your M-PESA account"
     if payout_type == 'TILL':
         payout_text = "your Till number"
@@ -705,8 +734,6 @@ Item: {item_name}
 Amount: KES {amount:,.0f}
 
 Status: Funds Released - Payment Complete
-
-Track: {tracking_link}
 
 Funds sent to {payout_text}."""
 
@@ -764,7 +791,7 @@ def daraja_stk_push(phone, amount, account_reference, description, transaction_i
         'PartyA': phone,
         'PartyB': DARAJA_SHORTCODE,
         'PhoneNumber': phone,
-        'CallBackURL': f"{DARAJA_CALLBACK_BASE_URL}/api/mpesa/stk-callback",
+        'CallBackURL': f"{DARAJA_CALLBACK_BASE_URL}/api/mpesa/stk-callback?key={MPESA_CALLBACK_SECRET}",
         'AccountReference': account_reference[:12],
         'TransactionDesc': description[:13],
     }
@@ -815,8 +842,8 @@ def daraja_b2c_payout(phone, amount, remarks, transaction_id):
         'PartyA': DARAJA_B2C_SHORTCODE,
         'PartyB': phone,
         'Remarks': remarks[:100],
-        'QueueTimeOutURL': f"{DARAJA_CALLBACK_BASE_URL}/api/mpesa/b2c-timeout",
-        'ResultURL': f"{DARAJA_CALLBACK_BASE_URL}/api/mpesa/b2c-result",
+        'QueueTimeOutURL': f"{DARAJA_CALLBACK_BASE_URL}/api/mpesa/b2c-timeout?key={MPESA_CALLBACK_SECRET}",
+        'ResultURL': f"{DARAJA_CALLBACK_BASE_URL}/api/mpesa/b2c-result?key={MPESA_CALLBACK_SECRET}",
         'Occasion': transaction_id,
     }
 
@@ -940,14 +967,16 @@ def create_transaction():
     conn.commit()
     conn.close()
 
-    log_activity(transaction_id, 'CREATED', normalize_phone(buyer_phone), f"Amount: {amount}")
+    log_activity(transaction_id, 'CREATED', normalize_phone(buyer_phone), f"Amount: {amount}, Fee: {fee_amount}, Total: {total_amount}")
 
     if DARAJA_CONFIGURED:
         # Real payment collection: send an STK Push prompt to the buyer's
-        # phone right now. Nothing is marked FUNDS_SECURED until the
-        # callback confirms it - but both parties get their tracking
-        # links immediately, same as the manual flow. The tracking page
-        # itself shows "Awaiting Payment" until the callback fires.
+        # phone right now, for the fee-inclusive TOTAL (not the bare item
+        # amount - see calculate_fee). Nothing is marked FUNDS_SECURED
+        # until the callback confirms it - but both parties get their
+        # tracking links immediately, same as the manual flow. The
+        # tracking page itself shows "Awaiting Payment" until the
+        # callback fires.
         try:
             stk_result = daraja_stk_push(
                 normalize_phone(buyer_phone), total_amount, transaction_id, item_name, transaction_id
@@ -1003,7 +1032,9 @@ def create_transaction():
                         'Transaction created, but the payment prompt failed to send. Please retry payment.')
         }), 201
 
-    # Legacy manual-payment path (Daraja not configured)
+    # Legacy manual-payment path (Daraja not configured). The buyer needs
+    # to know the fee-inclusive total since they're paying outside the
+    # app; the seller still only sees the item amount they'll receive.
     send_buyer_magic_link_sms(normalize_phone(buyer_phone), transaction_id, magic_token, item_name, total_amount)
     send_seller_tracking_sms(normalize_phone(seller_phone), transaction_id, seller_token, normalize_phone(buyer_phone), item_name, amount)
 
@@ -1018,9 +1049,23 @@ def create_transaction():
 @limiter.limit('5 per hour')
 def retry_payment(transaction_id):
     """Re-sends the STK Push prompt - for when a buyer cancelled it,
-    let it time out, or it failed to send the first time."""
+    let it time out, or it failed to send the first time.
+
+    SECURITY AUDIT FIX (HIGH): this endpoint previously had no
+    authorization check at all - anyone who knew or found a transaction
+    ID could repeatedly trigger unwanted M-PESA STK prompts to the
+    buyer's phone (harassment/abuse), and it broke the token-based
+    authorization model used by every other state-changing endpoint in
+    this app. It now requires the buyer's own magic token, same as
+    /release and /status."""
     if not DARAJA_CONFIGURED:
         return jsonify({'error': 'M-PESA payments are not configured yet'}), 503
+
+    data  = request.json or {}
+    token = data.get('token', '')
+
+    if not token:
+        return jsonify({'error': 'Authorization token is required'}), 400
 
     conn   = get_db_connection()
     cursor = conn.cursor()
@@ -1033,15 +1078,20 @@ def retry_payment(transaction_id):
 
     transaction = dict(row)
 
+    if hash_value(token) != transaction['magic_token_hash']:
+        conn.close()
+        log_activity(transaction_id, 'RETRY_PAYMENT_FAILED', None, 'Invalid token')
+        return jsonify({'error': 'Invalid authorization token'}), 403
+
     if transaction['status'] != 'AWAITING_PAYMENT':
         conn.close()
         return jsonify({'error': f"Cannot retry payment from status: {transaction['status']}"}), 400
 
     try:
         # total_amount may be NULL on rows created before this column
-        # existed - fall back to amount (no fee) for those old transactions
-        # only, so a retry never charges more than the buyer was originally
-        # promised.
+        # existed - fall back to amount (no fee) for those old
+        # transactions only, so a retry never charges more than the
+        # buyer was originally told.
         retry_amount = float(transaction['total_amount'] or transaction['amount'])
         stk_result = daraja_stk_push(
             transaction['buyer_phone'], retry_amount,
@@ -1073,10 +1123,16 @@ def retry_payment(transaction_id):
 def stk_callback():
     """Safaricom calls this after the buyer completes (or cancels/fails)
     the STK Push prompt. This endpoint is publicly reachable with no
-    auth - that's a Daraja requirement, not a choice - so it never
-    trusts the payload blindly: it looks up the transaction by
-    CheckoutRequestID and cross-checks the paid amount before confirming
-    anything."""
+    session/token auth - that's a Daraja requirement, not a choice - so
+    it never trusts the payload blindly: it requires the callback secret
+    that only this server and Safaricom (via the registered CallBackURL)
+    know, looks up the transaction by CheckoutRequestID, and cross-checks
+    the paid amount before confirming anything."""
+    if not _callback_secret_valid():
+        # Do NOT log the payload here or return any detail - an attacker
+        # probing this endpoint should learn nothing beyond "rejected".
+        return jsonify({'ResultCode': 1, 'ResultDesc': 'Rejected'}), 403
+
     payload = request.json or {}
     log_mpesa_callback('stk_push', payload)
 
@@ -1100,18 +1156,20 @@ def stk_callback():
     transaction = dict(row)
     transaction_id = transaction['id']
 
-    # Idempotency: Safaricom sometimes retries callbacks. If this
-    # transaction has already been marked paid, don't process it twice.
-    if transaction['payment_status'] == 'PAID':
-        conn.close()
-        return jsonify({'ResultCode': 0, 'ResultDesc': 'Accepted'})
-
     if result_code != 0:
+        # SECURITY AUDIT FIX (MEDIUM): use an atomic conditional UPDATE
+        # (WHERE payment_status = 'PENDING') instead of a separate
+        # read-then-write, so two near-simultaneous retried callbacks
+        # can't both pass a stale idempotency check and both send SMS.
         cursor.execute('''
-            UPDATE transactions SET payment_status = 'FAILED' WHERE id = ?
+            UPDATE transactions SET payment_status = 'FAILED'
+            WHERE id = ? AND payment_status = 'PENDING'
         ''', (transaction_id,))
         conn.commit()
+        already_handled = cursor.rowcount == 0
         conn.close()
+        if already_handled:
+            return jsonify({'ResultCode': 0, 'ResultDesc': 'Accepted'})
         log_activity(transaction_id, 'PAYMENT_FAILED', None,
                      stk_callback_data.get('ResultDesc', 'Payment failed or cancelled'))
         send_sms(
@@ -1132,13 +1190,14 @@ def stk_callback():
 
     # SECURITY: never trust the callback amount blindly - cross-check it
     # against what this transaction actually expects before confirming.
-    # expected_amount is the fee-inclusive total the buyer was charged via
-    # STK Push, NOT the bare item amount (that's what the seller receives).
+    # expected_amount is the fee-inclusive TOTAL the buyer was charged
+    # via STK Push, NOT the bare item amount (that's what the seller
+    # receives - see calculate_fee).
     expected_amount = float(transaction['total_amount'] or transaction['amount'])
-    item_amount = float(transaction['amount'])
     if paid_amount is None or abs(float(paid_amount) - expected_amount) > 1:
         cursor.execute('''
-            UPDATE transactions SET payment_status = 'MISMATCH' WHERE id = ?
+            UPDATE transactions SET payment_status = 'MISMATCH'
+            WHERE id = ? AND payment_status = 'PENDING'
         ''', (transaction_id,))
         conn.commit()
         conn.close()
@@ -1146,13 +1205,27 @@ def stk_callback():
                      f"Expected {expected_amount}, callback reported {paid_amount}")
         return jsonify({'ResultCode': 0, 'ResultDesc': 'Accepted'})
 
+    # SECURITY AUDIT FIX (MEDIUM - idempotency race): the idempotency
+    # check used to be a separate SELECT before this UPDATE, leaving a
+    # window where two concurrent retried callbacks could both read
+    # payment_status != 'PAID' and both proceed, sending duplicate SMS
+    # (the UPDATE itself was harmless to repeat, but the notifications
+    # weren't). Gating the UPDATE itself on payment_status = 'PENDING'
+    # makes the whole check-and-set atomic at the database level - only
+    # one concurrent request can ever see rowcount == 1.
     cursor.execute('''
         UPDATE transactions
         SET status = 'FUNDS_SECURED', payment_status = 'PAID', mpesa_receipt_number = ?
-        WHERE id = ?
+        WHERE id = ? AND payment_status = 'PENDING'
     ''', (receipt_number, transaction_id))
     conn.commit()
+    already_processed = cursor.rowcount == 0
     conn.close()
+
+    if already_processed:
+        # Either already PAID (Safaricom retried the same callback) or
+        # in some other state - don't re-notify either party.
+        return jsonify({'ResultCode': 0, 'ResultDesc': 'Accepted'})
 
     log_activity(transaction_id, 'PAYMENT_CONFIRMED', transaction['buyer_phone'],
                  f"Receipt: {receipt_number}, Amount: {paid_amount}")
@@ -1169,8 +1242,8 @@ def stk_callback():
     send_sms(
         transaction['seller_phone'],
         f"SecureEscrow Kenya\nBuyer's payment for {transaction['item_name']} has been "
-        f"confirmed and KES {item_amount:,.0f} is secured in escrow for you. "
-        f"You may proceed with fulfillment.",
+        f"confirmed and KES {float(transaction['amount']):,.0f} is secured in escrow for "
+        f"you. You may proceed with fulfillment.",
         transaction_id, 'payment_confirmed_seller'
     )
 
@@ -1206,6 +1279,22 @@ def get_transaction(transaction_id):
     transaction.pop('seller_token_hash', None)
     transaction.pop('token_expires_at', None)
     transaction.pop('token_used', None)
+    # SECURITY AUDIT FIX (CRITICAL): mpesa_checkout_request_id in
+    # particular was being returned here to ANY caller who knew a
+    # transaction ID, no token required. That value is exactly the
+    # lookup key /api/mpesa/stk-callback uses to identify which
+    # transaction to mark as paid - since that callback endpoint must
+    # stay publicly reachable (Safaricom calls it directly, with no
+    # session of its own), leaking this ID would have let someone submit
+    # a forged callback payload claiming a transaction was paid when it
+    # never was, then have real funds released to the seller. These IDs
+    # are purely internal correlation values; no legitimate frontend use
+    # ever needs them, authorized or not.
+    transaction.pop('mpesa_checkout_request_id', None)
+    transaction.pop('mpesa_merchant_request_id', None)
+    transaction.pop('mpesa_receipt_number', None)
+    transaction.pop('payout_conversation_id', None)
+    transaction.pop('payout_receipt_number', None)
 
     is_authorized = False
     if token:
@@ -1341,6 +1430,46 @@ def release_funds(transaction_id):
         DARAJA_B2C_CONFIGURED and transaction['payout_type'] == 'MPESA'
     )
 
+    # SECURITY AUDIT FIX (CRITICAL - double-release race condition): the
+    # checks above (token validity, token_used, status) were previously
+    # read in one SELECT and acted on afterwards, with no lock held in
+    # between. Two near-simultaneous requests carrying the same
+    # still-valid, still-unused token (a double-click, a replayed
+    # request, or a deliberately concurrent attack) could both pass
+    # every check and both reach daraja_b2c_payout / the manual release
+    # below, paying the seller twice for one transaction.
+    #
+    # This UPDATE closes that window by making the claim itself atomic:
+    # it only succeeds (rowcount == 1) if the row *still* matches the
+    # same status/token_used conditions at the moment of the write, not
+    # just at the moment of the earlier read. SQLite serializes writers
+    # against a single database file, so only one concurrent request can
+    # ever win this race - the loser sees rowcount == 0 and is rejected
+    # before any payout is ever attempted. token_used is burned here,
+    # atomically, rather than after a successful Daraja call as before.
+    claim_status = 'RELEASE_PROCESSING' if use_automated_payout else 'FUNDS_RELEASED'
+    claim_params = [claim_status]
+    claim_sql = 'UPDATE transactions SET status = ?, token_used = 1'
+    if not use_automated_payout:
+        claim_sql += ', released_at = ?'
+        claim_params.append(datetime.now().isoformat())
+    claim_sql += '''
+        WHERE id = ? AND status IN ('FUNDS_SECURED', 'AWAITING_DELIVERY', 'DELIVERED')
+        AND token_used = 0
+    '''
+    claim_params.append(transaction_id)
+
+    cursor.execute(claim_sql, claim_params)
+    conn.commit()
+
+    if cursor.rowcount == 0:
+        # Lost the race (or replayed/stale request) - another request
+        # already claimed this release. Do NOT attempt any payout.
+        conn.close()
+        log_activity(transaction_id, 'RELEASE_FAILED', transaction['buyer_phone'],
+                     'Release already claimed by a concurrent or prior request')
+        return jsonify({'error': 'This release has already been processed.'}), 409
+
     if use_automated_payout:
         try:
             b2c_result = daraja_b2c_payout(
@@ -1348,23 +1477,37 @@ def release_funds(transaction_id):
                 amount, f"Escrow release {transaction_id}", transaction_id
             )
         except Exception as e:
+            # We already claimed the release and burned the token above,
+            # which is intentional here: once Daraja may have received
+            # the request, blindly allowing a "retry" from the same link
+            # risks a genuine double payout if this was a network error
+            # rather than a real rejection. Leave status as
+            # RELEASE_PROCESSING and payout_status FAILED for manual
+            # reconciliation, same as a failed /b2c-result callback.
+            cursor.execute('''
+                UPDATE transactions SET payout_status = 'FAILED' WHERE id = ?
+            ''', (transaction_id,))
+            conn.commit()
             conn.close()
             log_activity(transaction_id, 'RELEASE_FAILED', transaction['buyer_phone'], f"B2C error: {e}")
-            return jsonify({'error': 'Payout could not be started. Please try again.'}), 502
+            return jsonify({'error': 'Payout could not be started. Our team will follow up shortly.'}), 502
 
         if b2c_result.get('ResponseCode') != '0':
+            cursor.execute('''
+                UPDATE transactions SET payout_status = 'FAILED' WHERE id = ?
+            ''', (transaction_id,))
+            conn.commit()
             conn.close()
             log_activity(transaction_id, 'RELEASE_FAILED', transaction['buyer_phone'],
                          f"B2C rejected: {b2c_result.get('ResponseDescription', 'unknown')}")
-            return jsonify({'error': 'Payout could not be started. Please try again.'}), 502
+            return jsonify({'error': 'Payout could not be started. Our team will follow up shortly.'}), 502
 
-        # Daraja accepted the payout request - NOW burn the one-time
-        # token and mark processing. Final confirmation comes via the
-        # B2C result callback.
+        # Daraja accepted the payout request - status/token were already
+        # claimed atomically above. Just record the ConversationID for
+        # matching the eventual /b2c-result callback.
         cursor.execute('''
             UPDATE transactions
-            SET status = 'RELEASE_PROCESSING', payout_status = 'PROCESSING',
-                payout_conversation_id = ?, token_used = 1
+            SET payout_status = 'PROCESSING', payout_conversation_id = ?
             WHERE id = ?
         ''', (b2c_result.get('ConversationID'), transaction_id))
         conn.commit()
@@ -1385,20 +1528,15 @@ def release_funds(transaction_id):
             'amount':  amount
         })
 
-    # Manual payout path (Till/Paybill sellers, or B2C not configured yet)
-    cursor.execute('''
-        UPDATE transactions
-        SET status = ?, released_at = ?, token_used = 1
-        WHERE id = ?
-    ''', ('FUNDS_RELEASED', datetime.now().isoformat(), transaction_id))
-
-    conn.commit()
+    # Manual payout path (Till/Paybill sellers, or B2C not configured
+    # yet) - status, released_at and token_used were already set
+    # atomically above.
     conn.close()
 
     log_activity(transaction_id, 'FUNDS_RELEASED', transaction['buyer_phone'], f"Amount: {amount}")
 
     send_seller_release_notification(
-        transaction['seller_phone'], transaction_id, generate_token(),
+        transaction['seller_phone'], transaction_id,
         transaction['buyer_phone'], transaction['item_name'],
         amount, transaction['payout_type']
     )
@@ -1415,7 +1553,11 @@ def release_funds(transaction_id):
 def b2c_result():
     """Safaricom calls this once a B2C payout actually completes (or
     fails). Like the STK callback, this is unauthenticated by necessity,
-    so it only acts on ConversationIDs it recognizes."""
+    so besides the shared callback secret it only ever acts on
+    ConversationIDs it recognizes."""
+    if not _callback_secret_valid():
+        return jsonify({'ResultCode': 1, 'ResultDesc': 'Rejected'}), 403
+
     payload = request.json or {}
     log_mpesa_callback('b2c_result', payload)
 
@@ -1466,16 +1608,31 @@ def b2c_result():
     }
     receipt_number = result_params.get('TransactionReceipt', '')
 
+    # SECURITY AUDIT FIX (MEDIUM - dispute overwrite race): a dispute can
+    # be raised (see /status) while a payout is RELEASE_PROCESSING, in
+    # the window between the buyer clicking release and this callback
+    # arriving. The money has genuinely already left via Daraja by the
+    # time this callback fires - that's a fact, not something a dispute
+    # can undo - so payout_status/receipt are always recorded. But the
+    # transaction's `status` itself is only advanced to FUNDS_RELEASED if
+    # it hasn't since become DISPUTED, so a dispute raised in that window
+    # doesn't get silently erased. Davies still needs to know the payout
+    # completed despite the dispute, so that's logged explicitly too.
     cursor.execute('''
         UPDATE transactions
-        SET status = 'FUNDS_RELEASED', payout_status = 'COMPLETED',
-            payout_receipt_number = ?, released_at = ?
+        SET status = CASE WHEN status = 'DISPUTED' THEN status ELSE 'FUNDS_RELEASED' END,
+            payout_status = 'COMPLETED', payout_receipt_number = ?, released_at = ?
         WHERE id = ?
     ''', (receipt_number, datetime.now().isoformat(), transaction_id))
     conn.commit()
     conn.close()
 
-    log_activity(transaction_id, 'PAYOUT_COMPLETED', None, f"Receipt: {receipt_number}")
+    if transaction['status'] == 'DISPUTED':
+        log_activity(transaction_id, 'PAYOUT_COMPLETED_DURING_DISPUTE', None,
+                     f"Receipt: {receipt_number} - payout completed via Daraja after a dispute "
+                     f"was raised; status kept as DISPUTED for manual review, but funds did move.")
+    else:
+        log_activity(transaction_id, 'PAYOUT_COMPLETED', None, f"Receipt: {receipt_number}")
 
     send_sms(
         transaction['seller_phone'],
@@ -1492,6 +1649,8 @@ def b2c_result():
 def b2c_timeout():
     """Safaricom calls this if a B2C request times out entirely (rare -
     most outcomes arrive via /b2c-result instead)."""
+    if not _callback_secret_valid():
+        return jsonify({'ResultCode': 1, 'ResultDesc': 'Rejected'}), 403
     payload = request.json or {}
     log_mpesa_callback('b2c_timeout', payload)
     return jsonify({'ResultCode': 0, 'ResultDesc': 'Accepted'})
@@ -1527,6 +1686,19 @@ def update_payout(transaction_id):
     if token_hash != transaction['seller_token_hash']:
         conn.close()
         return jsonify({'error': 'Only seller can update payout method'}), 403
+
+    # AUDIT FIX (MEDIUM): payout details used to be editable at any
+    # transaction status, including RELEASE_PROCESSING/FUNDS_RELEASED.
+    # Changing the payout number after a payout was already dispatched
+    # to the old one (or is actively in flight) doesn't move already-sent
+    # money, but it corrupts the stored record of where funds actually
+    # went - support/dispute review would show a payout number that
+    # doesn't match what Daraja was actually told. Lock it once release
+    # has started.
+    locked_statuses = ['RELEASE_PROCESSING', 'FUNDS_RELEASED']
+    if transaction['status'] in locked_statuses:
+        conn.close()
+        return jsonify({'error': 'Payout method can no longer be changed - release has already started.'}), 400
 
     cursor.execute('''
         UPDATE transactions
@@ -1836,28 +2008,99 @@ def create_import_order():
     seller_token_hash = hash_value(seller_token)
     token_expires_at  = (datetime.now() + timedelta(days=TOKEN_EXPIRY_DAYS)).isoformat()
 
+    # SECURITY AUDIT FIX (CRITICAL): this endpoint used to hardcode
+    # status='FUNDS_SECURED' immediately on order creation, with no STK
+    # Push, no Daraja call, no payment verification of any kind. Anyone
+    # could place an order that the system showed as fully paid without
+    # ever paying anything - if that "Funds Secured" signal were used to
+    # decide when to ship a real phone, orders could be fulfilled for
+    # free. This now mirrors the exact same real payment-collection flow
+    # used by the main escrow endpoint: an STK Push is sent for the real
+    # amount, and status only becomes FUNDS_SECURED once Safaricom's own
+    # callback confirms the payment (see stk_callback above).
+    initial_status = 'AWAITING_PAYMENT' if DARAJA_CONFIGURED else 'FUNDS_SECURED'
+    initial_payment_status = 'PENDING' if DARAJA_CONFIGURED else 'PAID'
+
     conn   = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO transactions (
             id, magic_token_hash, seller_token_hash, token_expires_at,
-            item_name, item_details, amount, buyer_phone, seller_phone,
+            item_name, item_details, amount, fee_amount, total_amount,
+            buyer_phone, seller_phone,
             transaction_type, delivery_deadline, payout_type, payout_number, payout_account,
-            status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            status, created_at, payment_status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         transaction_id, magic_token_hash, seller_token_hash, token_expires_at,
-        item_name, item_details, amount,
+        item_name, item_details, amount, 0, amount,
         normalized_buyer, normalized_seller,
         'PHONE_IMPORT', product.get('eta', ''),
         IMPORT_PAYOUT_TYPE, IMPORT_PAYOUT_NUMBER, IMPORT_PAYOUT_ACCOUNT,
-        'FUNDS_SECURED', datetime.now().isoformat()
+        initial_status, datetime.now().isoformat(), initial_payment_status
     ))
     conn.commit()
     conn.close()
 
     log_activity(transaction_id, 'CREATED', normalized_buyer, f"Import order: {item_name} - Amount: {amount}")
 
+    if DARAJA_CONFIGURED:
+        try:
+            stk_result = daraja_stk_push(
+                normalized_buyer, amount, transaction_id, item_name, transaction_id
+            )
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE transactions
+                SET mpesa_checkout_request_id = ?, mpesa_merchant_request_id = ?
+                WHERE id = ?
+            ''', (
+                stk_result.get('CheckoutRequestID'),
+                stk_result.get('MerchantRequestID'),
+                transaction_id
+            ))
+            conn.commit()
+            conn.close()
+            stk_sent = stk_result.get('ResponseCode') == '0'
+        except Exception as e:
+            log_activity(transaction_id, 'STK_PUSH_FAILED', None, str(e))
+            stk_sent = False
+
+        tracking_link = f"{FRONTEND_BASE_URL}?id={transaction_id}&token={magic_token}"
+        if stk_sent:
+            buyer_message = (
+                f"SecureEscrow Kenya\nEnter your M-PESA PIN on the prompt sent to your "
+                f"phone to pay KES {amount:,.0f} for {item_name}.\n\nTrack: {tracking_link}"
+            )
+        else:
+            buyer_message = (
+                f"SecureEscrow Kenya\nWe couldn't send the M-PESA payment prompt for your "
+                f"order. Please retry payment.\n\nTrack: {tracking_link}"
+            )
+        send_sms(normalized_buyer, buyer_message, transaction_id, 'stk_push_prompt')
+
+        seller_tracking_link = f"{FRONTEND_BASE_URL}?id={transaction_id}&token={seller_token}"
+        send_sms(
+            normalized_seller,
+            f"SecureEscrow Kenya\nNew phone import order: {item_name} (KES {amount:,.0f}).\n"
+            f"Payment has been requested from the buyer - you'll get another SMS once it's "
+            f"confirmed.\n\nTrack: {seller_tracking_link}",
+            transaction_id, 'seller_awaiting_payment'
+        )
+
+        return jsonify({
+            'success':       True,
+            'transactionId': transaction_id,
+            'paymentRequired': True,
+            'stkPushSent':   stk_sent,
+            'message': ('Check your phone and enter your M-PESA PIN to complete payment.'
+                        if stk_sent else
+                        'Order created, but the payment prompt failed to send. Please retry payment.')
+        }), 201
+
+    # Legacy manual-payment path - only reachable if Daraja isn't
+    # configured yet (sandbox/testing), same as the main escrow endpoint.
     send_buyer_magic_link_sms(normalized_buyer, transaction_id, magic_token, item_name, amount)
     send_seller_tracking_sms(normalized_seller, transaction_id, seller_token, normalized_buyer, item_name, amount)
 
@@ -2000,6 +2243,16 @@ def admin_upload_image():
     image_bytes = image_file.read()
     if len(image_bytes) > 10 * 1024 * 1024:
         return jsonify({'error': 'Image too large (max 10MB)'}), 400
+
+    # AUDIT FIX (LOW): this endpoint is admin-only so the blast radius was
+    # always small, but it forwarded whatever bytes it received straight
+    # to imgbb with no check that they're actually an image. A quick
+    # magic-byte check rejects obviously-wrong uploads before they ever
+    # leave the server, rather than relying entirely on imgbb's own
+    # validation.
+    image_signatures = (b'\xff\xd8\xff', b'\x89PNG\r\n\x1a\n', b'GIF87a', b'GIF89a', b'RIFF')
+    if not any(image_bytes.startswith(sig) for sig in image_signatures):
+        return jsonify({'error': 'That file does not look like a valid image'}), 400
 
     try:
         encoded = base64.b64encode(image_bytes).decode('utf-8')

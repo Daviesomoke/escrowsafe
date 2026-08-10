@@ -28,6 +28,104 @@
         return Object.assign({ 'X-Admin-Key': adminKey }, extra || {});
     }
 
+    // ============================================================================
+    // TOAST + CONFIRM DIALOG
+    // ============================================================================
+    // admin.html previously used raw alert()/confirm() - functional but it
+    // looks like a browser default popup, not part of this app. These reuse
+    // the exact same .toast / .modal-overlay CSS already defined in
+    // style.css (which this page already links), so it's visually
+    // consistent with the rest of the site rather than a one-off.
+
+    const Toast = {
+        container: null,
+        icons: {
+            success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>',
+            error:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>'
+        },
+        ensure: function () {
+            if (!this.container) {
+                this.container = document.createElement('div');
+                this.container.className = 'toast-container';
+                document.body.appendChild(this.container);
+            }
+        },
+        show: function (message, type, title) {
+            this.ensure();
+            const toast = document.createElement('div');
+            toast.className = 'toast ' + (type || 'info');
+            toast.innerHTML =
+                '<span class="toast-icon">' + (this.icons[type] || '') + '</span>' +
+                '<div class="toast-content">' +
+                '<div class="toast-title">' + (title || (type === 'error' ? 'Error' : 'Done')) + '</div>' +
+                '<div class="toast-message">' + escapeHtml(message) + '</div>' +
+                '</div>' +
+                '<button type="button" class="toast-close" aria-label="Dismiss">&times;</button>';
+            toast.querySelector('.toast-close').addEventListener('click', function () {
+                toast.remove();
+            });
+            this.container.appendChild(toast);
+            setTimeout(function () {
+                if (toast.parentElement) toast.remove();
+            }, 6000);
+        }
+    };
+
+    const ConfirmDialog = {
+        overlay: null,
+        ensure: function () {
+            if (this.overlay) return;
+            this.overlay = document.createElement('div');
+            this.overlay.className = 'modal-overlay';
+            this.overlay.innerHTML =
+                '<div class="modal confirm-dialog">' +
+                    '<div class="confirm-dialog-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg></div>' +
+                    '<div class="confirm-dialog-title"></div>' +
+                    '<div class="confirm-dialog-message"></div>' +
+                    '<div class="modal-footer">' +
+                        '<button type="button" class="btn-outline confirm-dialog-cancel">Cancel</button>' +
+                        '<button type="button" class="btn-danger confirm-dialog-confirm"></button>' +
+                    '</div>' +
+                '</div>';
+            document.body.appendChild(this.overlay);
+        },
+        show: function (options) {
+            this.ensure();
+            const dialog = this.overlay.querySelector('.confirm-dialog');
+            const titleEl = this.overlay.querySelector('.confirm-dialog-title');
+            const messageEl = this.overlay.querySelector('.confirm-dialog-message');
+            const confirmBtn = this.overlay.querySelector('.confirm-dialog-confirm');
+            const cancelBtn = this.overlay.querySelector('.confirm-dialog-cancel');
+
+            dialog.className = 'modal confirm-dialog tone-danger';
+            titleEl.textContent = options.title || 'Are you sure?';
+            messageEl.textContent = options.message || '';
+            confirmBtn.textContent = options.confirmText || 'Confirm';
+
+            const overlay = this.overlay;
+            return new Promise(function (resolve) {
+                function close(result) {
+                    overlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                    confirmBtn.removeEventListener('click', onConfirm);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    overlay.removeEventListener('click', onOverlayClick);
+                    resolve(result);
+                }
+                function onConfirm() { close(true); }
+                function onCancel() { close(false); }
+                function onOverlayClick(e) { if (e.target === overlay) close(false); }
+
+                confirmBtn.addEventListener('click', onConfirm);
+                cancelBtn.addEventListener('click', onCancel);
+                overlay.addEventListener('click', onOverlayClick);
+
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+        }
+    };
+
     function formatKES(amount) {
         return 'KES ' + Number(amount).toLocaleString('en-KE');
     }
@@ -128,16 +226,27 @@
     }
 
     async function deleteProduct(id) {
-        if (!confirm('Remove this phone from the catalog?')) return;
+        const product = products.find(function (p) { return p.id === id; });
+        const confirmed = await ConfirmDialog.show({
+            title: 'Remove this phone?',
+            message: product
+                ? '"' + product.name + '" will be removed from the catalog. This can\'t be undone.'
+                : 'This will be removed from the catalog. This can\'t be undone.',
+            confirmText: 'Remove'
+        });
+        if (!confirmed) return;
+
         try {
-            await fetch(API_BASE_URL + '/admin/import-products/delete', {
+            const res = await fetch(API_BASE_URL + '/admin/import-products/delete', {
                 method: 'POST',
                 headers: headers({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ id: id })
             });
+            if (!res.ok) throw new Error('Delete failed');
+            Toast.show('Removed from the catalog.', 'success');
             loadProducts();
         } catch (err) {
-            alert('Could not delete. Check your connection and try again.');
+            Toast.show('Could not delete. Check your connection and try again.', 'error');
         }
     }
 
